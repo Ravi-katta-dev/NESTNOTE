@@ -22,7 +22,7 @@ This activity record is assembled from visible repository commits, pull requests
 | [#1](https://github.com/Ravi-katta-dev/NESTNOTE/pull/1) | feat: Material 3 personalization and flexible note creation | **Merged** 2026-10-11 | Phase 1 dashboard modernization and personalization. |
 | [#2](https://github.com/Ravi-katta-dev/NESTNOTE/pull/2) | feat: resilient inline note editor | **Merged** 2026-10-11 | Unified create/edit experience and draft safety. |
 | [#3](https://github.com/Ravi-katta-dev/NESTNOTE/pull/3) | Expand settings | **Merged** 2026-10-11 | Theme, colors, layout, sorting, and note display preferences. |
-| [#4](https://github.com/Ravi-katta-dev/NESTNOTE/pull/4) | feat: modernize everyday note-taking experience | **Open draft** | Phase 4 editor refinement, sort options, and timestamp reliability. |
+| [#4](https://github.com/Ravi-katta-dev/NESTNOTE/pull/4) | feat: modernize everyday note-taking experience | **Open draft — awaiting owner review** | Phase 4 editor refinement, sorting, timestamp compatibility, archive/restore, deletion Undo, and explicit reminder-status messaging. |
 
 ## Work completed
 ### Foundation and delivery automation
@@ -239,3 +239,15 @@ Branch: `feature/phase-4-note-taking`; draft PR: [#4](https://github.com/Ravi-ka
 - Fixed the list-layout delete action to use the shared Undo snackbar helper, matching grid and editor deletion.
 - Added NoteStore tests for archived-state round-trip and legacy default behavior.
 - Validation: prior editor callback fix passed Android CI run [#38138686605](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38138686605). This archive increment needs its own Android CI run; emulator UI tests remain manual-only.
+
+
+## Phase 4 cross-check — 2026-10-11
+
+Reviewed the latest implementation source, Phase 4 roadmap, draft PR description, supplied visual-reference links, and Android CI result.
+
+- Latest implementation head: `63951027023f343f85be8fa35a835713d82629dc` — grid/list archive and restore callbacks now use the same state transition; restore persistence and an archived-screen restore instrumentation test were added.
+- [Android CI run #38139703593](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38139703593): **success**. This is the required automated CI result; it does not mean the emulator UI test was run.
+- UI/design review: editor uses Material 3 tonal surfaces, clearer title/body hierarchy, a larger writing area, explicit close icon, improved color swatches, and save feedback. Dashboard uses adaptive grid/list layouts, pastel/adaptive note colors, sorting, pinning, archive access, and an Undo snackbar. The supplied images are design inspiration, not app screenshots; exact pixel parity has not been verified.
+- Scope clarification: reminder time is stored/displayed as metadata only; no alarm or notification delivery is implemented. The third visual reference suggests text formatting, but this branch does not add a rich-text formatting toolbar. These are not claimed as implemented.
+- Validation boundary: instrumentation tests are included/compiled by the Android CI workflow, but the separate emulator UI workflow remains manual-only. No emulator or physical-device visual verification is claimed.
+- Documentation and PR description were reconciled with the implemented scope. Phase 4 remains **in progress / awaiting owner approval**; do not mark complete or merge PR #4 until explicit approval.

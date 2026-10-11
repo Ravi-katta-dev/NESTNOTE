@@ -45,9 +45,13 @@ Implemented a unified Material 3 editor with saveable title/body/category/color/
 - [x] Improve note colors and category handling with pastel/adaptive color choices.
 - [x] Sort by edited date, created date, and title; pinned notes stay first.
 - [x] Clarify pinning and archive behavior: archived notes are removed from active views, remain accessible in Archived, and can be restored without losing their content.
-- [ ] Provide clear reminder scheduling status; saved reminder metadata does not currently imply alarm/notification delivery.
-- [ ] Add undo for accidental deletion.
+- [x] Show clear reminder status in the editor and card metadata; explicitly disclose that reminder times are saved as metadata only and do not schedule notifications/alarms.
+- [x] Add Undo for accidental deletion using the shared snackbar action; restore the deleted note's saved metadata.
 - [x] Add creation timestamp persistence and regression coverage for legacy records and edits.
+- [x] Align archive/restore behavior in grid and list layouts; add persistence and archive-screen restore regression coverage.
+- [x] Refine editor hierarchy, tonal surfaces, writing space, close/color controls, and save feedback using the supplied references as inspiration (not pixel-perfect targets).
+
+**Review gate:** implementation and automated CI are ready for owner review; do not mark Phase 4 complete until explicit owner approval. Visual references are inspiration, not proof of screenshot parity. Reminder delivery, rich-text formatting, and emulator/physical-device visual verification are not claimed.
 
 ## Phase 5 — Reliability and finishing touches
 **Status: Planned; start after Phase 4 is complete.**
