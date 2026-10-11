@@ -7,6 +7,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,6 +25,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -27,6 +34,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -35,8 +44,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -54,12 +67,12 @@ import kotlinx.coroutines.launch
 
 private val fallbackAccent = Color(0xFF625B71)
 private val noteAccents = listOf(
-    Color(0xFF7567F8), Color(0xFF45A9E8), Color(0xFF58B990),
-    Color(0xFFF2B341), Color(0xFFFF8D7D), Color(0xFFED6C9B)
+    Color(0xFFF9F5EE), Color(0xFFF3A5A8), Color(0xFFF39B70),
+    Color(0xFFF6E99A), Color(0xFFCFE9C6), Color(0xFF9FD8D3), Color(0xFFA9CFEA)
 )
 private val noteTints = listOf(
-    Color(0xFFF0EFFF), Color(0xFFE9F6FF), Color(0xFFEAF9F1),
-    Color(0xFFFFF5E4), Color(0xFFFFF0ED), Color(0xFFFFF0F5)
+    Color(0xFFFFFCF7), Color(0xFFFFE5E6), Color(0xFFFFE4D6),
+    Color(0xFFFFF8CC), Color(0xFFE9F6E2), Color(0xFFDDF2EF), Color(0xFFE3F0FB)
 )
 private val categories = listOf("Work", "Personal", "Ideas", "Health", "Finance", "Education", "Travel", "Other")
 private const val PREFS = "nestnote_preferences"
@@ -111,7 +124,7 @@ private fun NestNoteApp(store: NoteStore) {
     var themeMode by remember { mutableStateOf(ThemeMode.values().firstOrNull { it.name == preferences.getString(PREF_THEME, "SYSTEM") } ?: ThemeMode.SYSTEM) }
     var dynamicColors by remember { mutableStateOf(preferences.getBoolean(PREF_DYNAMIC, true)) }
     var dashboardLayout by remember { mutableStateOf(DashboardLayout.values().firstOrNull { it.name == preferences.getString(PREF_LAYOUT, "GRID") } ?: DashboardLayout.GRID) }
-    var editorMode by remember { mutableStateOf(EditorMode.values().firstOrNull { it.name == preferences.getString(PREF_EDITOR, "SHEET") } ?: EditorMode.SHEET) }
+    var editorMode by remember { mutableStateOf(EditorMode.values().firstOrNull { it.name == preferences.getString(PREF_EDITOR, "FULL_SCREEN") } ?: EditorMode.FULL_SCREEN) }
     var dashboardDensity by remember { mutableStateOf(DashboardDensity.values().firstOrNull { it.name == preferences.getString(PREF_DENSITY, "COMPACT") } ?: DashboardDensity.COMPACT) }
     var sortByTitle by remember { mutableStateOf(preferences.getString(PREF_DEFAULT_SORT, "RECENT") == "TITLE") }
     var sortByCreated by remember { mutableStateOf(preferences.getString(PREF_DEFAULT_SORT, "RECENT") == "CREATED") }
@@ -641,10 +654,18 @@ private fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorStyl
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = tint, contentColor = cardText),
+        colors = CardDefaults.cardColors(containerColor = if (note.background > 0) Color.Transparent else tint, contentColor = cardText),
         border = BorderStroke(1.dp, colors.outlineVariant)
     ) {
-        Column(Modifier.fillMaxWidth().padding(if (compact) 10.dp else 16.dp)) {
+        Box {
+            if (note.background > 0) {
+                NoteWallpaperArtwork(note.background, Modifier.matchParentSize())
+            }
+            Column(
+                Modifier.fillMaxWidth()
+                    .background(if (note.background > 0) Color.White.copy(alpha = 0.68f) else Color.Transparent)
+                    .padding(if (compact) 10.dp else 16.dp)
+            ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(color = tint, shape = RoundedCornerShape(8.dp)) {
                     Text(note.category, Modifier.padding(horizontal = 8.dp, vertical = 5.dp), color = cardText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
@@ -672,6 +693,7 @@ private fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorStyl
                 style = MaterialTheme.typography.labelSmall, color = cardSecondary
             )
             }
+            }
         }
     }
 }
@@ -688,150 +710,391 @@ private fun NoteEditorContent(
     fullScreen: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    // Saveable editor fields survive activity recreation (for example, rotation).
-    // Keying by note ID resets the draft only when switching to another note.
     var title by rememberSaveable(original?.id) { mutableStateOf(original?.title.orEmpty()) }
     var body by rememberSaveable(original?.id) { mutableStateOf(original?.body.orEmpty()) }
     var category by rememberSaveable(original?.id) { mutableStateOf(original?.category ?: defaultNoteCategory) }
-    var colorIndex by rememberSaveable(original?.id) { mutableIntStateOf(original?.color ?: 0) }
+    var colorIndex by rememberSaveable(original?.id) { mutableIntStateOf(original?.color?.coerceIn(0, noteAccents.lastIndex) ?: 0) }
+    var backgroundIndex by rememberSaveable(original?.id) { mutableIntStateOf(original?.background?.coerceIn(0, 5) ?: 0) }
     var reminder by rememberSaveable(original?.id) { mutableStateOf(original?.reminder.orEmpty()) }
+    var pinned by rememberSaveable(original?.id) { mutableStateOf(original?.pinned ?: false) }
+    var appearanceVisible by remember { mutableStateOf(false) }
     var discardConfirmation by remember { mutableStateOf(false) }
+    var categoryExpanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val hasUnsavedChanges = title != original?.title.orEmpty() ||
         body != original?.body.orEmpty() ||
-        category != (original?.category ?: "Ideas") ||
+        category != (original?.category ?: defaultNoteCategory) ||
         colorIndex != (original?.color ?: 0) ||
+        backgroundIndex != (original?.background ?: 0) ||
+        pinned != (original?.pinned ?: false) ||
         reminder != original?.reminder.orEmpty()
+
     fun requestDismiss() {
         if (hasUnsavedChanges) discardConfirmation = true else onDismiss()
     }
+    fun buildNote(archived: Boolean = original?.archived ?: false): NestNote {
+        val now = System.currentTimeMillis()
+        return NestNote(
+            id = original?.id ?: now,
+            title = title.trim(),
+            body = body.trim(),
+            category = category,
+            color = colorIndex,
+            pinned = if (archived) false else pinned,
+            reminder = reminder,
+            updated = now,
+            created = original?.created ?: now,
+            archived = archived,
+            background = backgroundIndex
+        )
+    }
+    fun pickReminder() {
+        val now = Calendar.getInstance()
+        DatePickerDialog(context, { _, year, month, day ->
+            TimePickerDialog(context, { _, hour, minute ->
+                reminder = String.format(
+                    Locale.getDefault(), "%04d-%02d-%02d %02d:%02d",
+                    year, month + 1, day, hour, minute
+                )
+            }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show()
+        }, now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH)).show()
+    }
+
     LaunchedEffect(hasUnsavedChanges) { onUnsavedChangesChange(hasUnsavedChanges) }
-    var categoryExpanded by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    Column(
-        modifier = modifier.then(if (fullScreen) Modifier.statusBarsPadding().navigationBarsPadding().padding(horizontal = 20.dp) else Modifier.padding(horizontal = 20.dp).navigationBarsPadding()).padding(bottom = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+
+    Box(
+        modifier = modifier
+            .then(if (fullScreen) Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding() else Modifier.fillMaxWidth().navigationBarsPadding())
+            .background(if (backgroundIndex == 0) Color(0xFFFCFAFE) else Color.White)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(if (original == null) "New note" else "Edit note", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text("Capture it before it slips away.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            IconButton(onClick = { requestDismiss() }) { Icon(Icons.Default.Close, contentDescription = "Close editor") }
+        if (backgroundIndex > 0) {
+            NoteWallpaperArtwork(backgroundIndex, Modifier.fillMaxSize())
+            Box(Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.70f)))
         }
-        OutlinedTextField(
-            value = title,
-            onValueChange = { title = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Give your note a title") },
-            textStyle = MaterialTheme.typography.titleLarge,
-            singleLine = true,
-            shape = RoundedCornerShape(18.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                unfocusedBorderColor = Color.Transparent,
-                focusedBorderColor = MaterialTheme.colorScheme.primary
-            ),
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
-        )
-        OutlinedTextField(
-            value = body,
-            onValueChange = { body = it },
-            modifier = Modifier.fillMaxWidth().then(if (fullScreen) Modifier.weight(1f, fill = false) else Modifier),
-            placeholder = { Text("Start writing…") },
-            minLines = if (fullScreen) 10 else 5,
-            shape = RoundedCornerShape(20.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                unfocusedBorderColor = Color.Transparent,
-                focusedBorderColor = MaterialTheme.colorScheme.primary
-            ),
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
-        )
-        ExposedDropdownMenuBox(expanded = categoryExpanded, onExpandedChange = { categoryExpanded = it }) {
-            OutlinedTextField(
-                value = category, onValueChange = {}, readOnly = true, label = { Text("Category") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
-                modifier = Modifier.fillMaxWidth().menuAnchor()
-            )
-            ExposedDropdownMenu(expanded = categoryExpanded, onDismissRequest = { categoryExpanded = false }) {
-                categories.forEach { item -> DropdownMenuItem(text = { Text(item) }, onClick = { category = item; categoryExpanded = false }) }
-            }
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Note color", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.fillMaxSize()) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                noteAccents.forEachIndexed { index, color ->
-                    Surface(
-                        modifier = Modifier.size(36.dp).clickable { colorIndex = index },
-                        shape = CircleShape,
-                        color = color,
-                        border = if (colorIndex == index) BorderStroke(3.dp, MaterialTheme.colorScheme.onSurface) else null
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            if (colorIndex == index) Icon(Icons.Default.Check, contentDescription = "Selected note color", tint = Color.White, modifier = Modifier.size(18.dp))
+                IconButton(onClick = { requestDismiss() }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Close editor")
+                }
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = { pinned = !pinned }) {
+                    Icon(
+                        Icons.Default.PushPin,
+                        contentDescription = if (pinned) "Unpin note" else "Pin note",
+                        tint = if (pinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = { pickReminder() }) {
+                    Icon(
+                        Icons.Default.NotificationsNone,
+                        contentDescription = "Choose reminder time",
+                        tint = if (reminder.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (original != null) {
+                    IconButton(onClick = { onSave(buildNote(archived = true)) }) {
+                        Icon(Icons.Default.Archive, contentDescription = "Archive note")
+                    }
+                }
+                IconButton(onClick = { appearanceVisible = true }) {
+                    Icon(Icons.Default.Palette, contentDescription = "Choose note appearance")
+                }
+            }
+
+            Column(
+                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                    .padding(horizontal = 22.dp),
+                verticalArrangement = Arrangement.Top
+            ) {
+                Spacer(Modifier.height(26.dp))
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Title") },
+                    textStyle = MaterialTheme.typography.headlineSmall.copy(
+                        fontSize = 27.sp, lineHeight = 34.sp, fontWeight = FontWeight.Normal
+                    ),
+                    singleLine = false,
+                    shape = RoundedCornerShape(0.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedPlaceholderColor = Color(0xFF77737D),
+                        focusedPlaceholderColor = Color(0xFF77737D)
+                    ),
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+                )
+                OutlinedTextField(
+                    value = body,
+                    onValueChange = { body = it },
+                    modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
+                    placeholder = { Text("Note") },
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 16.sp, lineHeight = 23.sp
+                    ),
+                    minLines = if (fullScreen) 12 else 6,
+                    shape = RoundedCornerShape(0.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedPlaceholderColor = Color(0xFF9A969F),
+                        focusedPlaceholderColor = Color(0xFF9A969F)
+                    ),
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+                )
+
+                Spacer(Modifier.height(14.dp))
+                Box {
+                    TextButton(onClick = { categoryExpanded = true }) {
+                        Text(category, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    DropdownMenu(expanded = categoryExpanded, onDismissRequest = { categoryExpanded = false }) {
+                        categories.forEach { item ->
+                            DropdownMenuItem(
+                                text = { Text(item) },
+                                onClick = { category = item; categoryExpanded = false }
+                            )
+                        }
+                    }
+                }
+                if (reminder.isNotBlank()) {
+                    Text(
+                        "Reminder · $reminder",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "Saved as a reminder time only — notifications aren’t enabled yet.",
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(Modifier.height(24.dp))
+            }
+
+            HorizontalDivider(color = Color(0x1F6F6878))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (onDelete != null) TextButton(onClick = onDelete) { Text("Delete") }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = { requestDismiss() }) { Text("Cancel") }
+                Button(
+                    onClick = { if (title.isNotBlank()) onSave(buildNote()) },
+                    enabled = title.isNotBlank(),
+                    shape = RoundedCornerShape(18.dp),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                ) { Text("Save note") }
+            }
+        }
+    }
+
+    if (appearanceVisible) {
+        AppearancePickerSheet(
+            colorIndex = colorIndex,
+            backgroundIndex = backgroundIndex,
+            onColorSelected = { colorIndex = it },
+            onBackgroundSelected = { backgroundIndex = it },
+            onDismiss = { appearanceVisible = false }
+        )
+    }
+
+    if (discardConfirmation) {
+        AlertDialog(
+            onDismissRequest = { discardConfirmation = false },
+            title = { Text("Discard changes?") },
+            text = { Text("Your unsaved changes will be lost.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    discardConfirmation = false
+                    onDismiss()
+                }) { Text("Discard") }
+            },
+            dismissButton = {
+                TextButton(onClick = { discardConfirmation = false }) { Text("Keep editing") }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppearancePickerSheet(
+    colorIndex: Int,
+    backgroundIndex: Int,
+    onColorSelected: (Int) -> Unit,
+    onBackgroundSelected: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFFFFF6E5),
+        contentColor = Color(0xFF292633),
+        dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFFBDB5A6)) }
+    ) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp)) {
+            Box(Modifier.fillMaxWidth().height(258.dp)) {
+                if (backgroundIndex == 0) {
+                    Box(Modifier.fillMaxSize().background(Color(0xFFF9F4EA)))
+                } else {
+                    NoteWallpaperArtwork(backgroundIndex, Modifier.fillMaxSize())
+                }
+            }
+            Column(
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                Text("Colour", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    noteAccents.forEachIndexed { index, accent ->
+                        Box(
+                            Modifier.size(52.dp).clip(CircleShape)
+                                .background(accent)
+                                .border(
+                                    width = if (index == colorIndex) 2.dp else 1.dp,
+                                    color = if (index == colorIndex) Color(0xFF5A538A) else Color(0x55807870),
+                                    shape = CircleShape
+                                )
+                                .clickable { onColorSelected(index) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (index == colorIndex) {
+                                Icon(Icons.Default.Check, contentDescription = "Selected note color", tint = Color(0xFF5A538A), modifier = Modifier.size(25.dp))
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(3.dp))
+                Text("Background", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    (0..5).forEach { index ->
+                        Box(
+                            Modifier.size(70.dp).clip(CircleShape)
+                                .border(
+                                    width = if (index == backgroundIndex) 2.dp else 1.dp,
+                                    color = if (index == backgroundIndex) Color(0xFF5A538A) else Color(0x66807870),
+                                    shape = CircleShape
+                                )
+                                .clickable { onBackgroundSelected(index) }
+                        ) {
+                            if (index == 0) {
+                                Canvas(Modifier.fillMaxSize()) {
+                                    drawRect(Color(0xFFF9F4EA))
+                                    drawLine(Color(0xFF77716A), Offset(size.width * 0.28f, size.height * 0.28f), Offset(size.width * 0.72f, size.height * 0.72f), strokeWidth = 3.dp.toPx())
+                                }
+                            } else {
+                                NoteWallpaperArtwork(index, Modifier.fillMaxSize())
+                            }
+                            if (index == backgroundIndex) {
+                                Surface(
+                                    modifier = Modifier.align(Alignment.TopEnd).size(23.dp),
+                                    shape = CircleShape,
+                                    color = Color(0xFF5A538A),
+                                    contentColor = Color.White,
+                                    border = BorderStroke(1.dp, Color(0xFFFFF6E5))
+                                ) {
+                                    Icon(Icons.Default.Check, contentDescription = "Selected background", modifier = Modifier.padding(3.dp))
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        OutlinedButton(
-            onClick = {
-                val now = Calendar.getInstance()
-                DatePickerDialog(context, { _, year, month, day ->
-                    TimePickerDialog(context, { _, hour, minute ->
-                        reminder = String.format(Locale.getDefault(), "%04d-%02d-%02d %02d:%02d", year, month + 1, day, hour, minute)
-                    }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show()
-                }, now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH)).show()
-            },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
-        ) { Text(if (reminder.isBlank()) "Add reminder date & time" else "Reminder · $reminder") }
-        if (reminder.isNotBlank()) {
-            Text(
-                "Saved as a reminder time only — notifications aren’t enabled yet.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (onDelete != null) TextButton(onClick = onDelete) { Text("Delete") }
-            Spacer(Modifier.weight(1f))
-            TextButton(onClick = { requestDismiss() }) { Text("Cancel") }
-            Button(
-                onClick = {
-                    if (title.isNotBlank() && body.isNotBlank()) {
-                        onSave(NestNote(
-                            id = original?.id ?: System.currentTimeMillis(),
-                            title = title.trim(), body = body.trim(), category = category, color = colorIndex,
-                            pinned = original?.pinned ?: false, reminder = reminder, updated = System.currentTimeMillis(),
-                            created = original?.created ?: System.currentTimeMillis()
-                        ))
-                    }
-                },
-                enabled = title.isNotBlank() && body.isNotBlank()
-            ) { Text("Save note") }
-        }
-        if (discardConfirmation) {
-            AlertDialog(
-                onDismissRequest = { discardConfirmation = false },
-                title = { Text("Discard changes?") },
-                text = { Text("Your unsaved changes will be lost.") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        discardConfirmation = false
-                        onDismiss()
-                    }) { Text("Discard") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { discardConfirmation = false }) { Text("Keep editing") }
+    }
+}
+
+@Composable
+private fun NoteWallpaperArtwork(index: Int, modifier: Modifier = Modifier) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        when (index) {
+            1 -> {
+                drawRect(Color(0xFFE7E6D4))
+                drawCircle(Color(0xFFF3D6A4), radius = w * 0.16f, center = Offset(w * 0.78f, h * 0.24f))
+                drawOval(Color(0xFF7E8E6C), Offset(w * -0.12f, h * 0.66f), Size(w * 0.70f, h * 0.45f))
+                drawOval(Color(0xFF586E51), Offset(w * 0.22f, h * 0.53f), Size(w * 0.48f, h * 0.55f))
+                drawOval(Color(0xFF8C9A72), Offset(w * 0.56f, h * 0.60f), Size(w * 0.50f, h * 0.46f))
+                for (i in 0..8) {
+                    val x = w * (0.02f + i * 0.12f)
+                    val y = h * (0.56f - (i % 3) * 0.12f)
+                    drawLine(Color(0xFF52694D), Offset(x, h), Offset(x + w * 0.02f, y + h * 0.20f), strokeWidth = w * 0.008f)
+                    drawOval(if (i % 2 == 0) Color(0xFF718560) else Color(0xFF9EAA81), Offset(x - w * 0.08f, y), Size(w * 0.18f, h * 0.13f))
                 }
-            )
+            }
+            2 -> {
+                drawRect(Color(0xFFF2D7D0))
+                for (i in -4..12) {
+                    val x = w * (i / 12f)
+                    drawLine(Color(0xFFFFF2E5), Offset(x, h * 0.08f), Offset(x + w * 0.72f, h * 0.88f), strokeWidth = w * 0.07f)
+                    drawLine(Color(0xFFEABAB1), Offset(x + w * 0.08f, h * 0.08f), Offset(x + w * 0.80f, h * 0.88f), strokeWidth = w * 0.012f)
+                }
+            }
+            3 -> {
+                drawRect(Color(0xFFB7DDE6))
+                drawCircle(Color(0xFFF3B27F), radius = w * 0.16f, center = Offset(w * 0.68f, h * 0.34f))
+                val farWave = Path().apply {
+                    moveTo(0f, h * 0.58f); cubicTo(w * 0.32f, h * 0.45f, w * 0.61f, h * 0.68f, w, h * 0.52f)
+                    lineTo(w, h); lineTo(0f, h); close()
+                }
+                drawPath(farWave, Color(0xFF87BACD))
+                val nearWave = Path().apply {
+                    moveTo(0f, h * 0.74f); cubicTo(w * 0.33f, h * 0.60f, w * 0.71f, h * 0.85f, w, h * 0.71f)
+                    lineTo(w, h); lineTo(0f, h); close()
+                }
+                drawPath(nearWave, Color(0xFF6296AE))
+                drawOval(Color(0xFFECCCA4), Offset(w * 0.04f, h * 0.79f), Size(w * 0.46f, h * 0.13f))
+            }
+            4 -> {
+                drawRect(Color(0xFFF8E6C4))
+                drawCircle(Color(0xFFE9A77F), radius = w * 0.18f, center = Offset(w * 0.76f, h * 0.27f))
+                val backDune = Path().apply {
+                    moveTo(0f, h * 0.68f); cubicTo(w * 0.30f, h * 0.40f, w * 0.48f, h * 0.77f, w, h * 0.48f)
+                    lineTo(w, h); lineTo(0f, h); close()
+                }
+                drawPath(backDune, Color(0xFFE7B78B))
+                val frontDune = Path().apply {
+                    moveTo(0f, h * 0.82f); cubicTo(w * 0.36f, h * 0.67f, w * 0.56f, h * 0.92f, w, h * 0.73f)
+                    lineTo(w, h); lineTo(0f, h); close()
+                }
+                drawPath(frontDune, Color(0xFFD48E69))
+            }
+            else -> {
+                drawRect(Color(0xFFC7E0E3))
+                drawCircle(Color(0xFFF2B7A0), radius = w * 0.18f, center = Offset(w * 0.26f, h * 0.28f))
+                val hill = Path().apply {
+                    moveTo(0f, h * 0.60f); cubicTo(w * 0.25f, h * 0.72f, w * 0.48f, h * 0.49f, w, h * 0.65f)
+                    lineTo(w, h); lineTo(0f, h); close()
+                }
+                drawPath(hill, Color(0xFF70A9B4))
+                val foreground = Path().apply {
+                    moveTo(0f, h * 0.82f); cubicTo(w * 0.35f, h * 0.68f, w * 0.7f, h * 0.94f, w, h * 0.76f)
+                    lineTo(w, h); lineTo(0f, h); close()
+                }
+                drawPath(foreground, Color(0xFF568A96))
+            }
         }
     }
 }
@@ -860,7 +1123,8 @@ private fun QuickNoteFields(
                             id = original?.id ?: System.currentTimeMillis(), title = title.trim(), body = body.trim(),
                             category = original?.category ?: defaultCategory, color = original?.color ?: 0,
                             pinned = original?.pinned ?: false, reminder = original?.reminder.orEmpty(),
-                            updated = System.currentTimeMillis(), created = original?.created ?: System.currentTimeMillis()
+                            updated = System.currentTimeMillis(), created = original?.created ?: System.currentTimeMillis(),
+                            archived = original?.archived ?: false, background = original?.background ?: 0
                         )
                     )
                 },
