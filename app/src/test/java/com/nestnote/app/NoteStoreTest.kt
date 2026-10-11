@@ -75,6 +75,11 @@ class NoteStoreTest {
         val archived = NestNote(id = 19L, title = "Archived", body = "Keep it", archived = true)
         store.save(listOf(archived))
         assertEquals(archived, store.load().single())
+
+        val restored = store.load().single().copy(archived = false)
+        store.save(listOf(restored))
+        assertEquals(restored, store.load().single())
+        assertFalse(store.load().single().archived)
     }
 
     @Test

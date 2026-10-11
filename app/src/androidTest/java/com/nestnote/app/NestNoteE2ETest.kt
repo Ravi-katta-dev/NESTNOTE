@@ -93,6 +93,20 @@ class NestNoteE2ETest {
         }
     }
 
+
+    @Test
+    fun archivedNoteCanBeRestoredFromArchivedView() {
+        composeRule.onNodeWithContentDescription("Actions for Project Plan").performClick()
+        composeRule.onNodeWithText("Archive").performClick()
+        composeRule.onNodeWithText("Archived").performClick()
+        composeRule.onNodeWithText("Project Plan").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Actions for Project Plan").performClick()
+        composeRule.onNodeWithText("Restore from archive").performClick()
+        composeRule.onAllNodesWithText("Project Plan").assertCountEquals(0)
+        composeRule.onNodeWithText("Home").performClick()
+        composeRule.onNodeWithText("Project Plan").assertIsDisplayed()
+    }
+
     @Test
     fun userCanSearchForANote() {
         composeRule.onNodeWithText("Search your notes").performTextInput("Project")
