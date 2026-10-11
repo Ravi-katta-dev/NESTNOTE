@@ -50,6 +50,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 private val fallbackAccent = Color(0xFF625B71)
 private val noteAccents = listOf(
@@ -127,8 +128,8 @@ private fun NestNoteApp(store: NoteStore) {
     var confirmSystemDiscard by remember { mutableStateOf(false) }
     // Resolve the selected note from persisted notes after recreation.
     val editorNote = notes.firstOrNull { it.id == editorNoteId }
-    var toastMessage by remember { mutableStateOf("") }
-    var snackbarHost by remember { mutableStateOf<SnackbarHostState?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     fun savePreference(key: String, value: String) {
         preferences.edit().putString(key, value).apply()
@@ -136,6 +137,21 @@ private fun NestNoteApp(store: NoteStore) {
     fun persist(next: List<NestNote>) {
         notes = next
         store.save(next)
+    }
+    fun deleteNote(note: NestNote, closeEditor: Boolean = false) {
+        persist(notes.filterNot { it.id == note.id })
+        if (closeEditor) editorVisible = false
+        coroutineScope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "Note deleted",
+                actionLabel = "Undo",
+                withDismissAction = true,
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed && notes.none { it.id == note.id }) {
+                persist(notes + note)
+            }
+        }
     }
     val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
     val dark = when (themeMode) {
@@ -163,6 +179,7 @@ private fun NestNoteApp(store: NoteStore) {
     MaterialTheme(colorScheme = scheme) {
         val colors = MaterialTheme.colorScheme
         Scaffold(
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             containerColor = colors.background,
             topBar = {
                 TopAppBar(
@@ -348,7 +365,7 @@ private fun NestNoteApp(store: NoteStore) {
                             gridItems(filteredNotes, key = { it.id }) { note ->
                                 NoteCard(note, compact = dashboardDensity == DashboardDensity.COMPACT, colorStyle = noteColorStyle, showPreview = showNotePreviews, showTimestamp = showNoteTimestamps, onOpen = { editorNoteId = note.id; editorVisible = true },
                                     onPin = { persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { persist(notes.filterNot { it.id == note.id }) })
+                                    onDelete = { deleteNote(note) })
                             }
                         }
                     } else {
@@ -379,8 +396,7 @@ private fun NestNoteApp(store: NoteStore) {
                 toastMessage = "Note saved"
             }
             val deleteNote: (() -> Unit)? = if (editorNote != null) ({
-                persist(notes.filterNot { it.id == editorNote?.id })
-                editorVisible = false
+                editorNote?.let { deleteNote(it, closeEditor = true) }
             }) else null
             when (editorMode) {
                 EditorMode.SHEET -> ModalBottomSheet(onDismissRequest = dismissEditor, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)) {
@@ -780,6 +796,13 @@ private fun NoteEditorContent(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp)
         ) { Text(if (reminder.isBlank()) "Add reminder date & time" else "Reminder · $reminder") }
+        if (reminder.isNotBlank()) {
+            Text(
+                "Saved as a reminder time only — notifications aren’t enabled yet.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onDelete != null) TextButton(onClick = onDelete) { Text("Delete") }
             Spacer(Modifier.weight(1f))

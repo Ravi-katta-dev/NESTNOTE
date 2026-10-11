@@ -220,3 +220,10 @@ Branch: `feature/phase-4-note-taking`; draft PR: [#4](https://github.com/Ravi-ka
 ### Commit `90081fe` — test: cover legacy and stable note creation timestamps
 - Added two NoteStore regression tests and updated the roadmap/worklog status record in the follow-up documentation commit.
 - Validation: [Android CI run #38137412765](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38137412765) succeeded for this code head.
+
+
+### Phase 4 increment — undo deletion and reminder clarity
+
+- Added a Material 3 snackbar with an Undo action to note deletion from dashboard cards and the editor. Undo restores the deleted note to the persisted collection and retains its original metadata.
+- Added explicit reminder copy clarifying that the selected date/time is saved as note metadata and Android notifications are not enabled yet.
+- Validation: pending Android CI for this increment. Emulator UI workflow remains manual-only; no physical-device testing is claimed.
