@@ -14,7 +14,8 @@ data class NestNote(
     val reminder: String = "",
     val updated: Long = System.currentTimeMillis(),
     val created: Long = System.currentTimeMillis(),
-    val archived: Boolean = false
+    val archived: Boolean = false,
+    val background: Int = 0
 )
 
 class NoteStore(context: Context) {
@@ -36,7 +37,8 @@ class NoteStore(context: Context) {
                     reminder = o.optString("reminder"),
                     updated = o.optLong("updated"),
                     created = o.optLong("created", o.optLong("id", System.currentTimeMillis())),
-                    archived = o.optBoolean("archived", false)
+                    archived = o.optBoolean("archived", false),
+                    background = o.optInt("background", 0).coerceIn(0, 5)
                 )
             }
         }.getOrElse { sampleNotes() }
@@ -50,6 +52,7 @@ class NoteStore(context: Context) {
                 put("category", n.category); put("color", n.color)
                 put("pinned", n.pinned); put("reminder", n.reminder)
                 put("updated", n.updated); put("created", n.created); put("archived", n.archived)
+                put("background", n.background.coerceIn(0, 5))
             })
         }
         prefs.edit().putString("notes", array.toString()).apply()
