@@ -10,8 +10,8 @@ This activity record is assembled from visible repository commits, pull requests
 ## Current snapshot
 - Native Android app using Kotlin, Jetpack Compose, and Material 3.
 - Target SDK Android 16 / API 36; minimum SDK 26.
-- main includes merged PR #1.
-- Phase 2 is in progress on `feature/phase-2-note-editor`, tracked by draft PR #2. **PR #2 is not merged.**
+- `main` includes merged PRs #1, #2, and #3.
+- Phase 4 is in progress on `feature/phase-4-note-taking`, tracked by draft PR #4. **PR #4 is open and must not be merged without explicit approval.**
 - Existing note persistence uses SharedPreferences / NoteStore; Phase 2 preserves its format.
 - Emulator UI workflow is manual-only by project decision and is not a required CI gate.
 - No physical-device testing is claimed.
@@ -20,7 +20,9 @@ This activity record is assembled from visible repository commits, pull requests
 | PR | Title | Status | Scope |
 |---|---|---|---|
 | [#1](https://github.com/Ravi-katta-dev/NESTNOTE/pull/1) | feat: Material 3 personalization and flexible note creation | **Merged** 2026-10-11 | Phase 1 dashboard modernization and personalization. |
-| [#2](https://github.com/Ravi-katta-dev/NESTNOTE/pull/2) | feat: resilient inline note editor | **Open draft** | Early Phase 2 increment; further work and validation remain. |
+| [#2](https://github.com/Ravi-katta-dev/NESTNOTE/pull/2) | feat: resilient inline note editor | **Merged** 2026-10-11 | Unified create/edit experience and draft safety. |
+| [#3](https://github.com/Ravi-katta-dev/NESTNOTE/pull/3) | Expand settings | **Merged** 2026-10-11 | Theme, colors, layout, sorting, and note display preferences. |
+| [#4](https://github.com/Ravi-katta-dev/NESTNOTE/pull/4) | feat: modernize everyday note-taking experience | **Open draft** | Phase 4 editor refinement, sort options, and timestamp reliability. |
 
 ## Work completed
 ### Foundation and delivery automation
@@ -204,3 +206,17 @@ Design principles:
 
 - Added unit tests proving older saved JSON without a `created` field loads with a deterministic ID-based fallback, and that the original creation timestamp remains stable when an edited note is saved with a newer `updated` value.
 - Validation: Android CI run [#38137019018](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38137019018) passed for the prior Phase 4 head. The new regression tests are committed here and require a fresh CI result. Emulator UI workflow remains manual-only; no device testing is claimed.
+
+
+## Phase 4 current progress
+Branch: `feature/phase-4-note-taking`; draft PR: [#4](https://github.com/Ravi-katta-dev/NESTNOTE/pull/4). Reference images are recorded in the PR description and this branch's earlier Phase 4 entries as inspiration, not app screenshots.
+
+- Modernized the editor's Material 3 surfaces, title/body hierarchy, color swatches, and close affordance.
+- Added persisted creation timestamps and Recently created sorting, preserving pinned-first ordering and falling back safely for older stored notes.
+- Added unit regression tests for legacy JSON without `created` and for preserving creation time while edit time advances.
+- Latest confirmed Android CI: [run #38137412765](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38137412765) — **success** on commit `90081fe`.
+- Next: undo deletion, make reminder status explicit (without implying notifications are scheduled), then continue pin/archive behavior and test coverage. Emulator UI workflow remains manual-only; no physical-device testing is claimed.
+
+### Commit `90081fe` — test: cover legacy and stable note creation timestamps
+- Added two NoteStore regression tests and updated the roadmap/worklog status record in the follow-up documentation commit.
+- Validation: [Android CI run #38137412765](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38137412765) succeeded for this code head.
