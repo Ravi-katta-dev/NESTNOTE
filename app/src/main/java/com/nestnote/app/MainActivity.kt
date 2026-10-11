@@ -965,6 +965,7 @@ private fun AppearancePickerSheet(
                     noteAccents.forEachIndexed { index, accent ->
                         Box(
                             Modifier.size(52.dp).clip(CircleShape)
+                                .testTag("note_color_$index")
                                 .background(accent)
                                 .border(
                                     width = if (index == colorIndex) 2.dp else 1.dp,
@@ -991,6 +992,7 @@ private fun AppearancePickerSheet(
                     (0..5).forEach { index ->
                         Box(
                             Modifier.size(70.dp).clip(CircleShape)
+                                .testTag("note_background_$index")
                                 .border(
                                     width = if (index == backgroundIndex) 2.dp else 1.dp,
                                     color = if (index == backgroundIndex) Color(0xFF5A538A) else Color(0x66807870),
