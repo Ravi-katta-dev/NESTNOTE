@@ -90,6 +90,23 @@ class NoteStoreTest {
     }
 
     @Test
+    fun noteWallpaperSelectionSurvivesSaveAndLoad() {
+        val decorated = NestNote(
+            id = 91L, title = "Wallpaper", body = "Botanical",
+            color = 2, background = 1
+        )
+        store.save(listOf(decorated))
+        assertEquals(decorated, store.load().single())
+    }
+
+    @Test
+    fun legacyNotesDefaultToNoCustomWallpaper() {
+        context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
+            .edit().putString("notes", """[{"id":92,"title":"Legacy","body":"No wallpaper"}]""").commit()
+        assertEquals(0, store.load().single().background)
+    }
+
+    @Test
     fun savingEmptyListPersistsAnEmptyList() {
         store.save(emptyList())
         assertTrue(store.load().isEmpty())
