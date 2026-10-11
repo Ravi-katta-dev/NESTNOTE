@@ -81,6 +81,16 @@ class NestNoteE2ETest {
                     .getString("default_sort", null)
             )
         }
+        composeRule.onNodeWithText("Title A–Z").performClick()
+        composeRule.onNodeWithText("Recently created").assertIsDisplayed()
+        composeRule.onNodeWithText("Recently created").performClick()
+        composeRule.runOnIdle {
+            assertEquals(
+                "CREATED",
+                composeRule.activity.getSharedPreferences("nestnote_preferences", 0)
+                    .getString("default_sort", null)
+            )
+        }
     }
 
     @Test
