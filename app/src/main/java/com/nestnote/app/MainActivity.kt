@@ -393,14 +393,14 @@ private fun NestNoteApp(store: NoteStore) {
                 val next = if (existing == null) notes + updated else notes.map { if (it.id == existing.id) updated.copy(id = existing.id) else it }
                 persist(next)
                 closeEditor()
-                toastMessage = "Note saved"
+                coroutineScope.launch { snackbarHostState.showSnackbar("Note saved") }
             }
-            val deleteNote: (() -> Unit)? = if (editorNote != null) ({
+            val editorDeleteAction: (() -> Unit)? = if (editorNote != null) ({
                 editorNote?.let { deleteNote(it, closeEditor = true) }
             }) else null
             when (editorMode) {
                 EditorMode.SHEET -> ModalBottomSheet(onDismissRequest = dismissEditor, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)) {
-                    NoteEditorContent(editorNote, defaultNoteCategory = defaultNoteCategory, onSave = saveNote, onDismiss = closeEditor, onDelete = deleteNote, onUnsavedChangesChange = { editorHasUnsavedChanges = it }, modifier = Modifier.fillMaxWidth().imePadding())
+                    NoteEditorContent(editorNote, defaultNoteCategory = defaultNoteCategory, onSave = saveNote, onDismiss = closeEditor, onDelete = editorDeleteAction, onUnsavedChangesChange = { editorHasUnsavedChanges = it }, modifier = Modifier.fillMaxWidth().imePadding())
                 }
                 EditorMode.FULL_SCREEN -> Dialog(onDismissRequest = dismissEditor, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
                     Surface(Modifier.fillMaxSize().imePadding(), color = colors.surface) {
@@ -416,7 +416,7 @@ private fun NestNoteApp(store: NoteStore) {
                             defaultCategory = defaultNoteCategory,
                             onSave = saveNote,
                             onDismiss = dismissEditor,
-                            onDelete = deleteNote
+                            onDelete = editorDeleteAction
                         )
                     },
                     confirmButton = {},
@@ -432,14 +432,6 @@ private fun NestNoteApp(store: NoteStore) {
                     dismissButton = { TextButton(onClick = { confirmSystemDiscard = false }) { Text("Keep editing") } }
                 )
             }
-        }
-        if (toastMessage.isNotBlank()) {
-            val host = remember { SnackbarHostState() }
-            LaunchedEffect(toastMessage) {
-                host.showSnackbar(toastMessage)
-                toastMessage = ""
-            }
-            SnackbarHost(hostState = host, modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.BottomCenter))
         }
     }
 }

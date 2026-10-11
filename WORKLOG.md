@@ -226,4 +226,5 @@ Branch: `feature/phase-4-note-taking`; draft PR: [#4](https://github.com/Ravi-ka
 
 - Added a Material 3 snackbar with an Undo action to note deletion from dashboard cards and the editor. Undo restores the deleted note to the persisted collection and retains its original metadata.
 - Added explicit reminder copy clarifying that the selected date/time is saved as note metadata and Android notifications are not enabled yet.
-- Validation: pending Android CI for this increment. Emulator UI workflow remains manual-only; no physical-device testing is claimed.
+- Initial CI failure was a Kotlin compile error caused by removing the old `toastMessage` state while leaving its save-toast references. Reused the new shared snackbar host for save feedback and renamed the editor delete callback to avoid shadowing the shared delete helper.
+- Validation: fix pushed; Android CI pending. Emulator UI workflow remains manual-only; no physical-device testing is claimed.
