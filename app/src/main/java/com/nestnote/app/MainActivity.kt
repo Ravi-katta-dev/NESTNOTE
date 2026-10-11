@@ -165,8 +165,9 @@ private fun NestNoteApp(store: NoteStore) {
     else lightColorScheme(primary = fallbackAccent, secondary = Color(0xFF625B71))
 
     val filteredNotes = notes.filter { note ->
-        (selectedView == "Home" || selectedView == "All notes" || note.category == selectedView ||
-            (selectedView == "Reminders" && note.reminder.isNotBlank())) &&
+        ((selectedView == "Archived" && note.archived) ||
+            (selectedView != "Archived" && !note.archived && (selectedView == "Home" || selectedView == "All notes" || note.category == selectedView ||
+            (selectedView == "Reminders" && note.reminder.isNotBlank())))) &&
             (search.isBlank() || (note.title + " " + note.body + " " + note.category).contains(search, true))
     }.let { visible ->
         when {
@@ -211,9 +212,9 @@ private fun NestNoteApp(store: NoteStore) {
             },
             bottomBar = {
                 NavigationBar {
-                    listOf("Home", "All notes", "Categories", "Reminders", "Settings").forEach { item ->
+                    listOf("Home", "All notes", "Categories", "Reminders", "Archived", "Settings").forEach { item ->
                         NavigationBarItem(
-                            selected = selectedView == item || (item == "All notes" && selectedView !in listOf("Home", "Categories", "Reminders", "Settings") && categories.contains(selectedView)),
+                            selected = selectedView == item || (item == "All notes" && selectedView !in listOf("Home", "Categories", "Reminders", "Archived", "Settings") && categories.contains(selectedView)),
                             onClick = { selectedView = item },
                             icon = {
                                 Icon(when (item) {
@@ -221,6 +222,7 @@ private fun NestNoteApp(store: NoteStore) {
                                     "Settings" -> Icons.Default.Settings
                                     "Categories" -> Icons.Default.GridView
                                     "All notes" -> Icons.Default.List
+                                    "Archived" -> Icons.Default.Delete
                                     else -> Icons.Default.Check
                                 }, contentDescription = item)
                             },
@@ -303,6 +305,7 @@ private fun NestNoteApp(store: NoteStore) {
                                     when (selectedView) {
                                         "All notes" -> "All your notes"
                                         "Reminders" -> "Things to remember"
+                                        "Archived" -> "Archived notes"
                                         else -> selectedView
                                     },
                                     style = MaterialTheme.typography.headlineSmall,
@@ -365,7 +368,7 @@ private fun NestNoteApp(store: NoteStore) {
                             gridItems(filteredNotes, key = { it.id }) { note ->
                                 NoteCard(note, compact = dashboardDensity == DashboardDensity.COMPACT, colorStyle = noteColorStyle, showPreview = showNotePreviews, showTimestamp = showNoteTimestamps, onOpen = { editorNoteId = note.id; editorVisible = true },
                                     onPin = { persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { deleteNote(note) })
+                                    onDelete = { deleteNote(note) }, onArchive = { persist(notes.map { if (it.id == note.id) it.copy(archived = true, pinned = false, updated = System.currentTimeMillis()) else it }) })
                             }
                         }
                     } else {
@@ -377,7 +380,7 @@ private fun NestNoteApp(store: NoteStore) {
                             items(filteredNotes, key = { it.id }) { note ->
                                 NoteCard(note, compact = dashboardDensity == DashboardDensity.COMPACT, colorStyle = noteColorStyle, showPreview = showNotePreviews, showTimestamp = showNoteTimestamps, onOpen = { editorNoteId = note.id; editorVisible = true },
                                     onPin = { persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { persist(notes.filterNot { it.id == note.id }) })
+                                    onDelete = { deleteNote(note) }, onArchive = { persist(notes.map { if (it.id == note.id) it.copy(archived = true, pinned = false, updated = System.currentTimeMillis()) else it }) })
                             }
                         }
                     }
@@ -625,7 +628,7 @@ private fun OverviewTile(
 }
 
 @Composable
-private fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorStyle, showPreview: Boolean, showTimestamp: Boolean, onOpen: () -> Unit, onPin: () -> Unit, onDelete: () -> Unit) {
+private fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorStyle, showPreview: Boolean, showTimestamp: Boolean, onOpen: () -> Unit, onPin: () -> Unit, onDelete: () -> Unit, onArchive: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
     // Wallpaper palettes can produce very bright onSurface/primary colors that
@@ -653,6 +656,7 @@ private fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorStyl
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text(if (note.pinned) "Unpin note" else "Pin note") }, onClick = { menu = false; onPin() }, leadingIcon = { Icon(Icons.Default.PushPin, null) })
                         DropdownMenuItem(text = { Text("Edit") }, onClick = { menu = false; onOpen() }, leadingIcon = { Icon(Icons.Default.Edit, null) })
+                        DropdownMenuItem(text = { Text(if (note.archived) "Already archived" else "Archive") }, enabled = !note.archived, onClick = { menu = false; onArchive() }, leadingIcon = { Icon(Icons.Default.Delete, null) })
                         DropdownMenuItem(text = { Text("Delete") }, onClick = { menu = false; onDelete() }, leadingIcon = { Icon(Icons.Default.Delete, null) })
                     }
                 }

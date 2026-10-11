@@ -44,7 +44,7 @@ Implemented a unified Material 3 editor with saveable title/body/category/color/
 **Status: In progress** — [Draft PR #4](https://github.com/Ravi-katta-dev/NESTNOTE/pull/4)
 - [x] Improve note colors and category handling with pastel/adaptive color choices.
 - [x] Sort by edited date, created date, and title; pinned notes stay first.
-- [ ] Clarify pinning and archive behavior.
+- [x] Clarify pinning and archive behavior: archived notes are removed from active views, remain accessible in Archived, and retain data for restoration support in a follow-up increment.
 - [ ] Provide clear reminder scheduling status; saved reminder metadata does not currently imply alarm/notification delivery.
 - [ ] Add undo for accidental deletion.
 - [x] Add creation timestamp persistence and regression coverage for legacy records and edits.

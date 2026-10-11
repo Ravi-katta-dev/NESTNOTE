@@ -228,3 +228,12 @@ Branch: `feature/phase-4-note-taking`; draft PR: [#4](https://github.com/Ravi-ka
 - Added explicit reminder copy clarifying that the selected date/time is saved as note metadata and Android notifications are not enabled yet.
 - Initial CI failure was a Kotlin compile error caused by removing the old `toastMessage` state while leaving its save-toast references. Reused the new shared snackbar host for save feedback and renamed the editor delete callback to avoid shadowing the shared delete helper.
 - Validation: CI run [#38138296608](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38138296608) found a remaining function-reference mismatch in the full-screen editor (`onDelete = deleteNote`). Follow-up fix uses the same guarded `editorDeleteAction` callback as the sheet editor. Re-run CI before treating this increment as verified. Emulator UI workflow remains manual-only; no physical-device testing is claimed.
+
+
+### Phase 4 increment — persistent archive state
+
+- Added a backward-compatible `archived` field to the existing note JSON format; legacy records default to active.
+- Added an Archived navigation destination and an Archive action on note cards. Archiving unpins the note and removes it from active home/category/reminder views without deleting its content.
+- Fixed the list-layout delete action to use the shared Undo snackbar helper, matching grid and editor deletion.
+- Added NoteStore tests for archived-state round-trip and legacy default behavior.
+- Validation: prior editor callback fix passed Android CI run [#38138686605](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38138686605). This archive increment needs its own Android CI run; emulator UI tests remain manual-only.

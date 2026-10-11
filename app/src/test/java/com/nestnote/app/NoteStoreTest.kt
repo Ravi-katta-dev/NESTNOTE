@@ -71,6 +71,20 @@ class NoteStoreTest {
     }
 
     @Test
+    fun archivedStateSurvivesSaveAndLoad() {
+        val archived = NestNote(id = 19L, title = "Archived", body = "Keep it", archived = true)
+        store.save(listOf(archived))
+        assertEquals(archived, store.load().single())
+    }
+
+    @Test
+    fun legacyRecordsDefaultToNotArchived() {
+        context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
+            .edit().putString("notes", """[{"id":78,"title":"Legacy","body":"Visible"}]""").commit()
+        assertFalse(store.load().single().archived)
+    }
+
+    @Test
     fun savingEmptyListPersistsAnEmptyList() {
         store.save(emptyList())
         assertTrue(store.load().isEmpty())
