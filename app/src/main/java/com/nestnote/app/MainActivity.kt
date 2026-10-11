@@ -113,6 +113,7 @@ private fun NestNoteApp(store: NoteStore) {
     var editorMode by remember { mutableStateOf(EditorMode.values().firstOrNull { it.name == preferences.getString(PREF_EDITOR, "SHEET") } ?: EditorMode.SHEET) }
     var dashboardDensity by remember { mutableStateOf(DashboardDensity.values().firstOrNull { it.name == preferences.getString(PREF_DENSITY, "COMPACT") } ?: DashboardDensity.COMPACT) }
     var sortByTitle by remember { mutableStateOf(preferences.getString(PREF_DEFAULT_SORT, "RECENT") == "TITLE") }
+    var sortByCreated by remember { mutableStateOf(preferences.getString(PREF_DEFAULT_SORT, "RECENT") == "CREATED") }
     var showNotePreviews by remember { mutableStateOf(preferences.getBoolean(PREF_NOTE_PREVIEWS, true)) }
     var showNoteTimestamps by remember { mutableStateOf(preferences.getBoolean(PREF_NOTE_TIMESTAMPS, true)) }
     var defaultNoteCategory by remember { mutableStateOf(preferences.getString(PREF_DEFAULT_CATEGORY, "Ideas")?.takeIf { it in categories } ?: "Ideas") }
@@ -152,8 +153,11 @@ private fun NestNoteApp(store: NoteStore) {
             (selectedView == "Reminders" && note.reminder.isNotBlank())) &&
             (search.isBlank() || (note.title + " " + note.body + " " + note.category).contains(search, true))
     }.let { visible ->
-        if (sortByTitle) visible.sortedWith(compareByDescending<NestNote> { it.pinned }.thenBy { it.title.lowercase(Locale.getDefault()) })
-        else visible.sortedWith(compareByDescending<NestNote> { it.pinned }.thenByDescending { it.updated })
+        when {
+            sortByTitle -> visible.sortedWith(compareByDescending<NestNote> { it.pinned }.thenBy { it.title.lowercase(Locale.getDefault()) })
+            sortByCreated -> visible.sortedWith(compareByDescending<NestNote> { it.pinned }.thenByDescending { it.created })
+            else -> visible.sortedWith(compareByDescending<NestNote> { it.pinned }.thenByDescending { it.updated })
+        }
     }
 
     MaterialTheme(colorScheme = scheme) {
@@ -241,7 +245,7 @@ private fun NestNoteApp(store: NoteStore) {
                         noteColorStyle = noteColorStyle,
                         onNoteColorStyleChange = { noteColorStyle = it; savePreference(PREF_NOTE_STYLE, it.name) },
                         sortByTitle = sortByTitle,
-                        onSortChange = { sortByTitle = it; savePreference(PREF_DEFAULT_SORT, if (it) "TITLE" else "RECENT") },
+                        onSortChange = { sortByTitle = it; sortByCreated = false; savePreference(PREF_DEFAULT_SORT, if (it) "TITLE" else "RECENT") },
                         showNotePreviews = showNotePreviews,
                         onShowNotePreviewsChange = { showNotePreviews = it; preferences.edit().putBoolean(PREF_NOTE_PREVIEWS, it).apply() },
                         showNoteTimestamps = showNoteTimestamps,
@@ -307,11 +311,12 @@ private fun NestNoteApp(store: NoteStore) {
                             var sortMenuExpanded by remember { mutableStateOf(false) }
                             Box {
                                 TextButton(onClick = { sortMenuExpanded = true }) {
-                                    Text(if (sortByTitle) "Title A–Z" else "Recently edited", style = MaterialTheme.typography.labelLarge)
+                                    Text(when { sortByTitle -> "Title A–Z"; sortByCreated -> "Recently created"; else -> "Recently edited" }, style = MaterialTheme.typography.labelLarge)
                                 }
                                 DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
-                                    DropdownMenuItem(text = { Text("Recently edited") }, onClick = { sortByTitle = false; savePreference(PREF_DEFAULT_SORT, "RECENT"); sortMenuExpanded = false })
-                                    DropdownMenuItem(text = { Text("Title A–Z") }, onClick = { sortByTitle = true; savePreference(PREF_DEFAULT_SORT, "TITLE"); sortMenuExpanded = false })
+                                    DropdownMenuItem(text = { Text("Recently edited") }, onClick = { sortByTitle = false; sortByCreated = false; savePreference(PREF_DEFAULT_SORT, "RECENT"); sortMenuExpanded = false })
+                                    DropdownMenuItem(text = { Text("Recently created") }, onClick = { sortByTitle = false; sortByCreated = true; savePreference(PREF_DEFAULT_SORT, "CREATED"); sortMenuExpanded = false })
+                                    DropdownMenuItem(text = { Text("Title A–Z") }, onClick = { sortByTitle = true; sortByCreated = false; savePreference(PREF_DEFAULT_SORT, "TITLE"); sortMenuExpanded = false })
                                 }
                             }
                             IconButton(
@@ -785,7 +790,8 @@ private fun NoteEditorContent(
                         onSave(NestNote(
                             id = original?.id ?: System.currentTimeMillis(),
                             title = title.trim(), body = body.trim(), category = category, color = colorIndex,
-                            pinned = original?.pinned ?: false, reminder = reminder, updated = System.currentTimeMillis()
+                            pinned = original?.pinned ?: false, reminder = reminder, updated = System.currentTimeMillis(),
+                            created = original?.created ?: System.currentTimeMillis()
                         ))
                     }
                 },
@@ -835,7 +841,7 @@ private fun QuickNoteFields(
                             id = original?.id ?: System.currentTimeMillis(), title = title.trim(), body = body.trim(),
                             category = original?.category ?: defaultCategory, color = original?.color ?: 0,
                             pinned = original?.pinned ?: false, reminder = original?.reminder.orEmpty(),
-                            updated = System.currentTimeMillis()
+                            updated = System.currentTimeMillis(), created = original?.created ?: System.currentTimeMillis()
                         )
                     )
                 },
