@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
@@ -698,17 +699,37 @@ private fun NoteEditorContent(
                 Text(if (original == null) "New note" else "Edit note", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text("Capture it before it slips away.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            IconButton(onClick = { requestDismiss() }) { Text("✕") }
+            IconButton(onClick = { requestDismiss() }) { Icon(Icons.Default.Close, contentDescription = "Close editor") }
         }
         OutlinedTextField(
-            value = title, onValueChange = { title = it },
-            modifier = Modifier.fillMaxWidth(), label = { Text("Title") }, singleLine = true,
+            value = title,
+            onValueChange = { title = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Give your note a title") },
+            textStyle = MaterialTheme.typography.titleLarge,
+            singleLine = true,
+            shape = RoundedCornerShape(18.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = MaterialTheme.colorScheme.primary
+            ),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
         )
         OutlinedTextField(
-            value = body, onValueChange = { body = it },
+            value = body,
+            onValueChange = { body = it },
             modifier = Modifier.fillMaxWidth().then(if (fullScreen) Modifier.weight(1f, fill = false) else Modifier),
-            label = { Text("Your note") }, minLines = if (fullScreen) 8 else 4,
+            placeholder = { Text("Start writing…") },
+            minLines = if (fullScreen) 10 else 5,
+            shape = RoundedCornerShape(20.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = MaterialTheme.colorScheme.primary
+            ),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
         )
         ExposedDropdownMenuBox(expanded = categoryExpanded, onExpandedChange = { categoryExpanded = it }) {
@@ -721,11 +742,24 @@ private fun NoteEditorContent(
                 categories.forEach { item -> DropdownMenuItem(text = { Text(item) }, onClick = { category = item; categoryExpanded = false }) }
             }
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Note color", style = MaterialTheme.typography.labelLarge)
-            noteAccents.forEachIndexed { index, color ->
-                Box(Modifier.size(28.dp).background(color, CircleShape).clickable { colorIndex = index }, contentAlignment = Alignment.Center) {
-                    if (colorIndex == index) Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(17.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Note color", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                noteAccents.forEachIndexed { index, color ->
+                    Surface(
+                        modifier = Modifier.size(36.dp).clickable { colorIndex = index },
+                        shape = CircleShape,
+                        color = color,
+                        border = if (colorIndex == index) BorderStroke(3.dp, MaterialTheme.colorScheme.onSurface) else null
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (colorIndex == index) Icon(Icons.Default.Check, contentDescription = "Selected note color", tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                    }
                 }
             }
         }
@@ -738,8 +772,9 @@ private fun NoteEditorContent(
                     }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show()
                 }, now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH)).show()
             },
-            modifier = Modifier.fillMaxWidth()
-        ) { Text(if (reminder.isBlank()) "Add reminder date & time" else "Reminder: $reminder") }
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) { Text(if (reminder.isBlank()) "Add reminder date & time" else "Reminder · $reminder") }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onDelete != null) TextButton(onClick = onDelete) { Text("Delete") }
             Spacer(Modifier.weight(1f))
