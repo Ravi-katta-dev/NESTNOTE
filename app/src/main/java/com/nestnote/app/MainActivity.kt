@@ -66,13 +66,14 @@ import java.util.Locale
 import kotlinx.coroutines.launch
 
 private val fallbackAccent = Color(0xFF625B71)
+// Distinct, slightly richer swatches remain soft while being easy to tell apart.
 private val noteAccents = listOf(
-    Color(0xFFF9F5EE), Color(0xFFF3A5A8), Color(0xFFF39B70),
-    Color(0xFFF6E99A), Color(0xFFCFE9C6), Color(0xFF9FD8D3), Color(0xFFA9CFEA)
+    Color(0xFFFAF7F0), Color(0xFFEFA0A8), Color(0xFFEF956B),
+    Color(0xFFE8D66D), Color(0xFFB8D9A8), Color(0xFF82C9C3), Color(0xFF8DBDE0)
 )
 private val noteTints = listOf(
-    Color(0xFFFFFCF7), Color(0xFFFFE5E6), Color(0xFFFFE4D6),
-    Color(0xFFFFF8CC), Color(0xFFE9F6E2), Color(0xFFDDF2EF), Color(0xFFE3F0FB)
+    Color(0xFFFFFCF6), Color(0xFFFFE8E9), Color(0xFFFFE8DC),
+    Color(0xFFFFF6CC), Color(0xFFEBF5E5), Color(0xFFE0F4F1), Color(0xFFE5F1FC)
 )
 private val categories = listOf("Work", "Personal", "Ideas", "Health", "Finance", "Education", "Travel", "Other")
 private const val PREFS = "nestnote_preferences"
@@ -940,8 +941,8 @@ private fun AppearancePickerSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFFFFF6E5),
-        contentColor = Color(0xFF292633),
+        containerColor = Color(0xFFFFFBF4),
+        contentColor = Color(0xFF211F26),
         dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFFBDB5A6)) }
     ) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp)) {
@@ -969,14 +970,14 @@ private fun AppearancePickerSheet(
                                 .background(accent)
                                 .border(
                                     width = if (index == colorIndex) 2.dp else 1.dp,
-                                    color = if (index == colorIndex) Color(0xFF5A538A) else Color(0x55807870),
+                                    color = if (index == colorIndex) Color(0xFF514783) else Color(0xFFB8B1A7),
                                     shape = CircleShape
                                 )
                                 .clickable { onColorSelected(index) },
                             contentAlignment = Alignment.Center
                         ) {
                             if (index == colorIndex) {
-                                Icon(Icons.Default.Check, contentDescription = "Selected note color", tint = Color(0xFF5A538A), modifier = Modifier.size(25.dp))
+                                Icon(Icons.Default.Check, contentDescription = "Selected note color", tint = Color(0xFF514783), modifier = Modifier.size(25.dp))
                             }
                         }
                     }
@@ -1012,7 +1013,7 @@ private fun AppearancePickerSheet(
                                 Surface(
                                     modifier = Modifier.align(Alignment.TopEnd).size(23.dp),
                                     shape = CircleShape,
-                                    color = Color(0xFF5A538A),
+                                    color = Color(0xFF514783),
                                     contentColor = Color.White,
                                     border = BorderStroke(1.dp, Color(0xFFFFF6E5))
                                 ) {
