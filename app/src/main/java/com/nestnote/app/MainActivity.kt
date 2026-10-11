@@ -663,7 +663,7 @@ private fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorStyl
             }
             Column(
                 Modifier.fillMaxWidth()
-                    .background(if (note.background > 0) Color.White.copy(alpha = 0.68f) else Color.Transparent)
+                    .background(if (note.background > 0) noteTints[note.color.coerceIn(0, noteTints.lastIndex)].copy(alpha = 0.68f) else Color.Transparent)
                     .padding(if (compact) 10.dp else 16.dp)
             ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -765,11 +765,11 @@ private fun NoteEditorContent(
     Box(
         modifier = modifier
             .then(if (fullScreen) Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding() else Modifier.fillMaxWidth().navigationBarsPadding())
-            .background(if (backgroundIndex == 0) Color(0xFFFCFAFE) else Color.White)
+            .background(if (backgroundIndex == 0) noteTints[colorIndex] else Color.White)
     ) {
         if (backgroundIndex > 0) {
             NoteWallpaperArtwork(backgroundIndex, Modifier.fillMaxSize())
-            Box(Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.70f)))
+            Box(Modifier.fillMaxSize().background(noteTints[colorIndex].copy(alpha = 0.58f)))
         }
         Column(Modifier.fillMaxSize()) {
             Row(
