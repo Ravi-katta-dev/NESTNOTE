@@ -1022,6 +1022,9 @@ private fun AppearancePickerSheet(
                         }
                     }
                 }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Done") }
+                }
             }
         }
     }
