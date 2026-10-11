@@ -44,6 +44,33 @@ class NoteStoreTest {
     }
 
     @Test
+    fun legacyRecordsWithoutCreatedTimestampUseTheirIdAsFallback() {
+        context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
+            .edit()
+            .putString(
+                "notes",
+                """[{"id":77,"title":"Legacy","body":"Older note","category":"Ideas","updated":88}]"""
+            )
+            .commit()
+
+        val loaded = store.load().single()
+        assertEquals(77L, loaded.created)
+        assertEquals("Legacy", loaded.title)
+    }
+
+    @Test
+    fun createdTimestampSurvivesSaveAndLoad() {
+        val original = NestNote(
+            id = 9L, title = "Created date", body = "Keep original time",
+            updated = 500L, created = 100L
+        )
+        store.save(listOf(original.copy(updated = 900L)))
+        val loaded = store.load().single()
+        assertEquals(100L, loaded.created)
+        assertEquals(900L, loaded.updated)
+    }
+
+    @Test
     fun savingEmptyListPersistsAnEmptyList() {
         store.save(emptyList())
         assertTrue(store.load().isEmpty())

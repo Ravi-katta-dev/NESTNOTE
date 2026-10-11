@@ -198,3 +198,9 @@ Design principles:
 - `b77c543`: Added Recently created sorting while retaining pinned notes at the top and preserving Recently edited / Title A–Z. The chosen sort mode persists using the existing preferences key.
 - `b677784`: Extended the sorting UI test to check that Recently created is available and persists as `CREATED`.
 - Validation: Android CI passed for the earlier editor UI increment at run [#38136566682](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38136566682). The current changes have triggered a new CI run; do not mark them verified until that run finishes. Emulator UI workflow remains manual-only.
+
+
+### Phase 4 implementation increment — creation timestamp regression coverage
+
+- Added unit tests proving older saved JSON without a `created` field loads with a deterministic ID-based fallback, and that the original creation timestamp remains stable when an edited note is saved with a newer `updated` value.
+- Validation: Android CI run [#38137019018](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38137019018) passed for the prior Phase 4 head. The new regression tests are committed here and require a fresh CI result. Emulator UI workflow remains manual-only; no device testing is claimed.
