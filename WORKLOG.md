@@ -190,3 +190,11 @@ Design principles:
 - Clear title/body hierarchy, comfortable keyboard editing, accessible icon labels and touch targets.
 - Light/dark theme parity, dynamic color support, readable pastel-card contrast, and responsive insets.
 - Preserve existing note data and editor behavior while modernizing; visual polish must not regress save, cancel, or draft restoration.
+
+
+### Phase 4 implementation increment — created-date sorting
+
+- `7308052`: Added a backward-compatible `created` timestamp to the existing JSON note record. Older records without the field fall back to their saved ID; editing a note preserves its creation timestamp.
+- `b77c543`: Added Recently created sorting while retaining pinned notes at the top and preserving Recently edited / Title A–Z. The chosen sort mode persists using the existing preferences key.
+- `b677784`: Extended the sorting UI test to check that Recently created is available and persists as `CREATED`.
+- Validation: Android CI passed for the earlier editor UI increment at run [#38136566682](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38136566682). The current changes have triggered a new CI run; do not mark them verified until that run finishes. Emulator UI workflow remains manual-only.
