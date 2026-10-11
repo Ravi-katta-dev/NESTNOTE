@@ -234,6 +234,8 @@ Branch: `feature/phase-4-note-taking`; draft PR: [#4](https://github.com/Ravi-ka
 
 - Added a backward-compatible `archived` field to the existing note JSON format; legacy records default to active.
 - Added an Archived navigation destination and an Archive action on note cards. Archiving unpins the note and removes it from active home/category/reminder views without deleting its content.
+- Added **Restore from archive** directly in archived note actions. Restore returns the note to active views; it remains unpinned, and the updated timestamp reflects the change.
+- Expanded the store regression test to verify both archive and restore states survive save/load.
 - Fixed the list-layout delete action to use the shared Undo snackbar helper, matching grid and editor deletion.
 - Added NoteStore tests for archived-state round-trip and legacy default behavior.
 - Validation: prior editor callback fix passed Android CI run [#38138686605](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38138686605). This archive increment needs its own Android CI run; emulator UI tests remain manual-only.

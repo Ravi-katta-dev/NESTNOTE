@@ -71,7 +71,7 @@ class NoteStoreTest {
     }
 
     @Test
-    fun archivedStateSurvivesSaveAndLoad() {
+    fun archiveAndRestoreStateSurviveSaveAndLoad() {
         val archived = NestNote(id = 19L, title = "Archived", body = "Keep it", archived = true)
         store.save(listOf(archived))
         assertEquals(archived, store.load().single())
