@@ -158,7 +158,7 @@ class NestNoteE2ETest {
         composeRule.onNodeWithText("Background").assertIsDisplayed()
         composeRule.onNodeWithTag("note_color_2").performClick()
         composeRule.onNodeWithTag("note_background_1").performClick()
-        composeRule.onNodeWithContentDescription("Choose note appearance").performClick()
+        composeRule.onNodeWithText("Done").performClick()
         composeRule.onNodeWithText("Title").performTextInput("Wallpaper note")
         composeRule.onNodeWithText("Note").performTextInput("Illustrated background")
         composeRule.onNodeWithText("Save note").performClick()
