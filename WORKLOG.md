@@ -251,3 +251,15 @@ Reviewed the latest implementation source, Phase 4 roadmap, draft PR description
 - Scope clarification: reminder time is stored/displayed as metadata only; no alarm or notification delivery is implemented. The third visual reference suggests text formatting, but this branch does not add a rich-text formatting toolbar. These are not claimed as implemented.
 - Validation boundary: instrumentation tests are included/compiled by the Android CI workflow, but the separate emulator UI workflow remains manual-only. No emulator or physical-device visual verification is claimed.
 - Documentation and PR description were reconciled with the implemented scope. Phase 4 remains **in progress / awaiting owner approval**; do not mark complete or merge PR #4 until explicit approval.
+
+
+### Focused UI pass — editor redesign and appearance picker — 2026-10-11
+
+Scope was intentionally narrowed to the note editor and its appearance picker; dashboard redesign was not included.
+
+- `b8dec6f`: redesigned the editor around a spacious full-screen title/body canvas, back/pin/reminder/archive/palette actions, low-chrome text fields, category selection, and a persistent save/cancel footer. Fresh installs now default to the full-screen editor; an explicit saved editor-mode preference continues to be honored.
+- `cd9914b`: added a backward-compatible `background` index to the existing note JSON. Existing notes default to no custom wallpaper; color and wallpaper choices save with note content and survive reloads.
+- Added a native Compose appearance bottom sheet with a large preview, seven pastel colour swatches, five illustrated wallpaper choices plus “none”, selected-state indicators, and a Done action. The illustrations are drawn locally in Compose; no remote image assets or new dependencies are required.
+- `4ae78f4`, `7bab9ee`, `12e2e1e`, `0822ab6`, and `4760254`: exposed picker choices to UI tests, covered wallpaper persistence and legacy defaults in NoteStore unit tests, updated editor interactions in instrumentation coverage, and added a picker dismissal action.
+- The existing grid/list home screen, note sorting, archive/restore, and deletion undo were not redesigned. Notes edited through the quick-dialog mode preserve their saved wallpaper value.
+- Validation status at implementation time: **Android CI pending for the latest branch head**. The emulator UI workflow remains manual-only; no emulator or physical-device visual run is claimed. PR #4 remains open/draft and must not be merged without owner approval.
