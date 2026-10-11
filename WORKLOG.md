@@ -271,3 +271,10 @@ Scope was intentionally narrowed to the note editor and its appearance picker; d
 - Android CI [run #38146442164](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38146442164): **success** on implementation commit `f8bebeb`. Unit tests, debug APK build, and instrumentation-test compilation all passed.
 - This CI run compiles the UI tests; it does not execute the manual-only emulator UI workflow. No device screenshot comparison is claimed.
 - Branch remains `feature/phase-4-note-taking`; PR #4 remains open and in draft pending owner approval.
+
+
+### Palette contrast refinement — 2026-10-11
+
+- `a2485f5`: adjusted the editor/appearance-picker palette to use more distinguishable rose, peach, yellow, sage, teal, and blue swatches while keeping the warm neutral option. Matching note tints remain light enough for dark body text.
+- Increased the selected/unselected swatch border contrast and unified the selection indicator to a deeper purple; shifted the picker surface closer to a clean warm-white.
+- Validation: CI status for this palette-only commit is pending. No emulator/device visual test claimed.
