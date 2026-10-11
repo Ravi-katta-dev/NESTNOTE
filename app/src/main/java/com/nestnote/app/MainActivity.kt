@@ -404,7 +404,7 @@ private fun NestNoteApp(store: NoteStore) {
                 }
                 EditorMode.FULL_SCREEN -> Dialog(onDismissRequest = dismissEditor, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
                     Surface(Modifier.fillMaxSize().imePadding(), color = colors.surface) {
-                        NoteEditorContent(editorNote, defaultNoteCategory = defaultNoteCategory, onSave = saveNote, onDismiss = closeEditor, onDelete = deleteNote, onUnsavedChangesChange = { editorHasUnsavedChanges = it }, fullScreen = true, modifier = Modifier.fillMaxSize())
+                        NoteEditorContent(editorNote, defaultNoteCategory = defaultNoteCategory, onSave = saveNote, onDismiss = closeEditor, onDelete = editorDeleteAction, onUnsavedChangesChange = { editorHasUnsavedChanges = it }, fullScreen = true, modifier = Modifier.fillMaxSize())
                     }
                 }
                 EditorMode.QUICK_DIALOG -> AlertDialog(
