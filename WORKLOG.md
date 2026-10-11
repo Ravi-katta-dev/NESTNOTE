@@ -166,3 +166,11 @@ Update this file when a PR merges, an implementation stage completes, or a mater
 | `39b87ca` | Dashboard sort menu now writes its selection to preferences immediately. | Source reviewed; CI for this change pending. |
 | `806ab2e` | Clarified Settings grouping with Layout, Layout density, Note editor, and Data & privacy; privacy copy explicitly states cloud sync and built-in export/import are not currently provided. | Source reviewed; CI for this change pending. |
 | `8c3cba0` | Extended the dashboard sorting UI test to assert the selected sort mode is persisted. | Test added; UI workflow remains manual-only by project decision. |
+
+
+## Phase 4 — Everyday note-taking (in progress)
+
+- PR #3 (Settings expansion) was merged into `main`; Phase 4 work starts from the updated `main` on `feature/phase-4-note-taking`.
+- `075db52`: first UI modernization increment for the note editor. Replaced the decorative text close mark with an accessible Material icon, updated title/body fields to use rounded Material 3 tonal surfaces and clearer writing placeholders, enlarged the body writing area, and made selected note colors more visible with an outlined selection state.
+- Validation: source change committed; Android CI has not yet completed for this branch head. Emulator UI workflow remains manual-only. No emulator or physical-device validation is claimed.
+- Next increments: review remaining editor actions and reminder affordances; then tackle sorting/created timestamps, note colors/categories, archive/undo, and reminder reliability in separate tested steps.
