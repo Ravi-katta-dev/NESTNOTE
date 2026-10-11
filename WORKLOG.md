@@ -263,3 +263,11 @@ Scope was intentionally narrowed to the note editor and its appearance picker; d
 - `4ae78f4`, `7bab9ee`, `12e2e1e`, `0822ab6`, and `4760254`: exposed picker choices to UI tests, covered wallpaper persistence and legacy defaults in NoteStore unit tests, updated editor interactions in instrumentation coverage, and added a picker dismissal action.
 - The existing grid/list home screen, note sorting, archive/restore, and deletion undo were not redesigned. Notes edited through the quick-dialog mode preserve their saved wallpaper value.
 - Validation status at implementation time: **Android CI pending for the latest branch head**. The emulator UI workflow remains manual-only; no emulator or physical-device visual run is claimed. PR #4 remains open/draft and must not be merged without owner approval.
+
+
+### Validation follow-up — editor and appearance picker — 2026-10-11
+
+- `f8bebeb`: made the chosen note color visible in the editor canvas and as a tinted overlay beneath selected wallpaper art; note cards use the saved color tint with wallpaper art as well.
+- Android CI [run #38146442164](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38146442164): **success** on implementation commit `f8bebeb`. Unit tests, debug APK build, and instrumentation-test compilation all passed.
+- This CI run compiles the UI tests; it does not execute the manual-only emulator UI workflow. No device screenshot comparison is claimed.
+- Branch remains `feature/phase-4-note-taking`; PR #4 remains open and in draft pending owner approval.
