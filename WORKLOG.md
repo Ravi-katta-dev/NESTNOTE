@@ -172,5 +172,21 @@ Update this file when a PR merges, an implementation stage completes, or a mater
 
 - PR #3 (Settings expansion) was merged into `main`; Phase 4 work starts from the updated `main` on `feature/phase-4-note-taking`.
 - `075db52`: first UI modernization increment for the note editor. Replaced the decorative text close mark with an accessible Material icon, updated title/body fields to use rounded Material 3 tonal surfaces and clearer writing placeholders, enlarged the body writing area, and made selected note colors more visible with an outlined selection state.
-- Validation: source change committed; Android CI has not yet completed for this branch head. Emulator UI workflow remains manual-only. No emulator or physical-device validation is claimed.
+- Validation: Android CI run [#38136566682](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38136566682) passed for the PR head `71737e1`. Emulator UI workflow remains manual-only. No emulator or physical-device validation is claimed.
 - Next increments: review remaining editor actions and reminder affordances; then tackle sorting/created timestamps, note colors/categories, archive/undo, and reminder reliability in separate tested steps.
+
+
+### Phase 4 visual direction
+
+The following reference images supplied for this project are inspiration only; they are not NESTNOTE screenshots or assets. Implementation should translate the visual direction into native Jetpack Compose / Material 3 patterns rather than copying another app.
+
+1. [Android note-taking app inspiration — modern note cards and dashboard](https://images.openai.com/static-rsc-4/zPyVdHCYj04ct21srgrGTcWu_17kCukCcLmEEGjEC8BnOsuYqI_9G4maUXl6Ia60eRonulOwA0uukYCIjW1zGTLG-SG-LL7xMGMBZzBaxwWiVzG2JTS3EPwl2aifome1AsdR_eFxjErd0ipI77gsfueLC6m8TlUgjoydJK0WcZPTz6LeQw6Rv5c7cHCpnF9r?purpose=fullsize)
+2. [Minimal note-taking UI inspiration — clean hierarchy and writing space](https://images.openai.com/static-rsc-4/toLmSKmVIwCJpy33vaFcGMEMLl5PfFobOvb7V5sE8rzQO68T8pqatmExHE64MiczCHrfO5OFwQ7pEqxsU5IdhSLC9jmOKX1wgu6X_D_UuH4iMTS_M_ZLw8qF45PI_Z9k-9ZePKbItX9huFMmRjuwyIRsNTTqIBxDCQj_71TxGObzBJf70d-UrjIMYjoYX3ug?purpose=fullsize)
+3. [Google Keep formatting inspiration — readable typography and note controls](https://images.openai.com/static-rsc-4/Hfu_zLkOAJMCUEC24TajWwplqoK-sqrfB-Z2eP9_2CBy373ZUWP_9r-lxGYe8b-HcQiPBTZkGufQohXuOxRYIH5vbD9xbk03NXvZHZyKnYyW08wEA9OQw2m5WE5SwE3yv5erK7sETVFQH5Z4vmS3JhXlhCCWUUMTSGWgt5CWnpn-vgSLCgzINJUAIYxuuEx3?purpose=fullsize)
+
+Design principles:
+- Current Android / Material 3 feel, never legacy Android 5 styling.
+- Calm compact dashboard, generous readable editor canvas, rounded tonal fields and restrained elevation.
+- Clear title/body hierarchy, comfortable keyboard editing, accessible icon labels and touch targets.
+- Light/dark theme parity, dynamic color support, readable pastel-card contrast, and responsive insets.
+- Preserve existing note data and editor behavior while modernizing; visual polish must not regress save, cancel, or draft restoration.
