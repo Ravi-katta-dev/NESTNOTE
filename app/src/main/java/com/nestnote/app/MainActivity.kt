@@ -541,7 +541,13 @@ private fun NestNoteApp(store: NoteStore) {
             val dismissEditor = { if (editorHasUnsavedChanges) confirmSystemDiscard = true else closeEditor() }
             val saveNote: (NestNote) -> Unit = { draft ->
                 val existing = editorNote
-                val isStale = existing != null && !NoteStore.isSameNoteVersion(draft.updated, existing.updated)
+                // Compare the editor's baseline against the latest collection, not the
+                // editor's own snapshot, which naturally remains unchanged while typing.
+                val currentSaved = existing?.let { opened -> notes.firstOrNull { it.id == opened.id } }
+                val isStale = existing != null && (
+                    currentSaved == null ||
+                        !NoteStore.isSameNoteVersion(draft.updated, currentSaved.updated)
+                    )
                 if (isStale) {
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar("This note changed elsewhere. Reopen it before saving to avoid overwriting newer content.")
