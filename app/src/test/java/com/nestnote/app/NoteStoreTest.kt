@@ -113,6 +113,36 @@ class NoteStoreTest {
     }
 
     @Test
+    fun decodeRejectsDuplicateIdsInImportedBackup() {
+        val raw = """[{"id":7,"title":"One","body":"A"},{"id":7,"title":"Two","body":"B"}]"""
+        assertEquals(null, NoteStore.decode(raw, requireFields = true))
+    }
+
+    @Test
+    fun decodeRejectsInvalidIdsAndOversizedFields() {
+        val zeroId = """[{"id":0,"title":"Invalid","body":"Body"}]"""
+        val longTitle = "x".repeat(NoteStore.MAX_TITLE_LENGTH + 1)
+        val oversizedTitle = NoteStore.encode(listOf(NestNote(id = 8, title = longTitle, body = "Body")))
+        assertEquals(null, NoteStore.decode(zeroId, requireFields = true))
+        assertEquals(null, NoteStore.decode(oversizedTitle, requireFields = true))
+    }
+
+    @Test
+    fun decodeRejectsOversizedBackupBeforeParsing() {
+        val raw = " ".repeat(NoteStore.MAX_BACKUP_BYTES + 1)
+        assertEquals(null, NoteStore.decode(raw, requireFields = true))
+    }
+
+    @Test
+    fun saveRejectsDuplicateIdsWithoutReplacingExistingNotes() {
+        val original = NestNote(id = 81, title = "Keep me", body = "Existing data")
+        assertTrue(store.save(listOf(original)))
+        val result = store.save(listOf(original, original.copy(title = "Duplicate")))
+        assertFalse(result)
+        assertEquals(listOf(original), store.load())
+    }
+
+    @Test
     fun malformedStoredJsonFallsBackToStarterNotes() {
         context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
             .edit().putString("notes", "{not valid json").commit()
