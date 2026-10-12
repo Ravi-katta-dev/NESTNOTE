@@ -463,7 +463,7 @@ Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit â†’ reference â†
 - [x] Improve formatting toolbar hierarchy with a grouped tonal surface and clearer action labels.
 - [ ] Audit/unify the Quick Dialog editor path so it does not become a parallel reduced-feature editor.
 - [ ] Verify keyboard/insets, reduced motion, accessibility, large fonts and actual narrow/wide device layouts.
-- [ ] Re-run CI on the latest final P0 commit and update the worklog with exact evidence.
+- [x] Re-run required CI on the latest branch head and record exact evidence (run `38315174209`, commit `d9d134eb72ab2bfcd5125dad69b7f3cd6c5023b2`, result: success; hosted emulator execution intentionally excluded).
 - **Status:** implementation in progress; do not mark P0 complete yet.
 
 
@@ -473,4 +473,5 @@ Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit â†’ reference â†
 - [x] Preserve Quick Dialog as a user-selectable bounded dialog layout; reuse the same appearance, category, pin/reminder, formatting, sharing/copying, delete, save and discard interactions.
 - [x] Add explicit appearance Apply/Cancel draft semantics; Cancel, close, outside tap, and system Back restore the panel-opening appearance draft, while Apply keeps selections in the editor draft.
 - [ ] Validate compact-dialog keyboard/insets and scroll reachability at narrow sizes and large font settings.
-- [ ] Confirm CI passes for the latest exact branch head and update evidence.
+- [x] Confirm required CI passes on the latest exact branch head and update evidence (run `38315174209`, commit `d9d134eb72ab2bfcd5125dad69b7f3cd6c5023b2`; unit tests, debug build, minified release compilation, instrumentation-test compilation passed).
+- [ ] Execute instrumentation tests and manually verify compact-dialog keyboard/insets, narrow screens, large fonts, and accessibility on an available local device/emulator.
