@@ -68,3 +68,7 @@ The [Android CI workflow](https://github.com/Ravi-katta-dev/NESTNOTE/blob/main/.
 - Checklist items can be toggled in the editor; rich-text formatting is not implemented.
 - No account, remote sync, or server-side note storage is included.
 - Instrumentation tests are compiled in CI but are not automatically run on a device/emulator by the required CI workflow.
+
+
+## Mandatory UI/UX direction
+NESTNOTE follows [UI_UX_RULES.md](UI_UX_RULES.md). The immediate P0 is a polished note editor with an animated right-side Appearance panel (replacing the bottom appearance picker), shared by create/edit flows. App-wide consistency and accessibility auditing follow before backend/new-feature expansion. See [ROADMAP.md](ROADMAP.md) for phases and [WORKLOG.md](WORKLOG.md) for evidence and implementation status.
