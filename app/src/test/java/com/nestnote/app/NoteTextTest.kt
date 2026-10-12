@@ -70,9 +70,9 @@ class NoteTextTest {
 
     @Test
     fun lineFormattingPreservesSelectedTextRange() {
-        val old = "first\\nsecond"
+        val old = "first\nsecond"
         val (newText, cursor) = NoteText.cycleChecklist(old, 8)
-        assertEquals("first\\n☐ second", newText)
+        assertEquals("first\n☐ second", newText)
         assertEquals(10 to 14, NoteText.selectionAfterLineEdit(old, newText, 8, 12, cursor))
     }
 
