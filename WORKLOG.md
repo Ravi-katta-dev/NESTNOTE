@@ -386,3 +386,12 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 - Added a merge regression test proving newer copies update existing notes, older copies do not overwrite them, new IDs are added, and existing notes absent from the import are retained.
 - Marked the interactive checklist implementation milestone complete in ROADMAP.md based on passing CI; real-device interaction, TalkBack, and font-scaling checks remain unverified.
 - The new backup/merge tests and this log update await CI validation. PR #7 remains open and unmerged.
+
+
+
+### Phase 6 backup/merge validation — 2026-10-12
+
+- Android CI run [#38226761119](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38226761119) passed on commit `404cc744eccbb3d6854a93340136d2a793eb70a0`, including unit tests, API 36 debug build, instrumentation-test compilation, and test APK signing.
+- Updated release-checklist and roadmap statuses for backup validation, versioned/legacy import, local corruption recovery, and interactive checklist coverage. Device-only accessibility and interaction checks remain open.
+- Added a merge regression case for equal timestamps: an import with a timestamp tie must not overwrite the existing copy, and existing note ordering must remain stable while new IDs append.
+- This new equal-timestamp regression test and documentation updates require a fresh CI run. PR #7 remains open and unmerged.
