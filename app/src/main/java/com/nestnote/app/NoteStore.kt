@@ -21,6 +21,14 @@ data class NestNote(
 data class MergeResult(val notes: List<NestNote>, val added: Int, val updated: Int)
 
 class NoteStore(context: Context) {
+    companion object {
+        const val MAX_BACKUP_BYTES = 10 * 1024 * 1024
+        const val MAX_NOTES = 10_000
+        const val MAX_TITLE_LENGTH = 10_000
+        const val MAX_BODY_LENGTH = 1_000_000
+        const val MAX_CATEGORY_LENGTH = 256
+        const val MAX_REMINDER_LENGTH = 512
+    }
     private val prefs = context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
 
     fun load(): List<NestNote> {
@@ -28,8 +36,10 @@ class NoteStore(context: Context) {
         return decode(raw) ?: sampleNotes()
     }
 
-    fun save(notes: List<NestNote>) {
-        prefs.edit().putString("notes", encode(notes)).apply()
+    /** Returns false when Android reports that the synchronous preference commit failed. */
+    fun save(notes: List<NestNote>): Boolean {
+        if (!isValidNoteCollection(notes)) return false
+        return runCatching { prefs.edit().putString("notes", encode(notes)).commit() }.getOrDefault(false)
     }
 
     companion object {
@@ -54,8 +64,10 @@ class NoteStore(context: Context) {
          * (used to reject unrelated files during import).
          */
         fun decode(raw: String, requireFields: Boolean = false): List<NestNote>? = runCatching {
+            require(raw.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) { "backup is too large" }
             val array = JSONArray(raw)
-            (0 until array.length()).map { i ->
+            require(array.length() <= MAX_NOTES) { "too many notes" }
+            val decoded = (0 until array.length()).map { i ->
                 val o = array.getJSONObject(i)
                 if (requireFields && !(o.has("id") && o.has("title"))) error("not a NESTNOTE record")
                 NestNote(
@@ -72,7 +84,23 @@ class NoteStore(context: Context) {
                     background = o.optInt("background", 0).coerceIn(0, 5)
                 )
             }
+            require(isValidNoteCollection(decoded)) { "invalid note records" }
+            decoded
         }.getOrNull()
+
+        /** Shared validation for persisted and imported note collections. */
+        fun isValidNoteCollection(notes: List<NestNote>): Boolean {
+            if (notes.size > MAX_NOTES) return false
+            if (notes.any { note ->
+                    note.id <= 0L ||
+                        note.title.length > MAX_TITLE_LENGTH ||
+                        note.body.length > MAX_BODY_LENGTH ||
+                        note.category.length > MAX_CATEGORY_LENGTH ||
+                        note.reminder.length > MAX_REMINDER_LENGTH ||
+                        note.updated < 0L || note.created < 0L
+                }) return false
+            return notes.map { it.id }.distinct().size == notes.size
+        }
 
         /** Merges imported notes by id: new ids are added, existing ids keep the most recently edited copy. */
         fun merge(existing: List<NestNote>, incoming: List<NestNote>): MergeResult {
