@@ -79,6 +79,14 @@ object NoteText {
         return (new.substring(0, cursor) + nextPrefix + new.substring(cursor)) to (cursor + nextPrefix.length)
     }
 
+    /** Returns (total checklist items, completed items) for the note body. */
+    fun checklistProgress(text: String): Pair<Int, Int> {
+        val items = text.lineSequence().map(String::trimStart)
+            .filter { it.startsWith(UNCHECKED) || it.startsWith(CHECKED) }
+            .toList()
+        return items.size to items.count { it.startsWith(CHECKED) }
+    }
+
     fun shareText(title: String, body: String): String =
         listOf(title.trim(), body.trim()).filter { it.isNotEmpty() }.joinToString("\n\n")
 
