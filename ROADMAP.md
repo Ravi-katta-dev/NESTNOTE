@@ -224,9 +224,9 @@ Phase 6 follows **P0 → P1 → P2**. Check items only after the latest relevant
 
 ### P0 — Protect writing, saving, and recovery
 - [ ] Validate local save failure handling and ensure failed saves never close the editor or falsely report success (implementation started; CI passed on an earlier storage/backup commit, latest editor safeguards still need CI).
-- [ ] Reject malformed, oversized, duplicate-ID, invalid-ID, and invalid-timestamp backup records before modifying local notes (regression tests added; revalidate against current PR head).
-- [ ] Distinguish a fresh install from unreadable local storage; preserve corrupt bytes and offer a deliberate recovery route rather than silently loading starter notes (implemented; revalidate current PR head).
-- [ ] Export versioned backups and retain legacy array import compatibility; preview additions/updates and validate the complete restore before applying it (implemented; revalidate current PR head).
+- [x] Reject malformed, oversized, duplicate-ID, invalid-ID, and invalid-timestamp backup records before modifying local notes (backup validation regression tests pass CI run #38226761119).
+- [x] Distinguish a fresh install from unreadable local storage; preserve corrupt bytes and offer a deliberate recovery route rather than silently loading starter notes (regression test passes CI run #38226761119).
+- [x] Export versioned backups and retain legacy array import compatibility; preview additions/updates and validate the complete restore before applying it (implementation and regression tests pass CI run #38226761119).
 - [ ] Preserve editor drafts and discard-warning state across activity recreation; reject stale drafts that would overwrite a newer note version (implementation and unit test added; latest CI pending).
 - [ ] Add/verify rapid-edit, repeated-save, interrupted-edit, malformed restore, and save-failure regression tests.
 - [ ] Run Android CI successfully on the current PR head and perform a focused emulator/device smoke test before declaring P0 complete.
