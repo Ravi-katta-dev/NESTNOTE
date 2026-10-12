@@ -335,7 +335,7 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 
 
 ## Phase 6 — Reliability, Recovery & Accessibility (current work on PR #7)
-**Status: P0 implementation in progress; not yet CI-validated.** Branch: `feature/phase-6-release-checklist`; PR: [#7](https://github.com/Ravi-katta-dev/NESTNOTE/pull/7). No changes have been merged to `main`.
+**Status: P0 implementation in progress. Initial storage/backup increment passed CI; latest editor safeguards are awaiting a fresh CI result.** Branch: `feature/phase-6-release-checklist`; PR: [#7](https://github.com/Ravi-katta-dev/NESTNOTE/pull/7). No changes have been merged to `main`.
 
 - [x] Validate note collections for duplicate/non-positive IDs, invalid timestamps, field length limits, and maximum record count.
 - [x] Make local persistence report commit success/failure; keep the editor open when a note save fails.
@@ -343,8 +343,12 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 - [x] Add versioned JSON backup envelopes (schema version 1) while retaining import compatibility for legacy JSON-array backups.
 - [x] Validate a complete backup and show an add/update preview before applying restore; restore merges without deleting notes absent from the backup.
 - [x] Add unit coverage for duplicate IDs, invalid/oversized data, corrupt local storage recovery, backup versioning, and legacy backup compatibility.
-- [ ] Run Android CI for the current PR #7 head and fix any failures before marking this increment validated.
-- [ ] Continue with editor lifecycle/stale-draft protection, interactive checklist items, accessibility and appearance checks, then repository/ViewModel boundaries.
+- [x] Android CI passed for the initial storage/backup increment (run #129, commit `c3155b2a92d16996f025bc8be09d762613e2ef2f`). Newer editor lifecycle/stale-draft commits still require CI validation.
+- [x] Preserve the unsaved-change warning state across activity recreation and add a note-version guard that rejects stale editor drafts instead of overwriting newer saved content.
+- [ ] Continue with interactive checklist items, accessibility and appearance checks, then repository/ViewModel boundaries.
 - [ ] Reconcile remaining historical work-log entries and update roadmap/checklist status after each verified milestone.
 
 **Validation honesty:** source changes and test cases have been committed, but no passing CI result has yet been observed for the current PR #7 head. No emulator or physical-device validation is claimed.
+
+
+**Latest Phase 6 update (2026-10-12):** Added stale-draft version checking for full-screen and quick-note editors. A draft carries the version timestamp it was opened from; the parent compares that value with the latest saved note before writing. A mismatch produces a recovery-oriented message and leaves the newer note untouched. The unsaved-change warning flag now survives activity recreation alongside the saveable editor draft. Unit coverage includes the version comparison helper. This change is not yet CI-validated.
