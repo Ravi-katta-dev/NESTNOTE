@@ -154,11 +154,11 @@ class NestNoteE2ETest {
     fun appearancePickerChangesAndPersistsColorAndWallpaper() {
         composeRule.onNodeWithContentDescription("Create note").performClick()
         composeRule.onNodeWithContentDescription("Choose note appearance").performClick()
-        composeRule.onNodeWithText("Colour").assertIsDisplayed()
-        composeRule.onNodeWithText("Background").assertIsDisplayed()
+        composeRule.onNodeWithText("Colour palette").assertIsDisplayed()
+        composeRule.onNodeWithText("Backgrounds").assertIsDisplayed()
         composeRule.onNodeWithTag("note_color_2").performClick()
         composeRule.onNodeWithTag("note_background_1").performClick()
-        composeRule.onNodeWithText("Done").performClick()
+        composeRule.onNodeWithText("Apply").performClick()
         composeRule.onNodeWithText("Title").performTextInput("Wallpaper note")
         composeRule.onNodeWithText("Note").performTextInput("Illustrated background")
         composeRule.onNodeWithText("Save note").performClick()
@@ -166,6 +166,23 @@ class NestNoteE2ETest {
             val saved = com.nestnote.app.NoteStore(composeRule.activity).load().first { it.title == "Wallpaper note" }
             assertEquals(2, saved.color)
             assertEquals(1, saved.background)
+        }
+    }
+
+    @Test
+    fun cancellingAppearanceRestoresOriginalDraftSelection() {
+        composeRule.onNodeWithContentDescription("Create note").performClick()
+        composeRule.onNodeWithContentDescription("Choose note appearance").performClick()
+        composeRule.onNodeWithTag("note_color_2").performClick()
+        composeRule.onNodeWithTag("note_background_1").performClick()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithText("Title").performTextInput("Cancelled appearance")
+        composeRule.onNodeWithText("Note").performTextInput("Appearance should stay default")
+        composeRule.onNodeWithText("Save note").performClick()
+        composeRule.runOnIdle {
+            val saved = com.nestnote.app.NoteStore(composeRule.activity).load().first { it.title == "Cancelled appearance" }
+            assertEquals(0, saved.color)
+            assertEquals(0, saved.background)
         }
     }
 
