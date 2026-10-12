@@ -497,3 +497,12 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Updated README and DEVELOPMENT guidance so they accurately describe the new automated emulator run and keep physical-device/accessibility checks separate.
 - CI result for this workflow change and the latest branch head is pending; inspect the emulator job before treating this as validated.
 - Device-level TalkBack, visual contrast, large-font, keyboard/insets, and physical-device checks remain unperformed.
+
+
+### CI cost adjustment — 2026-10-13
+
+- Owner requested removal of the hosted Android emulator job because they do not have a subscription/budget for that execution path.
+- Removed the `instrumentation-tests` API 36 emulator job from `.github/workflows/android-ci.yml`; required CI continues to run JVM unit tests, debug/release builds, and instrumentation-test compilation.
+- Updated README and DEVELOPMENT.md to distinguish compilation from actual device execution and to document `connectedDebugAndroidTest` as an optional local command when a local emulator/device is available.
+- The previous emulator-run workflow entry above is retained as history; it describes the temporary addition and is superseded by this cost adjustment. No emulator execution is claimed. PR #10 remains open and unmerged.
+- Validation: the next workflow run should verify the reduced CI workflow on the updated branch head.
