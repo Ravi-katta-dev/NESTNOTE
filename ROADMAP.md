@@ -216,27 +216,34 @@ Reconcile the work log with the current `main` branch, including PR #4 and PR #5
 
 I recommend a focused **Phase 6 — Reliability, Recovery & Accessibility**, rather than adding cloud sync or a large collection of new features immediately.
 
-#### Phase 6 candidate checklist
+#### Phase 6 — Reliability, Recovery & Accessibility
 
-- [ ] Audit local storage and save failure handling — **P0**
-- [ ] Harden backup validation and atomic restore — **P0**
-- [ ] Add editor lifecycle and draft-recovery tests — **P0**
-- [ ] Complete contrast, font-scaling, and keyboard checks — **P1**
-- [ ] Make checklist interactions more natural — **P1**
-- [ ] Synchronize roadmap, work log, and release checklist — **P1**
-- [ ] Extract repository and ViewModel boundaries incrementally — **P2**
+**Status: In progress on [PR #7](https://github.com/Ravi-katta-dev/NESTNOTE/pull/7), branch `feature/phase-6-release-checklist`.** PR #6 security hardening remains separate and on hold. Do not merge either PR without explicit owner approval.
 
-### What I would do first
+Phase 6 follows **P0 → P1 → P2**. Check items only after the latest relevant code and tests pass CI; device-only acceptance criteria remain unchecked until manually verified.
 
-- Audit `NoteStore` and all save/restore paths for data-loss risks.
-- Add focused regression tests before modifying the storage implementation.
-- Improve editor state handling and backup recovery.
-- Run the automated suite and validate the interface on an emulator or physical device.
-- Update the documentation and open a small, reviewable PR.
+### P0 — Protect writing, saving, and recovery
+- [ ] Validate local save failure handling and ensure failed saves never close the editor or falsely report success (implementation started; CI passed on an earlier storage/backup commit, latest editor safeguards still need CI).
+- [ ] Reject malformed, oversized, duplicate-ID, invalid-ID, and invalid-timestamp backup records before modifying local notes (regression tests added; revalidate against current PR head).
+- [ ] Distinguish a fresh install from unreadable local storage; preserve corrupt bytes and offer a deliberate recovery route rather than silently loading starter notes (implemented; revalidate current PR head).
+- [ ] Export versioned backups and retain legacy array import compatibility; preview additions/updates and validate the complete restore before applying it (implemented; revalidate current PR head).
+- [ ] Preserve editor drafts and discard-warning state across activity recreation; reject stale drafts that would overwrite a newer note version (implementation and unit test added; latest CI pending).
+- [ ] Add/verify rapid-edit, repeated-save, interrupted-edit, malformed restore, and save-failure regression tests.
+- [ ] Run Android CI successfully on the current PR head and perform a focused emulator/device smoke test before declaring P0 complete.
 
-I would defer cloud sync, accounts, collaboration, and rich-text editing until local data safety and the everyday writing experience are dependable. Those are worthwhile future directions, but they introduce substantially more complexity.
+### P1 — Improve the everyday writing and organizing experience
+- [ ] Make checklist items interactive in the note body and preserve cursor/selection during list formatting.
+- [ ] Verify keyboard insets, scrolling, focus, and narrow-screen behavior.
+- [ ] Audit every note palette in light/dark themes for contrast; test appearance-picker selection states, font/display scaling, TalkBack labels, and touch targets.
+- [ ] Verify case-insensitive title/body search composes predictably with category/archive filters and sorting; add multi-select actions only after core flows remain stable.
+- [ ] Reconcile current-state summaries in ROADMAP.md, WORKLOG.md, and RELEASE_CHECKLIST.md while preserving older work-log entries as historical records.
 
-**Recommendation:** start Phase 6 with a storage-and-editor reliability audit, then implement the fixes in small, testable PRs. That offers the greatest improvement to NESTNOTE without unnecessarily destabilizing the existing app.
+### P2 — Incrementally improve architecture
+- [ ] Extract note persistence behind a repository interface and cover it with focused tests.
+- [ ] Move editor/dashboard state into lifecycle-aware ViewModels without a full application rewrite.
+- [ ] Evaluate Room only if data/query needs justify it; design and test migration, backup, upgrade, and rollback before changing storage.
+
+Defer cloud sync, accounts, collaboration, and rich-text editing until local data safety and the everyday writing experience are dependable.
 
 ---
 
