@@ -465,3 +465,12 @@ Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit → reference �
 - [ ] Verify keyboard/insets, reduced motion, accessibility, large fonts and actual narrow/wide device layouts.
 - [ ] Re-run CI on the latest final P0 commit and update the worklog with exact evidence.
 - **Status:** implementation in progress; do not mark P0 complete yet.
+
+
+### P0 editor audit follow-up — 2026-10-13
+
+- [x] Remove the parallel reduced-feature Quick Dialog form and reuse `NoteEditorContent` for Quick Dialog create/edit.
+- [x] Preserve Quick Dialog as a user-selectable bounded dialog layout; reuse the same appearance, category, pin/reminder, formatting, sharing/copying, delete, save and discard interactions.
+- [ ] Add explicit appearance Apply/Cancel draft semantics and verify dismissal does not accidentally commit a preview.
+- [ ] Validate compact-dialog keyboard/insets and scroll reachability at narrow sizes and large font settings.
+- [ ] Confirm CI passes for the latest exact branch head and update evidence.
