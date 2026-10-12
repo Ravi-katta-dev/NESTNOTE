@@ -448,3 +448,11 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Commit: `f9104271c2def154931fdc858439d04f4dbd3d11`.
 - Validation pending: Android CI must pass for this exact commit. Device/visual, keyboard/insets, reduced-motion, large-font and TalkBack checks have not yet been performed.
 - Next: inspect CI results, fix any compile/test failures, then continue editor hierarchy/toolbar polish and add/adjust automated coverage for panel interactions.
+
+
+## 2026-10-12 — P0 editor implementation continued
+- Confirmed Android CI passed for appearance-panel implementation commit `054a435aceb68f4b1c2a390b78a900db46eb9429`: unit tests, API 36 debug APK build, minified release compilation, and instrumentation-test compilation all succeeded. This CI run predates the newest toolbar polish commit.
+- Added a more deliberate formatting toolbar treatment in `NoteEditorContent`: grouped checklist and bullet actions in a tonal rounded surface, clearer action labels, outline treatment, and bounded word/count metadata to reduce visual clutter.
+- Latest implementation commit: `49b04452219ad1ae8fa9a0799905308b2375a14e`.
+- Validation for the toolbar commit is pending. No device-level visual, keyboard, reduced-motion or TalkBack testing is claimed.
+- Remaining P0 work: inspect the quick-dialog editor path for duplicated editor UI, complete the create/edit interaction audit, and validate the appearance panel on actual narrow/wide layouts before calling the editor milestone complete.
