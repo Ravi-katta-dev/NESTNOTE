@@ -79,6 +79,35 @@ object NoteText {
         return (new.substring(0, cursor) + nextPrefix + new.substring(cursor)) to (cursor + nextPrefix.length)
     }
 
+
+    /**
+     * Keeps a selected range anchored to the same text when a line-prefix action
+     * inserts or removes characters before it. A collapsed selection uses newCursor.
+     */
+    fun selectionAfterLineEdit(
+        oldText: String,
+        newText: String,
+        selectionStart: Int,
+        selectionEnd: Int,
+        newCursor: Int
+    ): Pair<Int, Int> {
+        val start = selectionStart.coerceIn(0, oldText.length)
+        val end = selectionEnd.coerceIn(0, oldText.length)
+        if (start == end) {
+            val cursor = newCursor.coerceIn(0, newText.length)
+            return cursor to cursor
+        }
+        val startOfLine = lineStart(oldText, start)
+        val delta = newCursor - start
+        fun map(position: Int): Int {
+            val adjusted = if (position >= startOfLine) position + delta else position
+            return adjusted.coerceIn(0, newText.length)
+        }
+        val mappedStart = map(start)
+        val mappedEnd = map(end)
+        return mappedStart to mappedEnd
+    }
+
     /** Returns (total checklist items, completed items) for the note body. */
     fun checklistProgress(text: String): Pair<Int, Int> {
         val items = text.lineSequence().map(String::trimStart)
