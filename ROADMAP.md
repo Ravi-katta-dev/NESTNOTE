@@ -455,3 +455,13 @@ This roadmap is governed by [UI_UX_RULES.md](UI_UX_RULES.md). The approved proto
 
 ### Required rule
 Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit → reference → acceptance criteria → reuse-first implementation → tests → responsive/accessibility review → worklog update. P0 is the immediate priority; later feature work must not bypass it.
+
+
+### P0 implementation status update — 2026-10-12
+- [x] Replace the bottom appearance picker call with the reusable animated right-side panel.
+- [x] Add dismissible scrim, system Back handling, colour/background previews, selected states and test tags.
+- [x] Improve formatting toolbar hierarchy with a grouped tonal surface and clearer action labels.
+- [ ] Audit/unify the Quick Dialog editor path so it does not become a parallel reduced-feature editor.
+- [ ] Verify keyboard/insets, reduced motion, accessibility, large fonts and actual narrow/wide device layouts.
+- [ ] Re-run CI on the latest final P0 commit and update the worklog with exact evidence.
+- **Status:** implementation in progress; do not mark P0 complete yet.
