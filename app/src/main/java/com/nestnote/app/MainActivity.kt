@@ -144,6 +144,7 @@ private fun NestNoteApp(store: NoteStore) {
     var notes by remember { mutableStateOf(initialNoteLoad.notes) }
     var storageRecoveryRequired by remember { mutableStateOf(initialNoteLoad.recoveryRequired) }
     var showStorageRecoveryDialog by remember { mutableStateOf(initialNoteLoad.recoveryRequired) }
+    var pendingRestore by remember { mutableStateOf<List<NestNote>?>(null) }
     var themeMode by remember { mutableStateOf(ThemeMode.values().firstOrNull { it.name == preferences.getString(PREF_THEME, "SYSTEM") } ?: ThemeMode.SYSTEM) }
     var dynamicColors by remember { mutableStateOf(preferences.getBoolean(PREF_DYNAMIC, true)) }
     var dashboardLayout by remember { mutableStateOf(DashboardLayout.values().firstOrNull { it.name == preferences.getString(PREF_LAYOUT, "GRID") } ?: DashboardLayout.GRID) }
@@ -240,14 +241,10 @@ private fun NestNoteApp(store: NoteStore) {
             }.getOrNull()
             val incoming = raw?.let { NoteStore.decodeBackup(it) }
             val message = if (incoming == null) {
-                "That file isn't a NESTNOTE backup"
+                "That file isn't a valid NESTNOTE backup"
             } else {
-                val merged = NoteStore.merge(notes, incoming)
-                if (persist(merged.notes, allowRecovery = true)) {
-                    "Restored ${merged.added} new and ${merged.updated} updated notes"
-                } else {
-                    "Restore failed. Existing local data was not changed."
-                }
+                pendingRestore = incoming
+                "Backup validated. Review the restore before applying it."
             }
             coroutineScope.launch { snackbarHostState.showSnackbar(message) }
         }
@@ -494,6 +491,30 @@ private fun NestNoteApp(store: NoteStore) {
                     }
                 }
             }
+        }
+
+        pendingRestore?.let { incoming ->
+            val preview = NoteStore.merge(notes, incoming)
+            AlertDialog(
+                onDismissRequest = { pendingRestore = null },
+                title = { Text("Review backup restore") },
+                text = {
+                    Text("This backup will add ${preview.added} notes and update ${preview.updated} existing notes. Notes not present in the backup will not be deleted.")
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        if (persist(preview.notes, allowRecovery = true)) {
+                            pendingRestore = null
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Restored ${preview.added} new and ${preview.updated} updated notes")
+                            }
+                        }
+                    }) { Text("Restore notes") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingRestore = null }) { Text("Cancel") }
+                }
+            )
         }
 
         if (showStorageRecoveryDialog) {
