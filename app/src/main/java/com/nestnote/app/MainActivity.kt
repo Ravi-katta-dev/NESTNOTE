@@ -68,8 +68,8 @@ import kotlinx.coroutines.launch
 private val fallbackAccent = Color(0xFF625B71)
 // Distinct, slightly richer swatches remain soft while being easy to tell apart.
 private val noteAccents = listOf(
-    Color(0xFFFAF7F0), Color(0xFFEFA0A8), Color(0xFFEF956B),
-    Color(0xFFE8D66D), Color(0xFFB8D9A8), Color(0xFF82C9C3), Color(0xFF8DBDE0)
+    Color(0xFFF4EEE3), Color(0xFFE88C98), Color(0xFFE98555),
+    Color(0xFFD8C34D), Color(0xFFA6CC91), Color(0xFF69B9B3), Color(0xFF73ACD8)
 )
 private val noteTints = listOf(
     Color(0xFFFFFCF6), Color(0xFFFFE8E9), Color(0xFFFFE8DC),
@@ -778,30 +778,30 @@ private fun NoteEditorContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { requestDismiss() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Close editor")
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Close editor", tint = Color(0xFF45434A))
                 }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = { pinned = !pinned }) {
                     Icon(
                         Icons.Default.PushPin,
                         contentDescription = if (pinned) "Unpin note" else "Pin note",
-                        tint = if (pinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (pinned) Color(0xFF514783) else Color(0xFF55515C)
                     )
                 }
                 IconButton(onClick = { pickReminder() }) {
                     Icon(
                         Icons.Default.NotificationsNone,
                         contentDescription = "Choose reminder time",
-                        tint = if (reminder.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (reminder.isNotBlank()) Color(0xFF514783) else Color(0xFF55515C)
                     )
                 }
                 if (original != null) {
                     IconButton(onClick = { onSave(buildNote(archived = true)) }) {
-                        Icon(Icons.Default.Archive, contentDescription = "Archive note")
+                        Icon(Icons.Default.Archive, contentDescription = "Archive note", tint = Color(0xFF55515C))
                     }
                 }
                 IconButton(onClick = { appearanceVisible = true }) {
-                    Icon(Icons.Default.Palette, contentDescription = "Choose note appearance")
+                    Icon(Icons.Default.Palette, contentDescription = "Choose note appearance", tint = Color(0xFF514783))
                 }
             }
 
@@ -826,8 +826,11 @@ private fun NoteEditorContent(
                         focusedContainerColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
                         focusedBorderColor = Color.Transparent,
-                        unfocusedPlaceholderColor = Color(0xFF77737D),
-                        focusedPlaceholderColor = Color(0xFF77737D)
+                        unfocusedTextColor = Color(0xFF292633),
+                        focusedTextColor = Color(0xFF292633),
+                        cursorColor = Color(0xFF514783),
+                        unfocusedPlaceholderColor = Color(0xFF66616D),
+                        focusedPlaceholderColor = Color(0xFF66616D)
                     ),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
@@ -846,8 +849,11 @@ private fun NoteEditorContent(
                         focusedContainerColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
                         focusedBorderColor = Color.Transparent,
-                        unfocusedPlaceholderColor = Color(0xFF9A969F),
-                        focusedPlaceholderColor = Color(0xFF9A969F)
+                        unfocusedTextColor = Color(0xFF292633),
+                        focusedTextColor = Color(0xFF292633),
+                        cursorColor = Color(0xFF514783),
+                        unfocusedPlaceholderColor = Color(0xFF77727D),
+                        focusedPlaceholderColor = Color(0xFF77727D)
                     ),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
@@ -855,7 +861,7 @@ private fun NoteEditorContent(
                 Spacer(Modifier.height(14.dp))
                 Box {
                     TextButton(onClick = { categoryExpanded = true }) {
-                        Text(category, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(category, color = Color(0xFF514783))
                     }
                     DropdownMenu(expanded = categoryExpanded, onDismissRequest = { categoryExpanded = false }) {
                         categories.forEach { item ->
@@ -891,12 +897,18 @@ private fun NoteEditorContent(
             ) {
                 if (onDelete != null) TextButton(onClick = onDelete) { Text("Delete") }
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = { requestDismiss() }) { Text("Cancel") }
+                TextButton(onClick = { requestDismiss() }, colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF514783))) { Text("Cancel") }
                 Button(
                     onClick = { if (title.isNotBlank()) onSave(buildNote()) },
                     enabled = title.isNotBlank(),
                     shape = RoundedCornerShape(18.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF514783),
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFFE2DFE9),
+                        disabledContentColor = Color(0xFF514783)
+                    )
                 ) { Text("Save note") }
             }
         }
