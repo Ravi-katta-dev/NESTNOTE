@@ -304,3 +304,15 @@ Scope was intentionally narrowed to the note editor and its appearance picker; d
 - Phase 4 is now marked complete in `ROADMAP.md`. The note editor redesign, appearance picker, persisted wallpaper/color choices, and screenshot-driven contrast/palette refinements are included.
 - Scope caveats remain accurate: reminder times are metadata only; rich-text formatting is not implemented. Owner performed the validation; no separate emulator screenshot run is claimed by the implementation agent.
 - PR #4 is merged. No further merge action is pending.
+
+
+## Phase 5 increment — Settings and editor UX — 2026-10-12
+
+Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). Not merged; needs owner review.
+
+- **Settings:** rebuilt with grouped sections using segmented controls (theme, dashboard view, density, sort, editor text size), selectable cards (note card colors, editor mode), default-category chips, switch rows with summaries, and a confirmed reset-to-defaults. Sorting can now be chosen as Edited / Created / Title from Settings (previously only a title toggle).
+- **Editor:** checklist (☐/☑) and bullet toolbar; pressing Enter continues a list item and ends the list on an empty item; optional live word count, character count and reading time; editor text size (Small/Medium/Large); category chips instead of a dropdown; reminder presets with a clear button; Share and Copy text from the overflow menu; new notes open with the title focused; edited/created info for existing notes.
+- **Backup/restore:** `NoteStore.encode/decode/merge` (same JSON format as local storage). Settings → Back up notes writes a file chosen via the system file picker; Restore backup merges by note id (new ids added, newer `updated` wins, nothing deleted) and rejects files that are not NESTNOTE backups.
+- **Tests added:** `NoteTextTest` (list, checklist, counters, reminder presets), `NoteBackupTest` (round trip, validation, merge), and two instrumentation tests (settings text size/backup controls, checklist button).
+- **Validation:** the pure logic in `NoteText.kt` was compiled with a standalone Kotlin compiler and its cases passed. The Compose UI changes and the Robolectric/instrumentation tests have **not** been built or run in this environment (no Android SDK). Android CI on this branch is the first real build; do not treat the change as verified until it passes. No emulator or physical-device testing is claimed.
+- **Known limits:** reminders are still metadata only; checkboxes toggle via the toolbar rather than by tapping; import accepts only NESTNOTE JSON backups.
