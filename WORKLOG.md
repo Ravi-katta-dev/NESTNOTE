@@ -377,3 +377,12 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 - Checklist checkboxes now expose the item text and its completion state through Compose accessibility semantics, instead of announcing only a bare checkbox.
 - Added JVM regression coverage for idempotent checkbox state updates, trailing-newline preservation, and ignoring non-checklist lines.
 - The accessibility and test additions after the confirmed run are awaiting CI. TalkBack, large-font, and narrow-device checks still require a real emulator/device run.
+
+
+### Backup recovery regression pass — 2026-10-12
+
+- CI run [#38226281995](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38226281995) passed on commit `4eb1babbcae60395772f0fd85144e10768dfbe44`, including unit tests, API 36 debug build, instrumentation-test compilation, and test APK signing.
+- Added unit tests to verify backup imports reject records missing required identity fields, invalid IDs, and malformed versioned envelopes.
+- Added a merge regression test proving newer copies update existing notes, older copies do not overwrite them, new IDs are added, and existing notes absent from the import are retained.
+- Marked the interactive checklist implementation milestone complete in ROADMAP.md based on passing CI; real-device interaction, TalkBack, and font-scaling checks remain unverified.
+- The new backup/merge tests and this log update await CI validation. PR #7 remains open and unmerged.
