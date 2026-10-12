@@ -484,3 +484,9 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - The existing appearance persistence test now exercises Apply followed by the normal Save note flow.
 - Commit: `3d06781d1200e5d204306ebf6d3214ba9b47d8e2`.
 - CI must compile and execute the updated test where supported; visual/device testing is still outstanding.
+
+### Appearance cancellation test selector hardening — 2026-10-13
+
+- Added the dedicated `appearance_cancel` test tag to the Appearance panel's Cancel button and updated the regression test to target it directly, avoiding ambiguity with the editor's separate Cancel action.
+- Commits: `4bbedecdf427c074561a550dab4fe28e75ec2f4d` (panel test tag), `8e68844a0e95d88f1bbf09e8193d95660dd1decd` (test selector).
+- Android CI for the latest branch head is pending; device-level visual, keyboard/insets, and accessibility checks are still not claimed.
