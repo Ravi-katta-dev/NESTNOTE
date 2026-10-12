@@ -1142,6 +1142,8 @@ private fun NoteEditorContent(
     var reminder by rememberSaveable(original?.id) { mutableStateOf(original?.reminder.orEmpty()) }
     var pinned by rememberSaveable(original?.id) { mutableStateOf(original?.pinned ?: false) }
     var appearanceVisible by remember { mutableStateOf(false) }
+    var appearanceStartColor by remember { mutableIntStateOf(colorIndex) }
+    var appearanceStartBackground by remember { mutableIntStateOf(backgroundIndex) }
     var discardConfirmation by remember { mutableStateOf(false) }
     var reminderMenu by remember { mutableStateOf(false) }
     var moreMenu by remember { mutableStateOf(false) }
@@ -1289,7 +1291,11 @@ private fun NoteEditorContent(
                         Icon(Icons.Default.Archive, contentDescription = "Archive note", tint = Color(0xFF55515C))
                     }
                 }
-                IconButton(onClick = { appearanceVisible = true }) {
+                IconButton(onClick = {
+                    appearanceStartColor = colorIndex
+                    appearanceStartBackground = backgroundIndex
+                    appearanceVisible = true
+                }) {
                     Icon(Icons.Default.Palette, contentDescription = "Choose note appearance", tint = accent)
                 }
                 Box {
@@ -1509,10 +1515,17 @@ private fun NoteEditorContent(
         }
     }
 
-    BackHandler(enabled = appearanceVisible) { appearanceVisible = false }
+    fun dismissAppearance(discardDraft: Boolean) {
+        if (discardDraft) {
+            colorIndex = appearanceStartColor
+            backgroundIndex = appearanceStartBackground
+        }
+        appearanceVisible = false
+    }
+    BackHandler(enabled = appearanceVisible) { dismissAppearance(discardDraft = true) }
     Box(Modifier.fillMaxSize()) {
         AnimatedVisibility(visible = appearanceVisible, enter = fadeIn(), exit = fadeOut()) {
-            Box(Modifier.fillMaxSize().background(Color(0x660F0D17)).clickable { appearanceVisible = false }.testTag("appearance_scrim"))
+            Box(Modifier.fillMaxSize().background(Color(0x660F0D17)).clickable { dismissAppearance(discardDraft = true) }.testTag("appearance_scrim"))
         }
         AnimatedVisibility(
             visible = appearanceVisible,
@@ -1525,7 +1538,8 @@ private fun NoteEditorContent(
                 backgroundIndex = backgroundIndex,
                 onColorSelected = { colorIndex = it },
                 onBackgroundSelected = { backgroundIndex = it },
-                onDismiss = { appearanceVisible = false },
+                onDismiss = { dismissAppearance(discardDraft = true) },
+                onApply = { dismissAppearance(discardDraft = false) },
                 modifier = Modifier.fillMaxHeight().fillMaxWidth(0.88f).widthIn(max = 360.dp)
                     .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
                     .background(MaterialTheme.colorScheme.surface)
@@ -1559,6 +1573,7 @@ private fun AppearanceSidePanel(
     onColorSelected: (Int) -> Unit,
     onBackgroundSelected: (Int) -> Unit,
     onDismiss: () -> Unit,
+    onApply: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
@@ -1640,7 +1655,17 @@ private fun AppearanceSidePanel(
                 }
             }
         }
-        OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Done") }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                Text("Cancel")
+            }
+            Button(onClick = onApply, modifier = Modifier.weight(1f)) {
+                Text("Apply")
+            }
+        }
         Text("Your choice is saved with the note when you tap Save.", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
     }
