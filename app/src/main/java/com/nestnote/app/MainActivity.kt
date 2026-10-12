@@ -1174,6 +1174,9 @@ private fun NoteEditorContent(
                                 ) {
                                     Checkbox(
                                         checked = item.checked,
+                                        modifier = Modifier.semantics {
+                                            contentDescription = "${item.text.ifBlank { "Empty checklist item" }}, ${if (item.checked) "completed" else "not completed"}"
+                                        },
                                         onCheckedChange = { checked ->
                                             bodyValue = bodyValue.copy(text = NoteText.setChecklistItemChecked(bodyValue.text, item.lineIndex, checked))
                                         }
