@@ -226,7 +226,7 @@ private fun NestNoteApp(store: NoteStore) {
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) {
             val saved = runCatching {
-                context.contentResolver.openOutputStream(uri)?.use { it.write(NoteStore.encode(notes).toByteArray(Charsets.UTF_8)) } != null
+                context.contentResolver.openOutputStream(uri)?.use { it.write(NoteStore.encodeBackup(notes).toByteArray(Charsets.UTF_8)) } != null
             }.getOrDefault(false)
             coroutineScope.launch {
                 snackbarHostState.showSnackbar(if (saved) "Backup saved (${notes.size} notes)" else "Couldn't save the backup")
@@ -238,7 +238,7 @@ private fun NestNoteApp(store: NoteStore) {
             val raw = runCatching {
                 context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
             }.getOrNull()
-            val incoming = raw?.let { NoteStore.decode(it, requireFields = true) }
+            val incoming = raw?.let { NoteStore.decodeBackup(it) }
             val message = if (incoming == null) {
                 "That file isn't a NESTNOTE backup"
             } else {
