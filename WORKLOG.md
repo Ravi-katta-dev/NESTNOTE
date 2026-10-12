@@ -345,10 +345,12 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 - [x] Add unit coverage for duplicate IDs, invalid/oversized data, corrupt local storage recovery, backup versioning, and legacy backup compatibility.
 - [x] Android CI passed for the initial storage/backup increment (run #129, commit `c3155b2a92d16996f025bc8be09d762613e2ef2f`). Newer editor lifecycle/stale-draft commits still require CI validation.
 - [x] Preserve the unsaved-change warning state across activity recreation and add a note-version guard that rejects stale editor drafts instead of overwriting newer saved content.
-- [ ] Continue with interactive checklist items, accessibility and appearance checks, then repository/ViewModel boundaries.
+- [x] Interactive checklist controls are available in the editor; tapping a checkbox or its item text toggles the selected row while preserving other lines and indentation.
+- [x] Completed checklist items are visually distinguished with muted color and strikethrough styling.
+- [ ] Continue with large-font/small-screen accessibility checks and repository/ViewModel boundaries.
 - [ ] Reconcile remaining historical work-log entries and update roadmap/checklist status after each verified milestone.
 
-**Validation honesty:** source changes and test cases have been committed, but no passing CI result has yet been observed for the current PR #7 head. No emulator or physical-device validation is claimed.
+**Validation honesty:** CI run [#38220086471](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38220086471) passed for commit `35d5f86e8ff956ccec00ed30a0cf627620f11231`, including unit tests, API 36 debug build, instrumentation-test compilation, and test APK signing. The subsequent completed-item styling commit still requires CI validation. No emulator or physical-device validation is claimed.
 
 
 **Latest Phase 6 update (2026-10-12):** Added stale-draft version checking for full-screen and quick-note editors. A draft carries the version timestamp it was opened from; the parent compares that value with the latest saved note before writing. A mismatch produces a recovery-oriented message and leaves the newer note untouched. The unsaved-change warning flag now survives activity recreation alongside the saveable editor draft. Unit coverage includes the version comparison helper. This change is not yet CI-validated.
@@ -360,3 +362,10 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 - Checklist progress on note cards now remains visible when note-body previews are turned off, so disabling previews no longer hides a useful task-status summary.
 - The progress label uses body-small typography for better readability and exposes a screen-reader description with the completed and total item counts.
 - Validation for this accessibility increment is pending a fresh CI run. UI behavior at system-large font sizes and TalkBack still requires manual device/emulator verification; none is claimed here.
+
+
+### Interactive checklist follow-up — 2026-10-12
+
+- Completed checklist rows now use strikethrough styling as well as muted text color, making completion state easier to scan.
+- CI passed for the interactive checkbox implementation before this visual follow-up; this latest styling change awaits CI.
+- Large system-font, narrow-screen, and TalkBack behavior remain manual validation items and are not claimed as tested.
