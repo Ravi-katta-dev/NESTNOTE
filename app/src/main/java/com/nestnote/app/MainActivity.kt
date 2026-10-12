@@ -140,7 +140,10 @@ class MainActivity : ComponentActivity() {
 private fun NestNoteApp(store: NoteStore) {
     val context = LocalContext.current
     val preferences = remember { context.getSharedPreferences(PREFS, 0) }
-    var notes by remember { mutableStateOf(store.load()) }
+    val initialNoteLoad = remember { store.loadSafely() }
+    var notes by remember { mutableStateOf(initialNoteLoad.notes) }
+    var storageRecoveryRequired by remember { mutableStateOf(initialNoteLoad.recoveryRequired) }
+    var showStorageRecoveryDialog by remember { mutableStateOf(initialNoteLoad.recoveryRequired) }
     var themeMode by remember { mutableStateOf(ThemeMode.values().firstOrNull { it.name == preferences.getString(PREF_THEME, "SYSTEM") } ?: ThemeMode.SYSTEM) }
     var dynamicColors by remember { mutableStateOf(preferences.getBoolean(PREF_DYNAMIC, true)) }
     var dashboardLayout by remember { mutableStateOf(DashboardLayout.values().firstOrNull { it.name == preferences.getString(PREF_LAYOUT, "GRID") } ?: DashboardLayout.GRID) }
@@ -169,10 +172,15 @@ private fun NestNoteApp(store: NoteStore) {
     fun savePreference(key: String, value: String) {
         preferences.edit().putString(key, value).apply()
     }
-    fun persist(next: List<NestNote>): Boolean {
+    fun persist(next: List<NestNote>, allowRecovery: Boolean = false): Boolean {
+        if (storageRecoveryRequired && !allowRecovery) {
+            coroutineScope.launch { snackbarHostState.showSnackbar("Restore a backup before changing notes. Existing local data was not overwritten.") }
+            return false
+        }
         val saved = store.save(next)
         if (saved) {
             notes = next
+            if (allowRecovery) storageRecoveryRequired = false
         } else {
             coroutineScope.launch { snackbarHostState.showSnackbar("Save failed. Your previous notes are still available.") }
         }
@@ -235,8 +243,11 @@ private fun NestNoteApp(store: NoteStore) {
                 "That file isn't a NESTNOTE backup"
             } else {
                 val merged = NoteStore.merge(notes, incoming)
-                persist(merged.notes)
-                "Restored ${merged.added} new and ${merged.updated} updated notes"
+                if (persist(merged.notes, allowRecovery = true)) {
+                    "Restored ${merged.added} new and ${merged.updated} updated notes"
+                } else {
+                    "Restore failed. Existing local data was not changed."
+                }
             }
             coroutineScope.launch { snackbarHostState.showSnackbar(message) }
         }
@@ -483,6 +494,22 @@ private fun NestNoteApp(store: NoteStore) {
                     }
                 }
             }
+        }
+
+        if (showStorageRecoveryDialog) {
+            AlertDialog(
+                onDismissRequest = { showStorageRecoveryDialog = false },
+                title = { Text("Local notes need recovery") },
+                text = { Text("NESTNOTE couldn't read the saved notes. The stored data has been left untouched. Open Settings and restore a backup before creating, editing, or deleting notes.") },
+                confirmButton = {
+                    TextButton(onClick = { showStorageRecoveryDialog = false; selectedView = "Settings" }) {
+                        Text("Open backup settings")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showStorageRecoveryDialog = false }) { Text("Later") }
+                }
+            )
         }
 
         if (editorVisible) {
