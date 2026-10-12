@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.FormatListBulleted
@@ -286,12 +287,12 @@ private fun NestNoteApp(store: NoteStore) {
                     title = {
                         Column {
                             Text(
-                                if (selectedView == "Settings") "Settings" else "NestNote",
+                                when (selectedView) { "Settings" -> "Settings"; "More" -> "More"; else -> "NestNote" },
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.2.sp
                             )
                             Text(
-                                if (selectedView == "Settings") "Make your notes feel like yours" else "Your thoughts, organized.",
+                                when (selectedView) { "Settings" -> "Make your notes feel like yours"; "More" -> "More ways to organize your notes"; else -> "Your thoughts, organized." },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = colors.onSurfaceVariant
                             )
@@ -425,7 +426,7 @@ private fun NestNoteApp(store: NoteStore) {
                                         color = colors.onSurfaceVariant
                                     )
                                 }
-                                Icon(Icons.Default.ArrowBack, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.ChevronRight, contentDescription = null, modifier = Modifier.size(20.dp))
                             }
                         }
                         HorizontalDivider(color = colors.outlineVariant)
