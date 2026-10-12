@@ -475,3 +475,12 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - This cancellation is intentionally scoped to appearance selections; it does not silently discard other editor fields.
 - Commit: `4564b72b24e9a6ff0217da032542ce46519b09fc`.
 - Validation pending for the final branch head. Device-level interaction, keyboard/insets, motion accessibility and TalkBack checks remain unperformed.
+
+
+### Appearance UI test coverage — 2026-10-13
+
+- Updated the instrumentation test to match the panel's actual section labels and Apply action.
+- Added an end-to-end regression test proving Cancel restores the original colour/background draft before the note is saved.
+- The existing appearance persistence test now exercises Apply followed by the normal Save note flow.
+- Commit: `3d06781d1200e5d204306ebf6d3214ba9b47d8e2`.
+- CI must compile and execute the updated test where supported; visual/device testing is still outstanding.
