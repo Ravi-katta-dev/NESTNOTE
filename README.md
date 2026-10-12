@@ -48,7 +48,7 @@ gradle --no-daemon assembleRelease
 gradle --no-daemon assembleDebugAndroidTest
 ```
 
-The [Android CI workflow](https://github.com/Ravi-katta-dev/NESTNOTE/blob/main/.github/workflows/android-ci.yml) runs unit tests, builds debug and minified release APKs, compiles instrumentation tests, and executes Android instrumentation tests on an API 36 emulator. Do not claim physical-device, TalkBack, large-font, keyboard/insets, upgrade, migration, or visual-regression checks unless they were actually run and recorded.
+The [Android CI workflow](https://github.com/Ravi-katta-dev/NESTNOTE/blob/main/.github/workflows/android-ci.yml) runs unit tests, builds debug and minified release APKs, and compiles instrumentation tests. Emulator execution is intentionally excluded from required CI to avoid hosted-emulator subscription/usage costs. Run `gradle --no-daemon connectedDebugAndroidTest` locally on an available emulator/device when possible. Do not claim instrumentation execution, physical-device, TalkBack, large-font, keyboard/insets, upgrade, migration, or visual-regression checks unless they were actually run and recorded.
 
 ## Repository guide
 - app/src/main/java/com/nestnote/app/MainActivity.kt — Compose UI and interactions.
@@ -67,7 +67,7 @@ The [Android CI workflow](https://github.com/Ravi-katta-dev/NESTNOTE/blob/main/.
 - Reminder dates/times are metadata only; alarm scheduling and notification delivery are not implemented.
 - Checklist items can be toggled in the editor; rich-text formatting is not implemented.
 - No account, remote sync, or server-side note storage is included.
-- Android instrumentation tests run in CI on an API 36 emulator; physical-device and manual accessibility/visual checks remain separate release gates.
+- Android instrumentation tests are compiled in CI but are not automatically executed on a hosted emulator; device execution and manual accessibility/visual checks remain separate release gates.
 
 
 ## Mandatory UI/UX direction
