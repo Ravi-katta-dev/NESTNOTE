@@ -466,3 +466,12 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Commit: `f0a1aa2a420ebe8cefd1f482ed6cb9bfb4451fcb`.
 - Validation status: waiting for Android CI on the updated branch head. Source diff was reviewed; no emulator/device visual, keyboard/insets, TalkBack, or large-font test is claimed.
 - Follow-up audit: validate the compact dialog's available height with the IME visible, and implement explicit Appearance Apply/Cancel semantics so closing the panel can discard uncommitted appearance-only selections without discarding unrelated note edits.
+
+
+### Appearance draft cancellation semantics — 2026-10-13
+
+- Added explicit **Apply** and **Cancel** actions to the right-side Appearance panel.
+- Colour/background selections still preview immediately in the editor draft. Opening the panel records its starting appearance; Cancel, close, outside tap, and system Back restore those appearance values, while Apply retains the draft selections for the existing Save note flow.
+- This cancellation is intentionally scoped to appearance selections; it does not silently discard other editor fields.
+- Commit: `4564b72b24e9a6ff0217da032542ce46519b09fc`.
+- Validation pending for the final branch head. Device-level interaction, keyboard/insets, motion accessibility and TalkBack checks remain unperformed.
