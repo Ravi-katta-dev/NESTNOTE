@@ -73,12 +73,12 @@ class NoteTextTest {
         val old = "first\\nsecond"
         val (newText, cursor) = NoteText.cycleChecklist(old, 8)
         assertEquals("first\\n☐ second", newText)
-        assertEquals(10 to 12, NoteText.selectionAfterLineEdit(old, newText, 8, 12, cursor))
+        assertEquals(10 to 14, NoteText.selectionAfterLineEdit(old, newText, 8, 12, cursor))
     }
 
     @Test
     fun lineFormattingKeepsCollapsedSelectionAtReturnedCursor() {
-        assertEquals(10 to 10, NoteText.selectionAfterLineEdit("item", "☐ item", 4, 4, 6))
+        assertEquals(6 to 6, NoteText.selectionAfterLineEdit("item", "☐ item", 4, 4, 6))
     }
 
     @Test
