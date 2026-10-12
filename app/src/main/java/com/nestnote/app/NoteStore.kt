@@ -121,6 +121,10 @@ class NoteStore(context: Context) {
             decoded
         }.getOrNull()
 
+        /** Prevents a draft based on an older saved version from replacing newer content. */
+        fun isSameNoteVersion(expectedUpdated: Long, currentUpdated: Long): Boolean =
+            expectedUpdated == currentUpdated
+
         /** Shared validation for persisted and imported note collections. */
         fun isValidNoteCollection(notes: List<NestNote>): Boolean {
             if (notes.size > MAX_NOTES) return false
