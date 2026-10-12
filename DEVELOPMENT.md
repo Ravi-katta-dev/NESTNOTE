@@ -22,7 +22,7 @@ gradle --no-daemon assembleRelease
 gradle --no-daemon assembleDebugAndroidTest
 ```
 
-CI is defined in .github/workflows/android-ci.yml. It runs unit tests, builds debug and minified release variants, and compiles instrumentation tests. The separate emulator UI workflow is manual-only; do not treat compilation as execution or proof of device behavior.
+CI is defined in .github/workflows/android-ci.yml. It runs unit tests, builds debug and minified release variants, compiles instrumentation tests, and runs Android instrumentation tests on an API 36 emulator. Emulator automation is not a substitute for manual visual, TalkBack, large-font, or physical-device verification.
 
 ## Code map
 - app/src/main/java/com/nestnote/app/MainActivity.kt — dashboard, editor, settings, and Compose interactions.
