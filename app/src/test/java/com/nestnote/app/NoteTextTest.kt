@@ -69,6 +69,12 @@ class NoteTextTest {
     }
 
     @Test
+    fun checklistProgressCountsOnlyChecklistLines() {
+        assertEquals(0 to 0, NoteText.checklistProgress("plain\\n• bullet"))
+        assertEquals(3 to 1, NoteText.checklistProgress("☑ done\\n☐ next\\n  ☐ indented\\nplain"))
+    }
+
+    @Test
     fun shareTextJoinsNonBlankParts() {
         assertEquals("Title\n\nBody", NoteText.shareText(" Title ", " Body "))
         assertEquals("Body", NoteText.shareText("", "Body"))
