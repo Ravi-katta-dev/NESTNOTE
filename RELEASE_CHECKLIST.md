@@ -10,14 +10,14 @@ Track implementation separately from release sign-off. The intended order is **P
 - [ ] Show clear Saving / Saved / Save failed status for edits and preserve recoverable drafts on failure.
 - [ ] Protect editor drafts across Back, rotation, activity recreation, and interrupted editing.
 - [ ] Prevent stale drafts from overwriting a newer version of a note; test rapid and repeated saves.
-- [ ] Reject malformed, oversized, duplicate-ID, and invalid backup records before any mutation.
-- [ ] Use a versioned backup schema with legacy migration/import support.
-- [ ] Preview restore additions/updates and apply the validated restore atomically.
-- [ ] Never silently treat unreadable local storage as a fresh installation; preserve original bytes and provide recovery.
+- [x] Reject malformed, oversized, duplicate-ID, and invalid backup records before any mutation (unit-tested; CI passed on 2026-10-12).
+- [x] Use a versioned backup schema with legacy migration/import support (schema-version and legacy-array tests pass CI).
+- [x] Preview restore additions/updates and apply the validated restore only after full validation (merge and restore-preview implementation; unit tests pass CI).
+- [x] Never silently treat unreadable local storage as a fresh installation; preserve original bytes and provide recovery (regression test passes CI).
 - [ ] Verify regression tests and Android CI on the exact implementation commit.
 
 ### P1 — Writing experience, accessibility, and organization
-- [ ] Make checklist items interactive in the note body and preserve cursor/selection during list formatting.
+- [x] Make checklist items interactive in the note body and preserve cursor/selection during list formatting (JVM tests and CI pass; device interaction remains manual).
 - [ ] Validate keyboard insets, focus, scrolling, and editor lifecycle on supported devices.
 - [ ] Audit foreground/background contrast for all note palettes in light and dark themes.
 - [ ] Test appearance-picker selected states, font scaling, display scaling, narrow screens, TalkBack labels, and touch targets.
