@@ -133,6 +133,34 @@ class NoteStoreTest {
     }
 
     @Test
+    fun backupRejectsMissingRequiredFieldsAndInvalidRecordValues() {
+        assertEquals(null, NoteStore.decodeBackup("""[{"title":"Missing ID","body":"No identity"}]"""))
+        assertEquals(null, NoteStore.decodeBackup("""{"schemaVersion":1,"notes":[{"id":-1,"title":"Invalid","body":"Bad ID"}]}"""))
+        assertEquals(null, NoteStore.decodeBackup("""{"schemaVersion":1}"""))
+    }
+
+    @Test
+    fun mergeAddsNewNotesUpdatesOnlyNewerCopiesAndNeverDeletesAbsentNotes() {
+        val original = NestNote(id = 1, title = "Original", body = "Keep", updated = 10)
+        val unchanged = NestNote(id = 2, title = "Unchanged", body = "Keep me", updated = 20)
+        val existing = listOf(original, unchanged)
+        val incoming = listOf(
+            original.copy(title = "Newer copy", updated = 11),
+            unchanged.copy(title = "Older copy", updated = 19),
+            NestNote(id = 3, title = "Imported", body = "Add", updated = 30)
+        )
+
+        val result = NoteStore.merge(existing, incoming)
+
+        assertEquals(1, result.added)
+        assertEquals(1, result.updated)
+        assertEquals(listOf(1L, 2L, 3L), result.notes.map { it.id })
+        assertEquals("Newer copy", result.notes[0].title)
+        assertEquals("Unchanged", result.notes[1].title)
+        assertEquals("Imported", result.notes[2].title)
+    }
+
+    @Test
     fun decodeRejectsDuplicateIdsInImportedBackup() {
         val raw = """[{"id":7,"title":"One","body":"A"},{"id":7,"title":"Two","body":"B"}]"""
         assertEquals(null, NoteStore.decode(raw, requireFields = true))
