@@ -425,3 +425,33 @@ Before a public release intended for sensitive personal notes:
 4. Continue architecture work incrementally (repository boundary and lifecycle-aware state) only with migration-safe tests; avoid a broad rewrite.
 
 **Validation boundary:** CI build/test success does not prove device behavior or production signing correctness. See RELEASE_CHECKLIST.md for release gates and WORKLOG.md for dated run evidence.
+
+
+## UI/UX maturity roadmap — approved direction (2026-10-12)
+
+This roadmap is governed by [UI_UX_RULES.md](UI_UX_RULES.md). The approved prototype direction is a focused note editor with an animated **right-side Appearance panel**; the existing bottom appearance picker is not the target interaction.
+
+### P0 — Note creation/editor redesign (start here)
+- [ ] Audit all editor modes and the create/edit entry points before changing layout.
+- [ ] Rework title, body, formatting toolbar, category and primary/secondary action hierarchy.
+- [ ] Replace the appearance bottom sheet with a reusable right-side slide-in panel; on phones it overlays the editor instead of permanently narrowing the writing canvas.
+- [ ] Provide wallpaper/background thumbnails, colour swatches, selected indicators, live draft preview, theme controls, and predictable Apply/Cancel/Back behavior.
+- [ ] Reuse the same editor and Appearance component for new and existing notes.
+- [ ] Preserve save/discard prompts, stale-draft protection, pinning, reminders, archive, delete, share/copy and persistence.
+- [ ] Validate keyboard/insets, narrow screens, large text, light/dark themes, and accessible labels.
+- **Exit gate:** relevant automated checks and CI pass on the exact final commit; record manual/device verification separately. Do not mark complete from compilation alone.
+
+### P1 — Whole-app UI/UX maturity audit
+- [ ] Audit Home, All notes, Categories, Reminders, More, Pinned, Archive, Settings, menus, dialogs, icons, empty/error states and navigation.
+- [ ] Standardize spacing, typography, shape, motion, selected/disabled states and primary-action hierarchy.
+- [ ] Verify accessible contrast across themes and note appearance variants; check touch targets, focus, screen readers, text scaling and system insets.
+- [ ] Remove duplicated controls/pickers and ensure every visible action works or is clearly identified as unavailable/deferred.
+- **Exit gate:** shared patterns are reused consistently and a screen-by-screen audit records pass, issue, or not-tested status.
+
+### P2 — Backend and new features on the mature UI
+- Start feature expansion only after the relevant UI components and interaction contracts are stable.
+- Reuse existing note models, storage boundary, navigation, design tokens, and components; do not introduce parallel UI or persistence for the same concept.
+- Each feature must document its owner/state, failure/empty states, accessibility, migration needs and tests.
+
+### Required rule
+Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit → reference → acceptance criteria → reuse-first implementation → tests → responsive/accessibility review → worklog update. P0 is the immediate priority; later feature work must not bypass it.
