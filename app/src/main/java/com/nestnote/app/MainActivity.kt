@@ -348,6 +348,31 @@ private fun NestNoteApp(store: NoteStore) {
                         )
                     )
                 }
+                // Keep common category filters one tap away on the dashboard.
+                if (selectedView == "Home" || selectedView == "All notes" || categories.contains(selectedView)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(start = 18.dp, end = 18.dp, bottom = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = selectedView == "Home" || selectedView == "All notes",
+                            onClick = { selectedView = "Home" },
+                            label = { Text("All notes") },
+                            leadingIcon = if (selectedView == "Home" || selectedView == "All notes") {
+                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            } else null
+                        )
+                        categories.forEach { category ->
+                            FilterChip(
+                                selected = selectedView == category,
+                                onClick = { selectedView = category },
+                                label = { Text(category) }
+                            )
+                        }
+                    }
+                }
                 if (selectedView == "Settings") {
                     SettingsScreen(
                         themeMode = themeMode,
