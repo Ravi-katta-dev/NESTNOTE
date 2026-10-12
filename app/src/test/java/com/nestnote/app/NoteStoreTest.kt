@@ -113,6 +113,20 @@ class NoteStoreTest {
     }
 
     @Test
+    fun versionedBackupRoundTripsAndLegacyArrayRemainsImportable() {
+        val notes = listOf(NestNote(id = 45, title = "Backup", body = "Version one"))
+        val versioned = NoteStore.encodeBackup(notes)
+        assertEquals(notes, NoteStore.decodeBackup(versioned))
+        assertEquals(notes, NoteStore.decodeBackup(NoteStore.encode(notes)))
+    }
+
+    @Test
+    fun backupRejectsUnknownSchemaVersion() {
+        val unknown = """{"schemaVersion":99,"notes":[]}"""
+        assertEquals(null, NoteStore.decodeBackup(unknown))
+    }
+
+    @Test
     fun decodeRejectsDuplicateIdsInImportedBackup() {
         val raw = """[{"id":7,"title":"One","body":"A"},{"id":7,"title":"Two","body":"B"}]"""
         assertEquals(null, NoteStore.decode(raw, requireFields = true))
