@@ -1156,6 +1156,40 @@ private fun NoteEditorContent(
                     colors = fieldColors,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
+                val checklistItems = NoteText.checklistItems(bodyValue.text)
+                if (checklistItems.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = accent.copy(alpha = 0.07f),
+                        border = BorderStroke(1.dp, accent.copy(alpha = 0.18f))
+                    ) {
+                        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                            Text("Checklist", style = MaterialTheme.typography.titleSmall, color = ink)
+                            checklistItems.forEach { item ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = item.checked,
+                                        onCheckedChange = { checked ->
+                                            bodyValue = bodyValue.copy(text = NoteText.setChecklistItemChecked(bodyValue.text, item.lineIndex, checked))
+                                        }
+                                    )
+                                    Text(
+                                        item.text.ifBlank { "(empty item)" },
+                                        modifier = Modifier.weight(1f).clickable {
+                                            bodyValue = bodyValue.copy(text = NoteText.setChecklistItemChecked(bodyValue.text, item.lineIndex, !item.checked))
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (item.checked) muted else ink
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 OutlinedTextField(
                     value = bodyValue,
                     onValueChange = { onBodyChange(it) },
