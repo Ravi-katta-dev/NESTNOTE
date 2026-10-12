@@ -175,7 +175,7 @@ class NestNoteE2ETest {
         composeRule.onNodeWithContentDescription("Choose note appearance").performClick()
         composeRule.onNodeWithTag("note_color_2").performClick()
         composeRule.onNodeWithTag("note_background_1").performClick()
-        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithTag("appearance_cancel").performClick()
         composeRule.onNodeWithText("Title").performTextInput("Cancelled appearance")
         composeRule.onNodeWithText("Note").performTextInput("Appearance should stay default")
         composeRule.onNodeWithText("Save note").performClick()
