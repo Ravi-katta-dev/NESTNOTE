@@ -21,14 +21,6 @@ data class NestNote(
 data class MergeResult(val notes: List<NestNote>, val added: Int, val updated: Int)
 
 class NoteStore(context: Context) {
-    companion object {
-        const val MAX_BACKUP_BYTES = 10 * 1024 * 1024
-        const val MAX_NOTES = 10_000
-        const val MAX_TITLE_LENGTH = 10_000
-        const val MAX_BODY_LENGTH = 1_000_000
-        const val MAX_CATEGORY_LENGTH = 256
-        const val MAX_REMINDER_LENGTH = 512
-    }
     private val prefs = context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
 
     fun load(): List<NestNote> {
@@ -43,6 +35,13 @@ class NoteStore(context: Context) {
     }
 
     companion object {
+        const val MAX_BACKUP_BYTES = 10 * 1024 * 1024
+        const val MAX_NOTES = 10_000
+        const val MAX_TITLE_LENGTH = 10_000
+        const val MAX_BODY_LENGTH = 1_000_000
+        const val MAX_CATEGORY_LENGTH = 256
+        const val MAX_REMINDER_LENGTH = 512
+
         /** Serializes notes to the same JSON array used for local storage and backups. */
         fun encode(notes: List<NestNote>): String {
             val array = JSONArray()
