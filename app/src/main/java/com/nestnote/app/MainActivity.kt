@@ -64,6 +64,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -906,16 +908,26 @@ private fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorStyl
             }
             Text(note.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
             if (showPreview && note.body.isNotBlank()) {
-            Text(note.body, style = MaterialTheme.typography.bodyMedium, color = cardSecondary, maxLines = if (compact) 2 else 5, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 7.dp).weight(1f, fill = false))
+                Text(
+                    note.body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = cardSecondary,
+                    maxLines = if (compact) 2 else 5,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 7.dp).weight(1f, fill = false)
+                )
+            }
+            // Progress remains visible even when note previews are disabled.
             val (checklistTotal, checklistDone) = NoteText.checklistProgress(note.body)
             if (checklistTotal > 0) {
                 Text(
                     "Checklist · $checklistDone/$checklistTotal complete",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = cardAccent,
-                    modifier = Modifier.padding(top = 6.dp)
+                    modifier = Modifier.padding(top = 6.dp).semantics {
+                        contentDescription = "Checklist progress: $checklistDone of $checklistTotal items complete"
+                    }
                 )
-            }
             }
             if (showTimestamp) {
             Spacer(Modifier.height(if (compact) 6.dp else 14.dp))
