@@ -2,6 +2,34 @@
 
 Use this checklist for each candidate release. A successful build is necessary, but it is not by itself evidence that the app is ready to ship. Record the commit, Android version/device, test result, and any accepted risks in [WORKLOG.md](WORKLOG.md).
 
+## Phase 6 implementation order
+
+Track implementation separately from release sign-off. The intended order is **P0 → P1 → P2**; check an item only after the change and its relevant tests have passed.
+
+### P0 — Editing, saving, and recovery
+- [ ] Show clear Saving / Saved / Save failed status for edits and preserve recoverable drafts on failure.
+- [ ] Protect editor drafts across Back, rotation, activity recreation, and interrupted editing.
+- [ ] Prevent stale drafts from overwriting a newer version of a note; test rapid and repeated saves.
+- [ ] Reject malformed, oversized, duplicate-ID, and invalid backup records before any mutation.
+- [ ] Use a versioned backup schema with legacy migration/import support.
+- [ ] Preview restore additions/updates and apply the validated restore atomically.
+- [ ] Never silently treat unreadable local storage as a fresh installation; preserve original bytes and provide recovery.
+- [ ] Verify regression tests and Android CI on the exact implementation commit.
+
+### P1 — Writing experience, accessibility, and organization
+- [ ] Make checklist items interactive in the note body and preserve cursor/selection during list formatting.
+- [ ] Validate keyboard insets, focus, scrolling, and editor lifecycle on supported devices.
+- [ ] Audit foreground/background contrast for all note palettes in light and dark themes.
+- [ ] Test appearance-picker selected states, font scaling, display scaling, narrow screens, TalkBack labels, and touch targets.
+- [ ] Verify search combines predictably with category/archive filters and sorting; add bulk actions only after existing flows are stable.
+- [ ] Reconcile ROADMAP.md and WORKLOG.md, preserving historical records but correcting the current-state summary.
+
+### P2 — Incremental architecture
+- [ ] Extract persistence behind a repository interface with focused tests.
+- [ ] Move dashboard/editor state into lifecycle-aware ViewModels without a full rewrite.
+- [ ] Evaluate Room only when query/data requirements justify migration; document migration and rollback before changing storage.
+- [ ] Keep storage migration backward-compatible and prove it with backup/upgrade tests.
+
 ## 1. Automated checks
 
 - [ ] Android CI passes on the exact candidate commit.
