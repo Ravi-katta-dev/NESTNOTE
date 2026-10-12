@@ -9,12 +9,12 @@ Track implementation separately from release sign-off. The intended order is **P
 ### P0 — Editing, saving, and recovery
 - [ ] Show clear Saving / Saved / Save failed status for edits and preserve recoverable drafts on failure.
 - [ ] Protect editor drafts across Back, rotation, activity recreation, and interrupted editing.
-- [ ] Prevent stale drafts from overwriting a newer version of a note; test rapid and repeated saves.
+- [x] Reject stale editor drafts when the saved note version has changed (version-guard unit test and CI pass); rapid/repeated-save and full lifecycle testing remain open.
 - [x] Reject malformed, oversized, duplicate-ID, and invalid backup records before any mutation (unit-tested; CI passed on 2026-10-12).
 - [x] Use a versioned backup schema with legacy migration/import support (schema-version and legacy-array tests pass CI).
 - [x] Preview restore additions/updates and apply the validated restore only after full validation (merge and restore-preview implementation; unit tests pass CI).
 - [x] Never silently treat unreadable local storage as a fresh installation; preserve original bytes and provide recovery (regression test passes CI).
-- [ ] Verify regression tests and Android CI on the exact implementation commit.
+- [x] Verify regression tests and Android CI on the exact implementation commit `48fd9d36b3ca4a559615bf74d68a149eaeede91c` (run [#38228131828](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38228131828), passed 2026-10-12).
 
 ### P1 — Writing experience, accessibility, and organization
 - [x] Make checklist items interactive in the note body and preserve cursor/selection during list formatting (JVM tests and CI pass; device interaction remains manual).
@@ -22,7 +22,7 @@ Track implementation separately from release sign-off. The intended order is **P
 - [ ] Audit foreground/background contrast for all note palettes in light and dark themes.
 - [ ] Test appearance-picker selected states, font scaling, display scaling, narrow screens, TalkBack labels, and touch targets.
 - [ ] Verify search combines predictably with category/archive filters and sorting; add bulk actions only after existing flows are stable.
-- [ ] Reconcile ROADMAP.md and WORKLOG.md, preserving historical records but correcting the current-state summary.
+- [x] Reconcile current Phase 6 status in ROADMAP.md and WORKLOG.md; historical run notes are retained.
 
 ### P2 — Incremental architecture
 - [ ] Extract persistence behind a repository interface with focused tests.
@@ -32,11 +32,11 @@ Track implementation separately from release sign-off. The intended order is **P
 
 ## 1. Automated checks
 
-- [ ] Android CI passes on the exact candidate commit.
-- [ ] Unit tests pass.
-- [ ] Debug APK builds successfully.
+- [x] Android CI passes on the exact candidate commit `48fd9d36b3ca4a559615bf74d68a149eaeede91c` (run #38228131828).
+- [x] Unit tests pass (run #38228131828).
+- [x] Debug APK builds successfully (API 36, run #38228131828).
 - [ ] Release APK builds with the configured R8/resource shrinking settings.
-- [ ] Instrumentation tests compile; if run on an emulator/device, record the actual result separately.
+- [x] Instrumentation tests compile (run #38228131828); execution on a device/emulator remains unverified.
 - [ ] No new unexplained warnings, dependency vulnerabilities, or manifest permissions are introduced.
 
 ## 2. Core note-taking regression
