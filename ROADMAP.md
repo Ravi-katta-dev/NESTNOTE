@@ -471,6 +471,6 @@ Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit â†’ reference â†
 
 - [x] Remove the parallel reduced-feature Quick Dialog form and reuse `NoteEditorContent` for Quick Dialog create/edit.
 - [x] Preserve Quick Dialog as a user-selectable bounded dialog layout; reuse the same appearance, category, pin/reminder, formatting, sharing/copying, delete, save and discard interactions.
-- [ ] Add explicit appearance Apply/Cancel draft semantics and verify dismissal does not accidentally commit a preview.
+- [x] Add explicit appearance Apply/Cancel draft semantics; Cancel, close, outside tap, and system Back restore the panel-opening appearance draft, while Apply keeps selections in the editor draft.
 - [ ] Validate compact-dialog keyboard/insets and scroll reachability at narrow sizes and large font settings.
 - [ ] Confirm CI passes for the latest exact branch head and update evidence.
