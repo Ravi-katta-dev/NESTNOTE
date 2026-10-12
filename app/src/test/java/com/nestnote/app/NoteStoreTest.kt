@@ -143,11 +143,21 @@ class NoteStoreTest {
     }
 
     @Test
-    fun malformedStoredJsonFallsBackToStarterNotes() {
-        context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
-            .edit().putString("notes", "{not valid json").commit()
-        val notes = store.load()
-        assertFalse(notes.isEmpty())
-        assertTrue(notes.any { it.title == "Project Plan" })
+    fun malformedStoredJsonRequiresRecoveryAndIsNotReplacedWithStarterNotes() {
+        val prefs = context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
+        prefs.edit().putString("notes", "{not valid json").commit()
+
+        val result = store.loadSafely()
+
+        assertTrue(result.recoveryRequired)
+        assertTrue(result.notes.isEmpty())
+        assertEquals("{not valid json", prefs.getString("notes", null))
+    }
+
+    @Test
+    fun missingStoredDataIsTreatedAsFreshInstallNotCorruption() {
+        val result = store.loadSafely()
+        assertFalse(result.recoveryRequired)
+        assertTrue(result.notes.any { it.title == "Project Plan" })
     }
 }
