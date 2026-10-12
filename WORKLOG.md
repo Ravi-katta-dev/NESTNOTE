@@ -506,3 +506,12 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Updated README and DEVELOPMENT.md to distinguish compilation from actual device execution and to document `connectedDebugAndroidTest` as an optional local command when a local emulator/device is available.
 - The previous emulator-run workflow entry above is retained as history; it describes the temporary addition and is superseded by this cost adjustment. No emulator execution is claimed. PR #10 remains open and unmerged.
 - Validation: the next workflow run should verify the reduced CI workflow on the updated branch head.
+
+
+### Required CI after hosted-emulator removal — 2026-10-13
+
+- **Workflow run:** https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38315174209
+- **Validated commit:** `d9d134eb72ab2bfcd5125dad69b7f3cd6c5023b2` (the workflow commit on the latest branch head when run `38315174209` started).
+- **Result:** success. The `Unit tests, API 36 debug build and release compilation` job completed successfully, including unit tests, debug APK build, minified release build, and instrumentation-test compilation.
+- **Cost adjustment:** hosted emulator job is removed. No emulator execution is claimed; device-level visual, keyboard/insets, TalkBack, large-font, and instrumentation execution remain unverified until run locally or on an available device.
+- **Follow-up:** roadmap now records CI evidence; PR #10 remains open and unmerged. Documentation-only evidence updates are on the branch after the validated workflow head and will trigger a fresh CI run.
