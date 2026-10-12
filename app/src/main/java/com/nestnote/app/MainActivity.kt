@@ -538,7 +538,7 @@ private fun NestNoteApp(store: NoteStore) {
             val dismissEditor = { if (editorHasUnsavedChanges) confirmSystemDiscard = true else closeEditor() }
             val saveNote: (NestNote) -> Unit = { draft ->
                 val existing = editorNote
-                val isStale = existing != null && draft.updated != existing.updated
+                val isStale = existing != null && !NoteStore.isSameNoteVersion(draft.updated, existing.updated)
                 if (isStale) {
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar("This note changed elsewhere. Reopen it before saving to avoid overwriting newer content.")
