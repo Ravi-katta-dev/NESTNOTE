@@ -1659,7 +1659,7 @@ private fun AppearanceSidePanel(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+            OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).testTag("appearance_cancel")) {
                 Text("Cancel")
             }
             Button(onClick = onApply, modifier = Modifier.weight(1f)) {
