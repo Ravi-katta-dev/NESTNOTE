@@ -169,9 +169,14 @@ private fun NestNoteApp(store: NoteStore) {
     fun savePreference(key: String, value: String) {
         preferences.edit().putString(key, value).apply()
     }
-    fun persist(next: List<NestNote>) {
-        notes = next
-        store.save(next)
+    fun persist(next: List<NestNote>): Boolean {
+        val saved = store.save(next)
+        if (saved) {
+            notes = next
+        } else {
+            coroutineScope.launch { snackbarHostState.showSnackbar("Save failed. Your previous notes are still available.") }
+        }
+        return saved
     }
     fun deleteNote(note: NestNote, closeEditor: Boolean = false) {
         persist(notes.filterNot { it.id == note.id })
@@ -486,9 +491,10 @@ private fun NestNoteApp(store: NoteStore) {
             val saveNote: (NestNote) -> Unit = { updated ->
                 val existing = editorNote
                 val next = if (existing == null) notes + updated else notes.map { if (it.id == existing.id) updated.copy(id = existing.id) else it }
-                persist(next)
-                closeEditor()
-                coroutineScope.launch { snackbarHostState.showSnackbar("Note saved") }
+                if (persist(next)) {
+                    closeEditor()
+                    coroutineScope.launch { snackbarHostState.showSnackbar("Note saved") }
+                }
             }
             val editorDeleteAction: (() -> Unit)? = if (editorNote != null) ({
                 editorNote?.let { deleteNote(it, closeEditor = true) }
