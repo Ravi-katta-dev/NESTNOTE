@@ -313,7 +313,7 @@ private fun NestNoteApp(store: NoteStore) {
                 )
             },
             floatingActionButton = {
-                if (selectedView != "Settings" && selectedView != "Categories") {
+                if (selectedView !in listOf("Settings", "Categories", "More")) {
                     FloatingActionButton(
                         onClick = { editorNoteId = null; editorVisible = true },
                         shape = CircleShape,
@@ -326,9 +326,9 @@ private fun NestNoteApp(store: NoteStore) {
             },
             bottomBar = {
                 NavigationBar {
-                    listOf("Home", "All notes", "Categories", "Reminders", "Archived", "Settings").forEach { item ->
+                    listOf("Home", "All notes", "Categories", "Reminders", "More", "Settings").forEach { item ->
                         NavigationBarItem(
-                            selected = selectedView == item || (item == "All notes" && selectedView !in listOf("Home", "Categories", "Reminders", "Archived", "Settings") && categories.contains(selectedView)),
+                            selected = selectedView == item || (item == "All notes" && selectedView !in listOf("Home", "Categories", "Reminders", "More", "Settings") && categories.contains(selectedView)),
                             onClick = { selectedView = item },
                             icon = {
                                 Icon(when (item) {
@@ -336,7 +336,7 @@ private fun NestNoteApp(store: NoteStore) {
                                     "Settings" -> Icons.Default.Settings
                                     "Categories" -> Icons.Default.GridView
                                     "All notes" -> Icons.Default.List
-                                    "Archived" -> Icons.Default.Archive
+                                    "More" -> Icons.Default.MoreVert
                                     "Reminders" -> Icons.Default.NotificationsNone
                                     else -> Icons.Default.Check
                                 }, contentDescription = item)
@@ -389,7 +389,54 @@ private fun NestNoteApp(store: NoteStore) {
                         }
                     }
                 }
-                if (selectedView == "Settings") {
+                if (selectedView == "More") {
+                    Column(
+                        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Text("More", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Useful spaces for the features we add next.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurfaceVariant
+                        )
+                        Card(
+                            modifier = Modifier.fillMaxWidth().clickable { selectedView = "Archived" },
+                            border = BorderStroke(1.dp, colors.outlineVariant),
+                            colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerLow)
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(18.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = colors.secondaryContainer,
+                                    contentColor = colors.onSecondaryContainer
+                                ) {
+                                    Icon(Icons.Default.Archive, contentDescription = null, modifier = Modifier.padding(12.dp).size(24.dp))
+                                }
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    Text("Archived notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        "${notes.count { it.archived }} notes kept out of your main lists",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = colors.onSurfaceVariant
+                                    )
+                                }
+                                Icon(Icons.Default.ArrowBack, contentDescription = null, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                        HorizontalDivider(color = colors.outlineVariant)
+                        Text("Coming next", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "This space is ready for future tools and note-management features.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurfaceVariant
+                        )
+                    }
+                } else if (selectedView == "Settings") {
                     SettingsScreen(
                         themeMode = themeMode,
                         onThemeChange = { themeMode = it; savePreference(PREF_THEME, it.name) },
