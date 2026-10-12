@@ -56,11 +56,12 @@ Implemented a unified Material 3 editor with saveable title/body/category/color/
 **Review outcome:** owner approved Phase 4 after testing; PR #4 was squash-merged on 2026-10-12. Visual references are inspiration, not proof of pixel-perfect parity. Reminder delivery and rich-text formatting remain unimplemented. Device testing was performed by the owner; no additional post-fix device verification is claimed by the implementation agent.
 
 ## Phase 5 — Reliability and finishing touches
-**Status: In progress** — branch `feature/phase-5-settings-editor-ux` (not yet merged; awaiting CI and owner review).
+**Status: In progress** — branch `feature/phase-5-settings-editor-ux` (not yet merged; Android CI passed, awaiting owner review).
 - [x] Backup and restore: JSON backup to a user-chosen file and merge-restore (new ids added, newest copy wins, nothing deleted). Same JSON format as local storage.
 - [x] Settings redesign: segmented controls (theme, view, density, sort, text size), selectable cards (note card colors, editor mode), default-category chips, per-setting summaries, reset-to-defaults.
 - [x] Editor UX: checklist and bullet tools with Enter-to-continue lists, live word count and reading time (optional), editor text size setting, category chips, reminder presets (later today, tomorrow morning, next Monday) and clear-reminder, share/copy note, new notes open focused, edited/created info.
-- [ ] Verify the above with Android CI and on a device (not yet run).
+- [x] Verify automated checks with Android CI: [run #38196257185 — success](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38196257185). Unit tests, API 36 debug APK build, instrumentation-test compilation, and test-APK signing passed.
+- [ ] Manual emulator/device UI validation (not yet run; the emulator UI workflow is manual-only).
 - [ ] Accessibility and larger-font audit.
 - [ ] Keyboard and edge-to-edge behavior review.
 - [ ] Tests for editing, deletion, persistence, and preferences (unit tests added for list/reminder helpers and backup merge).
