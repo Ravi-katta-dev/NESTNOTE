@@ -1006,8 +1006,16 @@ private fun NoteEditorContent(
         bodyValue = if (continued != null) TextFieldValue(continued.first, TextRange(continued.second)) else next
     }
     fun applyLineEdit(transform: (String, Int) -> Pair<String, Int>) {
-        val (text, cursor) = transform(bodyValue.text, bodyValue.selection.start)
-        bodyValue = TextFieldValue(text, TextRange(cursor))
+        val oldValue = bodyValue
+        val (text, cursor) = transform(oldValue.text, oldValue.selection.start)
+        val (selectionStart, selectionEnd) = NoteText.selectionAfterLineEdit(
+            oldText = oldValue.text,
+            newText = text,
+            selectionStart = oldValue.selection.start,
+            selectionEnd = oldValue.selection.end,
+            newCursor = cursor
+        )
+        bodyValue = TextFieldValue(text, TextRange(selectionStart, selectionEnd))
     }
     fun shareNote() {
         val send = Intent(Intent.ACTION_SEND).apply {
