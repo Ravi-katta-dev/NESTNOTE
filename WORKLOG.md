@@ -437,3 +437,14 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - The latest previously checked Android CI run passed for `9aa3e32980e101f95400d29930c777a9d29aba7f`. This is baseline evidence only, not validation of the planned redesign.
 - No editor redesign is claimed complete by this documentation update. Implementation and visual/device QA remain outstanding.
 - Next action: implement the shared animated right-side panel and editor layout on `feature/phase-7-dashboard-ux`, preserve existing save/discard and persistence behavior, then run CI against the exact final commit.
+
+
+## 2026-10-12 — P0 Appearance panel implementation started
+- Replaced the editor's `AppearancePickerSheet` / `ModalBottomSheet` call with a reusable `AppearanceSidePanel` composable in `MainActivity.kt`.
+- Added a right-edge slide/fade transition, dimmed dismissible scrim, system Back dismissal, close control, live colour/background preview, selected-state borders/checkmarks, labelled swatches and wallpaper preview rows.
+- Panel is constrained to a phone-friendly overlay width with a wider-screen maximum; selections still update the editor draft and persist only through the existing Save note flow.
+- Added test tags for the panel, scrim, preview, close action, colour swatches and background choices to support UI verification.
+- Preserved the existing editor state, save path and unsaved-change handling; this is the first implementation increment, not completion of the full editor redesign.
+- Commit: `f9104271c2def154931fdc858439d04f4dbd3d11`.
+- Validation pending: Android CI must pass for this exact commit. Device/visual, keyboard/insets, reduced-motion, large-font and TalkBack checks have not yet been performed.
+- Next: inspect CI results, fix any compile/test failures, then continue editor hierarchy/toolbar polish and add/adjust automated coverage for panel interactions.
