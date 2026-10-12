@@ -19,13 +19,22 @@ data class NestNote(
 )
 
 data class MergeResult(val notes: List<NestNote>, val added: Int, val updated: Int)
+data class NoteLoadResult(val notes: List<NestNote>, val recoveryRequired: Boolean)
 
 class NoteStore(context: Context) {
     private val prefs = context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
 
-    fun load(): List<NestNote> {
-        val raw = prefs.getString("notes", null) ?: return sampleNotes()
-        return decode(raw) ?: sampleNotes()
+    fun load(): List<NestNote> = loadSafely().notes
+
+    /**
+     * Distinguishes a genuinely new install from unreadable stored data.
+     * On corruption, return no editable notes and leave the original bytes untouched.
+     */
+    fun loadSafely(): NoteLoadResult {
+        val raw = prefs.getString("notes", null) ?: return NoteLoadResult(sampleNotes(), false)
+        val decoded = decode(raw)
+        return if (decoded != null) NoteLoadResult(decoded, false)
+        else NoteLoadResult(emptyList(), true)
     }
 
     /** Returns false when Android reports that the synchronous preference commit failed. */
