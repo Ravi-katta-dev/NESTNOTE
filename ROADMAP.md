@@ -227,9 +227,9 @@ Phase 6 follows **P0 → P1 → P2**. Check items only after the latest relevant
 - [x] Reject malformed, oversized, duplicate-ID, invalid-ID, and invalid-timestamp backup records before modifying local notes (backup validation regression tests pass CI run #38226761119).
 - [x] Distinguish a fresh install from unreadable local storage; preserve corrupt bytes and offer a deliberate recovery route rather than silently loading starter notes (regression test passes CI run #38226761119).
 - [x] Export versioned backups and retain legacy array import compatibility; preview additions/updates and validate the complete restore before applying it (implementation and regression tests pass CI run #38226761119).
-- [ ] Preserve editor drafts and discard-warning state across activity recreation; reject stale drafts that would overwrite a newer note version (implementation and unit test added; latest CI pending).
+- [x] Preserve editor drafts and discard-warning state across activity recreation; reject stale drafts that would overwrite a newer note version (version-guard unit test and CI run #38228131828 passed).
 - [ ] Add/verify rapid-edit, repeated-save, interrupted-edit, malformed restore, and save-failure regression tests.
-- [ ] Run Android CI successfully on the current PR head and perform a focused emulator/device smoke test before declaring P0 complete.
+- [x] Run Android CI successfully on current PR head `48fd9d36b3ca4a559615bf74d68a149eaeede91c` (run #38228131828 passed). Focused emulator/device smoke test remains outstanding.
 
 ### P1 — Improve the everyday writing and organizing experience
 - [x] Make checklist items interactive in the note body and preserve cursor/selection during list formatting (implementation and JVM tests pass CI; device interaction still needs manual validation).
@@ -399,3 +399,10 @@ Before a public release intended for sensitive personal notes:
 
 **Overall assessment:** NESTNOTE has a promising local-first MVP foundation, but the reviewed data-at-rest and release-process controls should be strengthened before recommending it for sensitive personal information. Treat severity as a prioritization aid, verify each observation against current source, and do not mark a finding resolved until its acceptance criteria have been tested.
 
+
+
+### Phase 6 validation update — 2026-10-12
+
+- Android CI run [#38228131828](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38228131828) passed on commit `48fd9d36b3ca4a559615bf74d68a149eaeede91c`: unit tests, API 36 debug APK build, instrumentation-test compilation, temporary test signing, and artifact uploads.
+- The latest editor stale-version guard is CI-validated. Rapid/repeated-save scenarios and full device/emulator lifecycle/accessibility checks remain outstanding.
+- PR #7 is still open pending final documentation validation and owner-requested merge workflow. This CI signing is for test artifacts only, not production release signing.
