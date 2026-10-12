@@ -318,3 +318,10 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 - **Android CI:** [run #38196257185 — success](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38196257185) on implementation commit `37055c10c5064129517ddd2efd82e4fc0928a921`, and [follow-up run #38196444610 — success](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38196444610) on branch head `7e9134a295ae93c41bb7e8c7a6412ff7ca89a9e4`. Both runs passed unit tests, the API 36 debug APK build, Android instrumentation-test compilation, and test-APK signing. Instrumentation tests were compiled, not run on a device; no emulator or physical-device testing is claimed.
 - **Review status:** [PR #5](https://github.com/Ravi-katta-dev/NESTNOTE/pull/5) was opened as a draft and is ready to move to review after the final documentation commit's CI check. It targets `main`; no merge performed, awaiting owner review.
 - **Known limits:** reminders are still metadata only; checkboxes toggle via the toolbar rather than by tapping; import accepts only NESTNOTE JSON backups.
+
+
+### Phase 5 documentation reconciliation — 2026-10-12
+
+- Refreshed `README.md` to describe the shipped Phase 5 feature scope, backup/restore merge semantics, project structure, build/test commands, and explicit limitations.
+- Reconciled the Phase 5 status in `ROADMAP.md`: automated Android CI success is recorded separately from manual UI/accessibility/keyboard/edge-to-edge checks, which remain outstanding. Phase 5 is not marked complete.
+- The implementation PR remains [#5](https://github.com/Ravi-katta-dev/NESTNOTE/pull/5), targeting `main`. The owner has requested discovery, documentation updates, and merge. Device/emulator instrumentation execution is not claimed.
