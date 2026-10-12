@@ -232,7 +232,7 @@ Phase 6 follows **P0 → P1 → P2**. Check items only after the latest relevant
 - [ ] Run Android CI successfully on the current PR head and perform a focused emulator/device smoke test before declaring P0 complete.
 
 ### P1 — Improve the everyday writing and organizing experience
-- [ ] Make checklist items interactive in the note body and preserve cursor/selection during list formatting.
+- [x] Make checklist items interactive in the note body and preserve cursor/selection during list formatting (implementation and JVM tests pass CI; device interaction still needs manual validation).
 - [ ] Verify keyboard insets, scrolling, focus, and narrow-screen behavior.
 - [ ] Audit every note palette in light/dark themes for contrast; test appearance-picker selection states, font/display scaling, TalkBack labels, and touch targets.
 - [ ] Verify case-insensitive title/body search composes predictably with category/archive filters and sorting; add multi-select actions only after core flows remain stable.
