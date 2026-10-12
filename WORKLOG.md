@@ -456,3 +456,13 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Latest implementation commit: `49b04452219ad1ae8fa9a0799905308b2375a14e`.
 - Validation for the toolbar commit is pending. No device-level visual, keyboard, reduced-motion or TalkBack testing is claimed.
 - Remaining P0 work: inspect the quick-dialog editor path for duplicated editor UI, complete the create/edit interaction audit, and validate the appearance panel on actual narrow/wide layouts before calling the editor milestone complete.
+
+
+### P0 editor audit — shared Quick Dialog path (2026-10-13)
+
+- Audited the three configured editor modes and confirmed Quick Dialog used a separate `QuickNoteFields` implementation that omitted appearance, category editing, pin/reminder actions, checklist/bullet tools, sharing/copy, and the shared stale-draft/save behavior.
+- Replaced the reduced-feature Quick Dialog form with the existing `NoteEditorContent` inside a bounded, rounded dialog surface. Added a compact layout option for spacing/body-field sizing and removed the duplicate `QuickNoteFields` implementation.
+- This keeps the user-selected Quick Dialog mode while routing create/edit through the same editor state and note-save boundary as sheet/full-screen modes.
+- Commit: `f0a1aa2a420ebe8cefd1f482ed6cb9bfb4451fcb`.
+- Validation status: waiting for Android CI on the updated branch head. Source diff was reviewed; no emulator/device visual, keyboard/insets, TalkBack, or large-font test is claimed.
+- Follow-up audit: validate the compact dialog's available height with the IME visible, and implement explicit Appearance Apply/Cancel semantics so closing the panel can discard uncommitted appearance-only selections without discarding unrelated note edits.
