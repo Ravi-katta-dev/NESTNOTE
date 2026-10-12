@@ -266,7 +266,8 @@ private fun NestNoteApp(store: NoteStore) {
 
     val filteredNotes = notes.filter { note ->
         ((selectedView == "Archived" && note.archived) ||
-            (selectedView != "Archived" && !note.archived && (selectedView == "Home" || selectedView == "All notes" || note.category == selectedView ||
+            (selectedView != "Archived" && !note.archived && (selectedView == "Home" || selectedView == "All notes" ||
+            (selectedView == "Pinned" && note.pinned) || note.category == selectedView ||
             (selectedView == "Reminders" && note.reminder.isNotBlank())))) &&
             (search.isBlank() || (note.title + " " + note.body + " " + note.category).contains(search, true))
     }.let { visible ->
@@ -401,41 +402,52 @@ private fun NestNoteApp(store: NoteStore) {
                             style = MaterialTheme.typography.bodyMedium,
                             color = colors.onSurfaceVariant
                         )
-                        Card(
-                            modifier = Modifier.fillMaxWidth().clickable { selectedView = "Archived" },
-                            border = BorderStroke(1.dp, colors.outlineVariant),
-                            colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerLow)
-                        ) {
-                            Row(
-                                Modifier.fillMaxWidth().padding(18.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        listOf(
+                            Triple("Pinned notes", "${notes.count { it.pinned && !it.archived }} important notes at a glance", Icons.Default.PushPin),
+                            Triple("Archived notes", "${notes.count { it.archived }} notes kept out of your main lists", Icons.Default.Archive)
+                        ).forEach { (title, description, icon) ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth().clickable {
+                                    selectedView = if (title == "Pinned notes") "Pinned" else "Archived"
+                                },
+                                border = BorderStroke(1.dp, colors.outlineVariant),
+                                colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerLow)
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(14.dp),
-                                    color = colors.secondaryContainer,
-                                    contentColor = colors.onSecondaryContainer
+                                Row(
+                                    Modifier.fillMaxWidth().padding(18.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                                 ) {
-                                    Icon(Icons.Default.Archive, contentDescription = null, modifier = Modifier.padding(12.dp).size(24.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = colors.secondaryContainer,
+                                        contentColor = colors.onSecondaryContainer
+                                    ) {
+                                        Icon(icon, contentDescription = null, modifier = Modifier.padding(12.dp).size(24.dp))
+                                    }
+                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                        Text(description, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                                    }
+                                    Icon(Icons.Default.ChevronRight, contentDescription = null, modifier = Modifier.size(20.dp))
                                 }
-                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                    Text("Archived notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                    Text(
-                                        "${notes.count { it.archived }} notes kept out of your main lists",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = colors.onSurfaceVariant
-                                    )
-                                }
-                                Icon(Icons.Default.ChevronRight, contentDescription = null, modifier = Modifier.size(20.dp))
                             }
                         }
                         HorizontalDivider(color = colors.outlineVariant)
-                        Text("Coming next", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text("Backup & preferences", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "This space is ready for future tools and note-management features.",
+                            "Manage your appearance, editor, and note backups in Settings.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = colors.onSurfaceVariant
                         )
+                        OutlinedButton(
+                            onClick = { selectedView = "Settings" },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Open Settings")
+                        }
                     }
                 } else if (selectedView == "Settings") {
                     SettingsScreen(
@@ -501,6 +513,7 @@ private fun NestNoteApp(store: NoteStore) {
                                 Text(
                                     when (selectedView) {
                                         "All notes" -> "All your notes"
+                                        "Pinned" -> "Pinned notes"
                                         "Reminders" -> "Things to remember"
                                         "Archived" -> "Archived notes"
                                         else -> selectedView
@@ -564,6 +577,7 @@ private fun NestNoteApp(store: NoteStore) {
                                     when {
                                         search.isNotBlank() -> Icons.Default.Search
                                         selectedView == "Archived" -> Icons.Default.Archive
+                                        selectedView == "Pinned" -> Icons.Default.PushPin
                                         selectedView == "Reminders" -> Icons.Default.NotificationsNone
                                         else -> Icons.Default.Add
                                     },
@@ -575,6 +589,7 @@ private fun NestNoteApp(store: NoteStore) {
                                 when {
                                     search.isNotBlank() -> "No matching notes"
                                     selectedView == "Archived" -> "Nothing archived yet"
+                                    selectedView == "Pinned" -> "No pinned notes yet"
                                     selectedView == "Reminders" -> "No reminders yet"
                                     categories.contains(selectedView) -> "No $selectedView notes yet"
                                     else -> "A fresh page awaits"
@@ -586,6 +601,7 @@ private fun NestNoteApp(store: NoteStore) {
                                 when {
                                     search.isNotBlank() -> "Try another search, or clear it to see all your notes."
                                     selectedView == "Archived" -> "Notes you archive will be kept here, away from your main lists."
+                                    selectedView == "Pinned" -> "Pin important notes to keep them easy to find."
                                     selectedView == "Reminders" -> "Add a reminder to a note and it will show up here."
                                     categories.contains(selectedView) -> "Notes assigned to this category will appear here."
                                     else -> "Create a note and let ideas flow."
