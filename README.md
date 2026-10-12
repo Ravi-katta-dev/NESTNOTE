@@ -30,6 +30,19 @@ NESTNOTE encrypts local note JSON with AES-GCM using a key held by Android Keyst
 
 Release builds use R8 minification and resource shrinking. CI does not sign test/debug APKs with disposable keys. Non-tag release builds are uploaded unsigned for inspection only. Production tags (v*.*.*) require the permanent Actions secrets SIGNING_KEY (base64-encoded keystore), KEY_ALIAS, KEY_STORE_PASSWORD, and KEY_PASSWORD; the workflow fails closed if any are missing and verifies the APK signature before publishing. Never distribute an unsigned or test artifact as a production update.
 
+## Download and install APK releases
+
+Open the [NESTNOTE GitHub Releases page](https://github.com/Ravi-katta-dev/NESTNOTE/releases) to download a published APK. Production APKs are published only from version tags such as `v1.0.0`; the release workflow builds the minified release variant, signs it with the permanent production keystore, verifies the APK signature, and attaches `NESTNOTE-vX.Y.Z.apk` to the GitHub Release.
+
+To publish a production release after approval:
+
+1. Confirm the candidate commit has passing Android CI and required device/recovery checks are signed off.
+2. Confirm repository Actions secrets `SIGNING_KEY` (base64-encoded keystore), `KEY_ALIAS`, `KEY_STORE_PASSWORD`, and `KEY_PASSWORD` are configured. Never put secret values in the repository or logs.
+3. Create and push a version tag, for example `git tag v1.0.0 && git push origin v1.0.0`.
+4. Wait for **Android Release** to finish successfully, then verify the APK signature and certificate fingerprint against the independently recorded production certificate before distributing the file.
+
+Unsigned APKs from non-tag/manual inspection builds are not production install packages. Do not use them for public distribution or upgrades.
+
 ## Project structure
 - `app/src/main/java/com/nestnote/app/MainActivity.kt`: UI and interactions
 - `app/src/main/java/com/nestnote/app/NoteStore.kt`: local persistence, note model, and backup encode/decode/merge
