@@ -50,6 +50,7 @@ class NoteStore(context: Context) {
         const val MAX_BODY_LENGTH = 1_000_000
         const val MAX_CATEGORY_LENGTH = 256
         const val MAX_REMINDER_LENGTH = 512
+        const val CURRENT_BACKUP_SCHEMA_VERSION = 1
 
         /** Serializes notes to the same JSON array used for local storage and backups. */
         fun encode(notes: List<NestNote>): String {
@@ -65,6 +66,29 @@ class NoteStore(context: Context) {
             }
             return array.toString()
         }
+
+        /** Encodes a versioned user-facing backup envelope. Local storage keeps the legacy array format. */
+        fun encodeBackup(notes: List<NestNote>): String {
+            require(isValidNoteCollection(notes)) { "invalid note records" }
+            return JSONObject()
+                .put("schemaVersion", CURRENT_BACKUP_SCHEMA_VERSION)
+                .put("notes", JSONArray(encode(notes)))
+                .toString()
+        }
+
+        /** Accepts versioned backups and legacy JSON-array backups for backward compatibility. */
+        fun decodeBackup(raw: String): List<NestNote>? = runCatching {
+            require(raw.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) { "backup is too large" }
+            if (raw.trimStart().startsWith("[")) {
+                return decode(raw, requireFields = true)
+            }
+            val envelope = JSONObject(raw)
+            require(envelope.optInt("schemaVersion", -1) == CURRENT_BACKUP_SCHEMA_VERSION) {
+                "unsupported backup schema"
+            }
+            val records = envelope.optJSONArray("notes") ?: error("missing notes")
+            decode(records.toString(), requireFields = true) ?: error("invalid backup records")
+        }.getOrNull()
 
         /**
          * Parses a JSON array of notes. Returns null if the text is not valid.
