@@ -1428,30 +1428,45 @@ private fun NoteEditorContent(
                 Spacer(Modifier.height(24.dp))
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
             ) {
-                IconButton(onClick = { applyLineEdit { text, cursor -> NoteText.cycleChecklist(text, cursor) } }) {
-                    Icon(Icons.Default.CheckBox, contentDescription = "Toggle checklist item", tint = Color(0xFF45434A))
-                }
-                IconButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleBullet(text, cursor) } }) {
-                    Icon(Icons.Default.FormatListBulleted, contentDescription = "Toggle bullet point", tint = Color(0xFF45434A))
-                }
-                Spacer(Modifier.weight(1f))
-                if (showCounts) {
-                    val words = NoteText.wordCount(body)
-                    val minutes = NoteText.readingMinutes(words)
-                    Text(
-                        buildString {
-                            append(if (words == 1) "1 word" else "$words words")
-                            append(" · ${body.length} characters")
-                            if (minutes > 0) append(" · $minutes min read")
-                        },
-                        modifier = Modifier.padding(end = 12.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = muted
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { applyLineEdit { text, cursor -> NoteText.cycleChecklist(text, cursor) } },
+                        modifier = Modifier.semantics { contentDescription = "Insert checklist item" }
+                    ) {
+                        Icon(Icons.Default.CheckBox, contentDescription = "Insert checklist item", tint = accent)
+                    }
+                    IconButton(
+                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleBullet(text, cursor) } },
+                        modifier = Modifier.semantics { contentDescription = "Insert bullet point" }
+                    ) {
+                        Icon(Icons.Default.FormatListBulleted, contentDescription = "Insert bullet point", tint = accent)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    if (showCounts) {
+                        val words = NoteText.wordCount(body)
+                        val minutes = NoteText.readingMinutes(words)
+                        Text(
+                            buildString {
+                                append(if (words == 1) "1 word" else "$words words")
+                                append(" · ${body.length} characters")
+                                if (minutes > 0) append(" · $minutes min read")
+                            },
+                            modifier = Modifier.padding(end = 10.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = muted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
             HorizontalDivider(color = Color(0x1F6F6878))
