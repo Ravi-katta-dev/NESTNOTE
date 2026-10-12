@@ -127,6 +127,12 @@ class NoteStoreTest {
     }
 
     @Test
+    fun versionGuardAllowsUnchangedNoteAndRejectsStaleDraft() {
+        assertTrue(NoteStore.isSameNoteVersion(100L, 100L))
+        assertFalse(NoteStore.isSameNoteVersion(100L, 101L))
+    }
+
+    @Test
     fun decodeRejectsDuplicateIdsInImportedBackup() {
         val raw = """[{"id":7,"title":"One","body":"A"},{"id":7,"title":"Two","body":"B"}]"""
         assertEquals(null, NoteStore.decode(raw, requireFields = true))
