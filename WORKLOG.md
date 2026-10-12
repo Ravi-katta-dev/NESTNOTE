@@ -369,3 +369,11 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 - Completed checklist rows now use strikethrough styling as well as muted text color, making completion state easier to scan.
 - CI passed for the interactive checkbox implementation before this visual follow-up; this latest styling change awaits CI.
 - Large system-font, narrow-screen, and TalkBack behavior remain manual validation items and are not claimed as tested.
+
+
+### Checklist accessibility and edge-case hardening — 2026-10-12
+
+- Latest confirmed CI run [#38225533514](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38225533514) passed for commit `29ff4626cb8069cbe6d4b32c52e555a01accc05f` (unit tests, API 36 debug build, instrumentation-test compilation, and temporary test signing).
+- Checklist checkboxes now expose the item text and its completion state through Compose accessibility semantics, instead of announcing only a bare checkbox.
+- Added JVM regression coverage for idempotent checkbox state updates, trailing-newline preservation, and ignoring non-checklist lines.
+- The accessibility and test additions after the confirmed run are awaiting CI. TalkBack, large-font, and narrow-device checks still require a real emulator/device run.
