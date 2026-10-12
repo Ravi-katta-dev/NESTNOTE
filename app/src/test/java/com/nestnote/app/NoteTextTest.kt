@@ -82,6 +82,22 @@ class NoteTextTest {
     }
 
     @Test
+    fun interactiveChecklistUpdatesOnlySelectedItemAndPreservesIndentation() {
+        val body = "plain\n  ☐ first\n☑ second"
+        assertEquals(
+            listOf(
+                NoteText.ChecklistItem(1, "first", false),
+                NoteText.ChecklistItem(2, "second", true)
+            ),
+            NoteText.checklistItems(body)
+        )
+        assertEquals("plain\n  ☑ first\n☑ second", NoteText.setChecklistItemChecked(body, 1, true))
+        assertEquals("plain\n  ☐ first\n☐ second", NoteText.setChecklistItemChecked(body, 2, false))
+        assertEquals(body, NoteText.setChecklistItemChecked(body, 0, true))
+        assertEquals(body, NoteText.setChecklistItemChecked(body, 99, true))
+    }
+
+    @Test
     fun checklistProgressCountsOnlyChecklistLines() {
         assertEquals(0 to 0, NoteText.checklistProgress("plain\n• bullet"))
         assertEquals(3 to 1, NoteText.checklistProgress("☑ done\n☐ next\n  ☐ indented\nplain"))
