@@ -70,8 +70,8 @@ class NoteTextTest {
 
     @Test
     fun checklistProgressCountsOnlyChecklistLines() {
-        assertEquals(0 to 0, NoteText.checklistProgress("plain\\n• bullet"))
-        assertEquals(3 to 1, NoteText.checklistProgress("☑ done\\n☐ next\\n  ☐ indented\\nplain"))
+        assertEquals(0 to 0, NoteText.checklistProgress("plain\n• bullet"))
+        assertEquals(3 to 1, NoteText.checklistProgress("☑ done\n☐ next\n  ☐ indented\nplain"))
     }
 
     @Test
