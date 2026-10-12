@@ -98,6 +98,16 @@ class NoteTextTest {
     }
 
     @Test
+    fun interactiveChecklistIsIdempotentAndPreservesTrailingNewline() {
+        val body = "☐ first\nplain\n"
+        val checked = NoteText.setChecklistItemChecked(body, 0, true)
+        assertEquals("☑ first\nplain\n", checked)
+        assertEquals(checked, NoteText.setChecklistItemChecked(checked, 0, true))
+        assertEquals(body, NoteText.setChecklistItemChecked(checked, 0, false))
+        assertEquals(emptyList<NoteText.ChecklistItem>(), NoteText.checklistItems("\nplain\n• bullet"))
+    }
+
+    @Test
     fun checklistProgressCountsOnlyChecklistLines() {
         assertEquals(0 to 0, NoteText.checklistProgress("plain\n• bullet"))
         assertEquals(3 to 1, NoteText.checklistProgress("☑ done\n☐ next\n  ☐ indented\nplain"))
