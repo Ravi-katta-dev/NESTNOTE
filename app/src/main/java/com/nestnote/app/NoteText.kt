@@ -108,6 +108,36 @@ object NoteText {
         return mappedStart to mappedEnd
     }
 
+    data class ChecklistItem(val lineIndex: Int, val text: String, val checked: Boolean)
+
+    /** Returns checklist items with their original line indices for interactive views. */
+    fun checklistItems(text: String): List<ChecklistItem> = text.lineSequence().mapIndexedNotNull { index, line ->
+        val trimmed = line.trimStart()
+        when {
+            trimmed.startsWith(UNCHECKED) -> ChecklistItem(index, trimmed.removePrefix(UNCHECKED), false)
+            trimmed.startsWith(CHECKED) -> ChecklistItem(index, trimmed.removePrefix(CHECKED), true)
+            else -> null
+        }
+    }.toList()
+
+    /** Updates one checklist item's state without changing other lines or indentation. */
+    fun setChecklistItemChecked(text: String, lineIndex: Int, checked: Boolean): String {
+        val lines = text.split("\n").toMutableList()
+        if (lineIndex !in lines.indices) return text
+        val line = lines[lineIndex]
+        val indentation = line.takeWhile { it.isWhitespace() }
+        val content = line.drop(indentation.length)
+        val prefix = when {
+            content.startsWith(UNCHECKED) -> UNCHECKED
+            content.startsWith(CHECKED) -> CHECKED
+            else -> return text
+        }
+        if ((prefix == CHECKED) == checked) return text
+        val replacement = if (checked) CHECKED else UNCHECKED
+        lines[lineIndex] = indentation + replacement + content.removePrefix(prefix)
+        return lines.joinToString("\n")
+    }
+
     /** Returns (total checklist items, completed items) for the note body. */
     fun checklistProgress(text: String): Pair<Int, Int> {
         val items = text.lineSequence().map(String::trimStart)
