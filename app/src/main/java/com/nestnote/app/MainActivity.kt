@@ -71,6 +71,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -1182,7 +1183,9 @@ private fun NoteEditorContent(
                                         modifier = Modifier.weight(1f).clickable {
                                             bodyValue = bodyValue.copy(text = NoteText.setChecklistItemChecked(bodyValue.text, item.lineIndex, !item.checked))
                                         },
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None
+                                        ),
                                         color = if (item.checked) muted else ink
                                     )
                                 }
