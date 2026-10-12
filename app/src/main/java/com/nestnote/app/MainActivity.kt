@@ -163,7 +163,7 @@ private fun NestNoteApp(store: NoteStore) {
     var searchVisible by remember { mutableStateOf(false) }
     var editorNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editorVisible by rememberSaveable { mutableStateOf(false) }
-    var editorHasUnsavedChanges by remember { mutableStateOf(false) }
+    var editorHasUnsavedChanges by rememberSaveable { mutableStateOf(false) }
     var confirmSystemDiscard by remember { mutableStateOf(false) }
     // Resolve the selected note from persisted notes after recreation.
     val editorNote = notes.firstOrNull { it.id == editorNoteId }
@@ -536,12 +536,22 @@ private fun NestNoteApp(store: NoteStore) {
         if (editorVisible) {
             val closeEditor = { editorHasUnsavedChanges = false; confirmSystemDiscard = false; editorVisible = false }
             val dismissEditor = { if (editorHasUnsavedChanges) confirmSystemDiscard = true else closeEditor() }
-            val saveNote: (NestNote) -> Unit = { updated ->
+            val saveNote: (NestNote) -> Unit = { draft ->
                 val existing = editorNote
-                val next = if (existing == null) notes + updated else notes.map { if (it.id == existing.id) updated.copy(id = existing.id) else it }
-                if (persist(next)) {
-                    closeEditor()
-                    coroutineScope.launch { snackbarHostState.showSnackbar("Note saved") }
+                val isStale = existing != null && draft.updated != existing.updated
+                if (isStale) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("This note changed elsewhere. Reopen it before saving to avoid overwriting newer content.")
+                    }
+                } else {
+                    val updated = draft.copy(updated = System.currentTimeMillis())
+                    val next = if (existing == null) notes + updated else notes.map {
+                        if (it.id == existing.id) updated.copy(id = existing.id) else it
+                    }
+                    if (persist(next)) {
+                        closeEditor()
+                        coroutineScope.launch { snackbarHostState.showSnackbar("Note saved") }
+                    }
                 }
             }
             val editorDeleteAction: (() -> Unit)? = if (editorNote != null) ({
@@ -964,7 +974,8 @@ private fun NoteEditorContent(
             color = colorIndex,
             pinned = if (archived) false else pinned,
             reminder = reminder,
-            updated = now,
+            // Carry the version opened by this editor; the parent checks it before writing.
+            updated = original?.updated ?: 0L,
             created = original?.created ?: now,
             archived = archived,
             background = backgroundIndex
@@ -1466,7 +1477,7 @@ private fun QuickNoteFields(
                             id = original?.id ?: System.currentTimeMillis(), title = title.trim(), body = body.trim(),
                             category = original?.category ?: defaultCategory, color = original?.color ?: 0,
                             pinned = original?.pinned ?: false, reminder = original?.reminder.orEmpty(),
-                            updated = System.currentTimeMillis(), created = original?.created ?: System.currentTimeMillis(),
+                            updated = original?.updated ?: 0L, created = original?.created ?: System.currentTimeMillis(),
                             archived = original?.archived ?: false, background = original?.background ?: 0
                         )
                     )
