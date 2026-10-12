@@ -907,6 +907,15 @@ private fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorStyl
             Text(note.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
             if (showPreview && note.body.isNotBlank()) {
             Text(note.body, style = MaterialTheme.typography.bodyMedium, color = cardSecondary, maxLines = if (compact) 2 else 5, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 7.dp).weight(1f, fill = false))
+            val (checklistTotal, checklistDone) = NoteText.checklistProgress(note.body)
+            if (checklistTotal > 0) {
+                Text(
+                    "Checklist · $checklistDone/$checklistTotal complete",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = cardAccent,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
             }
             if (showTimestamp) {
             Spacer(Modifier.height(if (compact) 6.dp else 14.dp))
