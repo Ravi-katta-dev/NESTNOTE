@@ -8,13 +8,13 @@ Repository: [Ravi-katta-dev/NESTNOTE](https://github.com/Ravi-katta-dev/NESTNOTE
 This activity record is assembled from visible repository commits, pull requests, and GitHub Actions runs. Statuses reflect the latest checks observed when written; use the linked run for live status.
 
 ## Current snapshot
-- Native Android app using Kotlin, Jetpack Compose, and Material 3.
-- Target SDK Android 16 / API 36; minimum SDK 26.
-- `main` includes merged PRs #1, #2, and #3.
-- Phase 4 is in progress on `feature/phase-4-note-taking`, tracked by draft PR #4. **PR #4 is open and must not be merged without explicit approval.**
-- Existing note persistence uses SharedPreferences / NoteStore; Phase 2 preserves its format.
-- Emulator UI workflow is manual-only by project decision and is not a required CI gate.
-- No physical-device testing is claimed.
+- Native Android app using Kotlin, Jetpack Compose, and Material 3; target SDK API 36, minimum SDK 26.
+- `main` includes merged PRs #1–#5 as of 2026-10-12. Verify live PR status before relying on this snapshot.
+- PR #6, `security/privacy-hardening`, is intentionally on hold and remains unmerged pending owner approval and device/release validation.
+- PR #7, `feature/phase-6-release-checklist`, is open against `main` and now includes Phase 6 reliability work; it is not merged.
+- Phase 4 (PR #4) and Phase 5 (PR #5) were merged on 2026-10-12; older entries below describing them as open/in progress are historical snapshots, not current status.
+- Note persistence uses SharedPreferences / NoteStore. Phase 6 is incrementally hardening local-save behavior and backup/restore before larger architecture changes.
+- Emulator UI workflow is manual-only by project decision. Do not claim device testing unless it was actually run.
 
 ## Pull requests
 | PR | Title | Status | Scope |
@@ -332,3 +332,19 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 - Owner requested discovery, documentation reconciliation, and merge of PR [#5](https://github.com/Ravi-katta-dev/NESTNOTE/pull/5). The PR was squash-merged into `main`; merge commit: `ee046eaa67fe2b2be713ef96becabf0892f034fe`.
 - Final docs now include the README feature/limitations/build guide, roadmap status, and this worklog history. Phase 5 remains in progress until the manual UI, accessibility/larger-font, keyboard/edge-to-edge, and final regression checks are completed.
 - CI runs recorded before the final documentation-only commits passed. No fresh workflow run was returned for the final docs head. Instrumentation tests were compiled, not executed on a device.
+
+
+## Phase 6 — Reliability, Recovery & Accessibility (current work on PR #7)
+**Status: P0 implementation in progress; not yet CI-validated.** Branch: `feature/phase-6-release-checklist`; PR: [#7](https://github.com/Ravi-katta-dev/NESTNOTE/pull/7). No changes have been merged to `main`.
+
+- [x] Validate note collections for duplicate/non-positive IDs, invalid timestamps, field length limits, and maximum record count.
+- [x] Make local persistence report commit success/failure; keep the editor open when a note save fails.
+- [x] Distinguish unreadable local storage from a fresh install. Corrupt stored bytes are left untouched; normal note writes are blocked until recovery.
+- [x] Add versioned JSON backup envelopes (schema version 1) while retaining import compatibility for legacy JSON-array backups.
+- [x] Validate a complete backup and show an add/update preview before applying restore; restore merges without deleting notes absent from the backup.
+- [x] Add unit coverage for duplicate IDs, invalid/oversized data, corrupt local storage recovery, backup versioning, and legacy backup compatibility.
+- [ ] Run Android CI for the current PR #7 head and fix any failures before marking this increment validated.
+- [ ] Continue with editor lifecycle/stale-draft protection, interactive checklist items, accessibility and appearance checks, then repository/ViewModel boundaries.
+- [ ] Reconcile remaining historical work-log entries and update roadmap/checklist status after each verified milestone.
+
+**Validation honesty:** source changes and test cases have been committed, but no passing CI result has yet been observed for the current PR #7 head. No emulator or physical-device validation is claimed.
