@@ -56,3 +56,7 @@ CI is defined in .github/workflows/android-ci.yml. It runs unit tests, builds de
 Phases 1–6 and security/release hardening PRs #1–#7 are merged to main as of 2026-10-12. See ROADMAP.md for implementation priorities and WORKLOG.md for historical evidence.
 
 Still required before claiming production release readiness: real-device/emulator smoke testing, legacy-data migration and Keystore recovery validation, TalkBack and large-font/narrow-screen checks, keyboard/focus/insets checks, release signing certificate fingerprint verification, and installation/upgrade testing of the exact published APK. These checks are not claimed as complete by this guide.
+
+
+## Mandatory UI/UX design contract
+All UI changes must follow [UI_UX_RULES.md](UI_UX_RULES.md). The immediate P0 is note creation/editing and replacing the bottom appearance picker with an animated right-side Appearance panel. Keep the writing canvas dominant; overlay the panel on phones, provide clear colour/background previews and selection state, and preserve the existing save/discard protections. New and existing notes must reuse the same editor and appearance components. Do not expand backend/new features ahead of this P0 unless explicitly approved. Follow the audit → prototype/reference → acceptance criteria → reuse-first implementation → test → accessibility/responsive review → worklog sequence.
