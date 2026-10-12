@@ -729,21 +729,35 @@ private fun NestNoteApp(store: NoteStore) {
                         NoteEditorContent(editorNote, defaultNoteCategory = defaultNoteCategory, textSize = editorTextSize, showCounts = showEditorCounts, onSave = saveNote, onDismiss = closeEditor, onDelete = editorDeleteAction, onUnsavedChangesChange = { editorHasUnsavedChanges = it }, fullScreen = true, modifier = Modifier.fillMaxSize())
                     }
                 }
-                EditorMode.QUICK_DIALOG -> AlertDialog(
+                EditorMode.QUICK_DIALOG -> Dialog(
                     onDismissRequest = dismissEditor,
-                    title = { Text(if (editorNote == null) "Quick note" else "Edit note") },
-                    text = {
-                        QuickNoteFields(
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 520.dp)
+                            .heightIn(max = 760.dp)
+                            .padding(horizontal = 18.dp, vertical = 24.dp)
+                            .imePadding(),
+                        shape = RoundedCornerShape(28.dp),
+                        color = colors.surface,
+                        tonalElevation = 6.dp
+                    ) {
+                        NoteEditorContent(
                             original = editorNote,
-                            defaultCategory = defaultNoteCategory,
+                            defaultNoteCategory = defaultNoteCategory,
+                            textSize = editorTextSize,
+                            showCounts = showEditorCounts,
                             onSave = saveNote,
                             onDismiss = dismissEditor,
-                            onDelete = editorDeleteAction
+                            onDelete = editorDeleteAction,
+                            onUnsavedChangesChange = { editorHasUnsavedChanges = it },
+                            compactDialog = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    },
-                    confirmButton = {},
-                    dismissButton = {}
-                )
+                    }
+                }
             }
             if (confirmSystemDiscard) {
                 AlertDialog(
@@ -1114,6 +1128,7 @@ private fun NoteEditorContent(
     onDelete: (() -> Unit)?,
     onUnsavedChangesChange: (Boolean) -> Unit = {},
     fullScreen: Boolean = false,
+    compactDialog: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var title by rememberSaveable(original?.id) { mutableStateOf(original?.title.orEmpty()) }
@@ -1303,7 +1318,7 @@ private fun NoteEditorContent(
                     .padding(horizontal = 22.dp),
                 verticalArrangement = Arrangement.Top
             ) {
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(if (compactDialog) 8.dp else 18.dp))
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
@@ -1364,13 +1379,13 @@ private fun NoteEditorContent(
                     textStyle = MaterialTheme.typography.bodyLarge.copy(
                         fontSize = textSize.bodySp.sp, lineHeight = (textSize.bodySp * 1.45f).sp
                     ),
-                    minLines = if (fullScreen) 10 else 5,
+                    minLines = if (fullScreen) 10 else if (compactDialog) 3 else 5,
                     shape = RoundedCornerShape(0.dp),
                     colors = fieldColors,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(if (compactDialog) 6.dp else 12.dp))
                 Text("Category", style = MaterialTheme.typography.labelMedium, color = muted, modifier = Modifier.padding(horizontal = 12.dp))
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp),
@@ -1425,11 +1440,11 @@ private fun NoteEditorContent(
                         color = muted
                     )
                 }
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(if (compactDialog) 8.dp else 24.dp))
             }
 
             Surface(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactDialog) 8.dp else 14.dp, vertical = 6.dp),
                 shape = RoundedCornerShape(18.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
@@ -1471,7 +1486,7 @@ private fun NoteEditorContent(
             }
             HorizontalDivider(color = Color(0x1F6F6878))
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactDialog) 8.dp else 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -1705,37 +1720,3 @@ private fun NoteWallpaperArtwork(index: Int, modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-private fun QuickNoteFields(
-    original: NestNote?,
-    defaultCategory: String,
-    onSave: (NestNote) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: (() -> Unit)?
-) {
-    var title by remember(original?.id) { mutableStateOf(original?.title.orEmpty()) }
-    var body by remember(original?.id) { mutableStateOf(original?.body.orEmpty()) }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text("Title") }, singleLine = true)
-        OutlinedTextField(body, { body = it }, label = { Text("Note") }, minLines = 3)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (onDelete != null) TextButton(onClick = onDelete) { Text("Delete") }
-            Spacer(Modifier.weight(1f))
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-            Button(
-                onClick = {
-                    if (title.isNotBlank() && body.isNotBlank()) onSave(
-                        NestNote(
-                            id = original?.id ?: System.currentTimeMillis(), title = title.trim(), body = body.trim(),
-                            category = original?.category ?: defaultCategory, color = original?.color ?: 0,
-                            pinned = original?.pinned ?: false, reminder = original?.reminder.orEmpty(),
-                            updated = original?.updated ?: 0L, created = original?.created ?: System.currentTimeMillis(),
-                            archived = original?.archived ?: false, background = original?.background ?: 0
-                        )
-                    )
-                },
-                enabled = title.isNotBlank() && body.isNotBlank()
-            ) { Text("Save") }
-        }
-    }
-}
