@@ -562,10 +562,10 @@ private fun NestNoteApp(store: NoteStore) {
                             ) {
                                 Icon(
                                     when {
-                                        search.isNotBlank() -> Icons.Default.SearchOff
+                                        search.isNotBlank() -> Icons.Default.Search
                                         selectedView == "Archived" -> Icons.Default.Archive
                                         selectedView == "Reminders" -> Icons.Default.NotificationsNone
-                                        else -> Icons.Default.NoteAdd
+                                        else -> Icons.Default.Add
                                     },
                                     contentDescription = null,
                                     modifier = Modifier.padding(18.dp).size(30.dp)
