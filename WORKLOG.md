@@ -352,3 +352,11 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 
 
 **Latest Phase 6 update (2026-10-12):** Added stale-draft version checking for full-screen and quick-note editors. A draft carries the version timestamp it was opened from; the parent compares that value with the latest saved note before writing. A mismatch produces a recovery-oriented message and leaves the newer note untouched. The unsaved-change warning flag now survives activity recreation alongside the saveable editor draft. Unit coverage includes the version comparison helper. This change is not yet CI-validated.
+
+
+### Phase 6 accessibility increment — 2026-10-12
+
+- Android CI run [#142](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38212595857) passed on commit `59e33cc6dfff9694ac97c6c9575e6e5bfe871600`, validating the newline-fixture regression fix before the next change.
+- Checklist progress on note cards now remains visible when note-body previews are turned off, so disabling previews no longer hides a useful task-status summary.
+- The progress label uses body-small typography for better readability and exposes a screen-reader description with the completed and total item counts.
+- Validation for this accessibility increment is pending a fresh CI run. UI behavior at system-large font sizes and TalkBack still requires manual device/emulator verification; none is claimed here.
