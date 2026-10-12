@@ -278,3 +278,10 @@ Scope was intentionally narrowed to the note editor and its appearance picker; d
 - `a2485f5`: adjusted the editor/appearance-picker palette to use more distinguishable rose, peach, yellow, sage, teal, and blue swatches while keeping the warm neutral option. Matching note tints remain light enough for dark body text.
 - Increased the selected/unselected swatch border contrast and unified the selection indicator to a deeper purple; shifted the picker surface closer to a clean warm-white.
 - Validation: CI status for this palette-only commit is pending. No emulator/device visual test claimed.
+
+
+### Device screenshot contrast fix — 2026-10-12
+
+- User-provided device screenshot showed nearly invisible toolbar icons, yellow-on-cream body text/cursor, and a disabled Save button with insufficient contrast.
+- `fb88176`: explicitly set editor text to dark graphite, placeholders to readable mid-grey, cursor and action accents to deep purple, toolbar icons to graphite/purple, and Cancel/Save button colors including a readable disabled state. Increased colour-swatch saturation while keeping the note background tints soft.
+- Automated CI status is pending for this commit. Device screenshot should be rechecked after installing the build; no post-fix emulator/device verification is claimed.
