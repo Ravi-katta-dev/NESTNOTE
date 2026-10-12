@@ -80,14 +80,15 @@ class NoteStore(context: Context) {
         fun decodeBackup(raw: String): List<NestNote>? = runCatching {
             require(raw.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) { "backup is too large" }
             if (raw.trimStart().startsWith("[")) {
-                return decode(raw, requireFields = true)
+                decode(raw, requireFields = true)
+            } else {
+                val envelope = JSONObject(raw)
+                require(envelope.optInt("schemaVersion", -1) == CURRENT_BACKUP_SCHEMA_VERSION) {
+                    "unsupported backup schema"
+                }
+                val records = envelope.optJSONArray("notes") ?: error("missing notes")
+                decode(records.toString(), requireFields = true) ?: error("invalid backup records")
             }
-            val envelope = JSONObject(raw)
-            require(envelope.optInt("schemaVersion", -1) == CURRENT_BACKUP_SCHEMA_VERSION) {
-                "unsupported backup schema"
-            }
-            val records = envelope.optJSONArray("notes") ?: error("missing notes")
-            decode(records.toString(), requireFields = true) ?: error("invalid backup records")
         }.getOrNull()
 
         /**
