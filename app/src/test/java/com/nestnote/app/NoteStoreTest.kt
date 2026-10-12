@@ -208,4 +208,21 @@ class NoteStoreTest {
         assertFalse(result.recoveryRequired)
         assertTrue(result.notes.any { it.title == "Project Plan" })
     }
+
+    @Test
+    fun mergeKeepsExistingCopyWhenTimestampsTieAndPreservesExistingOrder() {
+        val first = NestNote(id = 10, title = "First", body = "Saved first", updated = 100)
+        val second = NestNote(id = 20, title = "Second", body = "Saved second", updated = 200)
+        val tiedImport = first.copy(title = "Conflicting equal-time copy", body = "Must not win", updated = 100)
+        val added = NestNote(id = 30, title = "Third", body = "Imported third", updated = 300)
+
+        val result = NoteStore.merge(listOf(first, second), listOf(added, tiedImport))
+
+        assertEquals(1, result.added)
+        assertEquals(0, result.updated)
+        assertEquals(listOf(10L, 20L, 30L), result.notes.map { it.id })
+        assertEquals("First", result.notes[0].title)
+        assertEquals("Saved first", result.notes[0].body)
+    }
+
 }
