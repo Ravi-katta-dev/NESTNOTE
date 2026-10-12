@@ -490,3 +490,10 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Added the dedicated `appearance_cancel` test tag to the Appearance panel's Cancel button and updated the regression test to target it directly, avoiding ambiguity with the editor's separate Cancel action.
 - Commits: `4bbedecdf427c074561a550dab4fe28e75ec2f4d` (panel test tag), `8e68844a0e95d88f1bbf09e8193d95660dd1decd` (test selector).
 - Android CI for the latest branch head is pending; device-level visual, keyboard/insets, and accessibility checks are still not claimed.
+
+### Instrumentation execution added to required CI — 2026-10-13
+
+- Added a dedicated API 36 / x86_64 Pixel 2 emulator job to `.github/workflows/android-ci.yml` running `gradle --no-daemon connectedDebugAndroidTest`, rather than only compiling the instrumentation test APK.
+- Updated README and DEVELOPMENT guidance so they accurately describe the new automated emulator run and keep physical-device/accessibility checks separate.
+- CI result for this workflow change and the latest branch head is pending; inspect the emulator job before treating this as validated.
+- Device-level TalkBack, visual contrast, large-font, keyboard/insets, and physical-device checks remain unperformed.
