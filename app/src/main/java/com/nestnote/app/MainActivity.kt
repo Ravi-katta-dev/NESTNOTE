@@ -285,13 +285,28 @@ private fun NestNoteApp(store: NoteStore) {
                 TopAppBar(
                     title = {
                         Column {
-                            Text("NestNote", fontWeight = FontWeight.Bold, letterSpacing = 0.2.sp)
-                            Text("Your thoughts, organized.", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                            Text(
+                                if (selectedView == "Settings") "Settings" else "NestNote",
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.2.sp
+                            )
+                            Text(
+                                if (selectedView == "Settings") "Make your notes feel like yours" else "Your thoughts, organized.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.onSurfaceVariant
+                            )
                         }
                     },
                     actions = {
-                        IconButton(onClick = { selectedView = "Settings" }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Open settings")
+                        // Settings is already the active destination; don't show a
+                        // redundant settings shortcut inside the settings screen.
+                        if (selectedView != "Settings") {
+                            IconButton(
+                                onClick = { selectedView = "Settings" },
+                                modifier = Modifier.semantics { contentDescription = "Open settings" }
+                            ) {
+                                Icon(Icons.Default.Settings, contentDescription = null)
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.surface)
@@ -321,7 +336,8 @@ private fun NestNoteApp(store: NoteStore) {
                                     "Settings" -> Icons.Default.Settings
                                     "Categories" -> Icons.Default.GridView
                                     "All notes" -> Icons.Default.List
-                                    "Archived" -> Icons.Default.Delete
+                                    "Archived" -> Icons.Default.Archive
+                                    "Reminders" -> Icons.Default.NotificationsNone
                                     else -> Icons.Default.Check
                                 }, contentDescription = item)
                             },
