@@ -427,3 +427,13 @@ This section supersedes stale status snapshots at the top of this file; older en
 - CI for this documentation branch must be checked before merge. This work updates docs only and does not trigger a version tag or publish an APK.
 
 Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR #7](https://github.com/Ravi-katta-dev/NESTNOTE/pull/7), [Android CI](https://github.com/Ravi-katta-dev/NESTNOTE/actions/workflows/android-ci.yml), [Android Release](https://github.com/Ravi-katta-dev/NESTNOTE/actions/workflows/android-release.yml), [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases).
+
+
+## 2026-10-12 — UI/UX direction approved; P0 editor redesign queued
+- Product owner approved the prototype direction: a focused note editor with a right-side animated Appearance panel, wallpaper previews, colour palette, visible selection states, live draft preview and predictable Apply/Cancel behavior.
+- Set the UI/UX policy in `UI_UX_RULES.md` as the required contract for all future UI work and reviews.
+- Roadmap priority updated: P0 is note creation/editing and the appearance panel; P1 is a full app-wide UI/UX and accessibility audit; P2 is backend/new-feature expansion using the same reusable design system.
+- Source inspection confirms the current `NoteEditorContent` opens `AppearancePickerSheet`, implemented with `ModalBottomSheet`; this is a known mismatch with the approved target design.
+- The latest previously checked Android CI run passed for `9aa3e32980e101f95400d29930c777a9d29aba7f`. This is baseline evidence only, not validation of the planned redesign.
+- No editor redesign is claimed complete by this documentation update. Implementation and visual/device QA remain outstanding.
+- Next action: implement the shared animated right-side panel and editor layout on `feature/phase-7-dashboard-ux`, preserve existing save/discard and persistence behavior, then run CI against the exact final commit.
