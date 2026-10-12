@@ -9,9 +9,15 @@ import android.app.TimePickerDialog
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
@@ -1473,14 +1479,29 @@ private fun NoteEditorContent(
         }
     }
 
-    if (appearanceVisible) {
-        AppearancePickerSheet(
-            colorIndex = colorIndex,
-            backgroundIndex = backgroundIndex,
-            onColorSelected = { colorIndex = it },
-            onBackgroundSelected = { backgroundIndex = it },
-            onDismiss = { appearanceVisible = false }
-        )
+    BackHandler(enabled = appearanceVisible) { appearanceVisible = false }
+    Box(Modifier.fillMaxSize()) {
+        AnimatedVisibility(visible = appearanceVisible, enter = fadeIn(), exit = fadeOut()) {
+            Box(Modifier.fillMaxSize().background(Color(0x660F0D17)).clickable { appearanceVisible = false }.testTag("appearance_scrim"))
+        }
+        AnimatedVisibility(
+            visible = appearanceVisible,
+            modifier = Modifier.align(Alignment.CenterEnd),
+            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+        ) {
+            AppearanceSidePanel(
+                colorIndex = colorIndex,
+                backgroundIndex = backgroundIndex,
+                onColorSelected = { colorIndex = it },
+                onBackgroundSelected = { backgroundIndex = it },
+                onDismiss = { appearanceVisible = false },
+                modifier = Modifier.fillMaxHeight().fillMaxWidth(0.88f).widthIn(max = 360.dp)
+                    .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .testTag("appearance_side_panel")
+            )
+        }
     }
 
     if (discardConfirmation) {
@@ -1501,104 +1522,97 @@ private fun NoteEditorContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AppearancePickerSheet(
+private fun AppearanceSidePanel(
     colorIndex: Int,
     backgroundIndex: Int,
     onColorSelected: (Int) -> Unit,
     onBackgroundSelected: (Int) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = Color(0xFFFFFBF4),
-        contentColor = Color(0xFF211F26),
-        dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFFBDB5A6)) }
+    val colors = MaterialTheme.colorScheme
+    Column(
+        modifier.fillMaxHeight().verticalScroll(rememberScrollState())
+            .statusBarsPadding().navigationBarsPadding()
+            .padding(horizontal = 18.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp)) {
-            Box(Modifier.fillMaxWidth().height(258.dp)) {
-                if (backgroundIndex == 0) {
-                    Box(Modifier.fillMaxSize().background(Color(0xFFF9F4EA)))
-                } else {
-                    NoteWallpaperArtwork(backgroundIndex, Modifier.fillMaxSize())
-                }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                Text("Make this note feel like yours", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
             }
-            Column(
-                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp)
-            ) {
-                Text("Colour", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    noteAccents.forEachIndexed { index, accent ->
-                        Box(
-                            Modifier.size(52.dp).clip(CircleShape)
-                                .testTag("note_color_$index")
-                                .background(accent)
-                                .border(
-                                    width = if (index == colorIndex) 2.dp else 1.dp,
-                                    color = if (index == colorIndex) Color(0xFF514783) else Color(0xFFB8B1A7),
-                                    shape = CircleShape
-                                )
-                                .clickable { onColorSelected(index) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (index == colorIndex) {
-                                Icon(Icons.Default.Check, contentDescription = "Selected note color", tint = Color(0xFF514783), modifier = Modifier.size(25.dp))
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(3.dp))
-                Text("Background", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    (0..5).forEach { index ->
-                        Box(
-                            Modifier.size(70.dp).clip(CircleShape)
-                                .testTag("note_background_$index")
-                                .border(
-                                    width = if (index == backgroundIndex) 2.dp else 1.dp,
-                                    color = if (index == backgroundIndex) Color(0xFF5A538A) else Color(0x66807870),
-                                    shape = CircleShape
-                                )
-                                .clickable { onBackgroundSelected(index) }
-                        ) {
-                            if (index == 0) {
-                                Canvas(Modifier.fillMaxSize()) {
-                                    drawRect(Color(0xFFF9F4EA))
-                                    drawLine(Color(0xFF77716A), Offset(size.width * 0.28f, size.height * 0.28f), Offset(size.width * 0.72f, size.height * 0.72f), strokeWidth = 3.dp.toPx())
-                                }
-                            } else {
-                                NoteWallpaperArtwork(index, Modifier.fillMaxSize())
-                            }
-                            if (index == backgroundIndex) {
-                                Surface(
-                                    modifier = Modifier.align(Alignment.TopEnd).size(23.dp),
-                                    shape = CircleShape,
-                                    color = Color(0xFF514783),
-                                    contentColor = Color.White,
-                                    border = BorderStroke(1.dp, Color(0xFFFFF6E5))
-                                ) {
-                                    Icon(Icons.Default.Check, contentDescription = "Selected background", modifier = Modifier.padding(3.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Done") }
+            IconButton(onClick = onDismiss, modifier = Modifier.testTag("appearance_close")) {
+                Icon(Icons.Default.Close, contentDescription = "Close appearance panel")
+            }
+        }
+        Surface(
+            modifier = Modifier.fillMaxWidth().height(150.dp).testTag("appearance_preview"),
+            shape = RoundedCornerShape(18.dp),
+            color = noteTints[colorIndex],
+            border = BorderStroke(1.dp, colors.outlineVariant)
+        ) {
+            Box {
+                if (backgroundIndex > 0) NoteWallpaperArtwork(backgroundIndex, Modifier.fillMaxSize())
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Your note", style = MaterialTheme.typography.titleMedium, color = Color(0xFF292633))
+                    Text("A little space for your thoughts…", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF514D57))
                 }
             }
         }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Colour palette", style = MaterialTheme.typography.titleSmall, color = colors.onSurface)
+            Text("Choose a soft tint", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                noteAccents.forEachIndexed { index, tint ->
+                    val selected = index == colorIndex
+                    Box(
+                        Modifier.weight(1f).aspectRatio(1f).clip(CircleShape)
+                            .background(tint)
+                            .border(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant, CircleShape)
+                            .clickable { onColorSelected(index) }
+                            .semantics { contentDescription = "Note colour " + (index + 1) + (if (selected) ", selected" else "") }
+                            .testTag("note_color_$index"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (selected) Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF383044))
+                    }
+                }
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Backgrounds", style = MaterialTheme.typography.titleSmall, color = colors.onSurface)
+            Text("Add a little atmosphere", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+            (0..5).forEach { index ->
+                val selected = index == backgroundIndex
+                Surface(
+                    modifier = Modifier.fillMaxWidth().height(58.dp)
+                        .testTag("note_background_$index")
+                        .clickable { onBackgroundSelected(index) },
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant),
+                    color = noteTints[colorIndex]
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp)) {
+                        Box(Modifier.size(42.dp).clip(RoundedCornerShape(9.dp))) {
+                            if (index == 0) Box(Modifier.fillMaxSize().background(noteTints[colorIndex]))
+                            else NoteWallpaperArtwork(index, Modifier.fillMaxSize())
+                        }
+                        Text(
+                            if (index == 0) "Plain colour" else listOf("", "Botanical", "Sunset", "Waves", "Soft shapes", "Paper")[index],
+                            modifier = Modifier.weight(1f).padding(start = 12.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurface
+                        )
+                        if (selected) Icon(Icons.Default.Check, contentDescription = "Selected background", tint = colors.primary)
+                    }
+                }
+            }
+        }
+        OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Done") }
+        Text("Your choice is saved with the note when you tap Save.", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+        Spacer(Modifier.height(8.dp))
     }
 }
 
