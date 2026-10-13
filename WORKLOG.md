@@ -541,3 +541,11 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - The panel still occupies at most 88% of the available width, preserving the writing canvas as the primary surface on phones.
 - Commit: `1127653ce0ecc7f139082f53b93376fae117219b`.
 - Validation boundary: source change is committed; exact-head CI is pending. Wide-screen behavior has not been visually verified on a tablet/emulator, and this does not close P0 device/accessibility checks.
+
+
+### Appearance swatch touch-target follow-up — 2026-10-13
+
+- Increased each colour swatch hit target to 48 dp and enabled horizontal scrolling for the palette so the seven options do not compress below the intended touch size on narrow phones.
+- Existing semantic selected state and test tags are preserved.
+- Commit: `b323dbe8c37e695f014a94e3b94a7453faa89ac1`.
+- Validation boundary: exact-head CI pending; swatch scrolling and touch behavior still need device/emulator verification.
