@@ -360,7 +360,7 @@ private fun NestNoteApp(store: NoteStore) {
                 if (selectedView == "Home" || selectedView == "All notes" || searchVisible) {
                     OutlinedTextField(
                         value = search, onValueChange = { search = it },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp).testTag("note_search_field"),
                         placeholder = { Text("Search your notes") },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         singleLine = true,
