@@ -557,3 +557,11 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Both tests change colour/background drafts, dismiss without Apply, then save a note and assert the original appearance is preserved.
 - Commit: `1f13cf49e5099fb767a358ff6a701987777c6f5b`.
 - Validation: inspect the exact-head CI run below; instrumentation tests are compiled in required CI but are not executed because hosted emulator usage is intentionally excluded. These tests need execution on a local emulator/device before P0 is closed.
+
+
+### P1 search regression coverage — 2026-10-13
+
+- Added a stable `note_search_field` test tag and an instrumentation regression covering case-insensitive search against note body and category, in addition to the existing title-search coverage.
+- Commits: `990ec55a88bee6dae7eb869bcc988394b4769163`, `611c7a2755aa87b2fdce7056b7f8190ba0c2a3e2`, `5072889751b544bd046c5e2b999da6a7f6fecaff`, `811f583b080f7e7f0f129a41f7f3cabb3bfbb900`.
+- P0 dismissal test additions are in `1f13cf49e5099fb767a358ff6a701987777c6f5b`.
+- Validation boundary: exact-head CI is running/awaiting result. Instrumentation test APK compilation does not execute these UI tests; local device/emulator execution remains required. No manual visual, keyboard/insets, or TalkBack verification is claimed.
