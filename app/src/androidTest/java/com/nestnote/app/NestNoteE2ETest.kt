@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextClearance
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -150,7 +151,7 @@ class NestNoteE2ETest {
         composeRule.onNodeWithText("Trip to the Mountains").assertIsDisplayed()
         composeRule.onAllNodesWithText("Project Plan").assertCountEquals(0)
 
-        composeRule.onNodeWithText("Search your notes").performClick()
+        composeRule.onNodeWithText("Search your notes").performTextClearance()
         composeRule.onNodeWithText("Search your notes").performTextInput("TRAVEL")
         composeRule.onNodeWithText("Trip to the Mountains").assertIsDisplayed()
         composeRule.onAllNodesWithText("Project Plan").assertCountEquals(0)
