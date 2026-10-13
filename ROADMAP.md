@@ -473,5 +473,5 @@ Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit â†’ reference â†
 - [x] Preserve Quick Dialog as a user-selectable bounded dialog layout; reuse the same appearance, category, pin/reminder, formatting, sharing/copying, delete, save and discard interactions.
 - [x] Add explicit appearance Apply/Cancel draft semantics; Cancel, close, outside tap, and system Back restore the panel-opening appearance draft, while Apply keeps selections in the editor draft.
 - [ ] Validate compact-dialog keyboard/insets and scroll reachability at narrow sizes and large font settings.
-- [x] Confirm required CI passes on the latest exact branch head and update evidence (run `38315174209`, commit `d9d134eb72ab2bfcd5125dad69b7f3cd6c5023b2`; unit tests, debug build, minified release compilation, instrumentation-test compilation passed).
+- [x] Confirm required CI passes on the exact branch head `fb6c096e85c55d78286e02c59aeb26f49efbcd0c` (run [#38315774563](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38315774563): unit tests, debug APK build, minified release compilation, and instrumentation-test compilation passed; hosted emulator execution intentionally excluded).
 - [ ] Execute instrumentation tests and manually verify compact-dialog keyboard/insets, narrow screens, large fonts, and accessibility on an available local device/emulator.
