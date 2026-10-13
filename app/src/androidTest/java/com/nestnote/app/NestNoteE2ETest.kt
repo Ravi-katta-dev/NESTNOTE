@@ -187,6 +187,22 @@ class NestNoteE2ETest {
     }
 
     @Test
+    fun closingAppearancePanelRestoresOriginalDraftSelection() {
+        composeRule.onNodeWithContentDescription("Create note").performClick()
+        composeRule.onNodeWithContentDescription("Choose note appearance").performClick()
+        composeRule.onNodeWithTag("note_color_3").performClick()
+        composeRule.onNodeWithTag("note_background_2").performClick()
+        composeRule.onNodeWithTag("appearance_close").performClick()
+        composeRule.onNodeWithText("Title").performTextInput("Closed appearance")
+        composeRule.onNodeWithText("Save note").performClick()
+        composeRule.runOnIdle {
+            val saved = com.nestnote.app.NoteStore(composeRule.activity).load().first { it.title == "Closed appearance" }
+            assertEquals(0, saved.color)
+            assertEquals(0, saved.background)
+        }
+    }
+
+    @Test
     fun settingsExposeEditorLayoutAndWallpaperColorChoices() {
         composeRule.onNodeWithText("Settings").performClick()
         composeRule.onNodeWithText("Wallpaper colors").assertIsDisplayed()
