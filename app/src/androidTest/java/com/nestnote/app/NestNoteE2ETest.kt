@@ -206,6 +206,45 @@ class NestNoteE2ETest {
     }
 
     @Test
+    fun systemBackClosesAppearanceAndRestoresDraftSelection() {
+        composeRule.onNodeWithContentDescription("Create note").performClick()
+        composeRule.onNodeWithContentDescription("Choose note appearance").performClick()
+        composeRule.onNodeWithTag("note_color_4").performClick()
+        composeRule.onNodeWithTag("note_background_3").performClick()
+
+        composeRule.activity.runOnUiThread {
+            composeRule.activity.onBackPressedDispatcher.onBackPressed()
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Colour palette").assertCountEquals(0)
+        composeRule.onNodeWithText("Title").performTextInput("Back cancelled appearance")
+        composeRule.onNodeWithText("Save note").performClick()
+        composeRule.runOnIdle {
+            val saved = NoteStore(composeRule.activity).load().first { it.title == "Back cancelled appearance" }
+            assertEquals(0, saved.color)
+            assertEquals(0, saved.background)
+        }
+    }
+
+    @Test
+    fun tappingAppearanceScrimClosesPanelAndRestoresDraftSelection() {
+        composeRule.onNodeWithContentDescription("Create note").performClick()
+        composeRule.onNodeWithContentDescription("Choose note appearance").performClick()
+        composeRule.onNodeWithTag("note_color_5").performClick()
+        composeRule.onNodeWithTag("note_background_4").performClick()
+        composeRule.onNodeWithTag("appearance_scrim").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Colour palette").assertCountEquals(0)
+        composeRule.onNodeWithText("Title").performTextInput("Scrim cancelled appearance")
+        composeRule.onNodeWithText("Save note").performClick()
+        composeRule.runOnIdle {
+            val saved = NoteStore(composeRule.activity).load().first { it.title == "Scrim cancelled appearance" }
+            assertEquals(0, saved.color)
+            assertEquals(0, saved.background)
+        }
+    }
+
+    @Test
     fun settingsExposeEditorLayoutAndWallpaperColorChoices() {
         composeRule.onNodeWithText("Settings").performClick()
         composeRule.onNodeWithText("Wallpaper colors").assertIsDisplayed()
