@@ -526,3 +526,16 @@ This sequence is cumulative: later work must not bypass earlier safety gates.
 - [ ] Verify APK signature and compare the certificate fingerprint to the approved production fingerprint.
 - [ ] Install/smoke-test the downloaded artifact and record owner approval before production release.
 - **Current status:** release workflow and checklist are under audit; signing and installed-APK proof must be run with the owner's configured secrets/device.
+
+
+### UI/UX roadmap cross-check — 2026-10-13
+
+This section reconciles the implementation checklists above with the latest P0–P3 execution track and current PR #10 state. It does not erase historical status entries.
+
+- **P0 implementation:** the right-side Appearance panel, responsive width caps, 48 dp horizontally scrollable colour swatches, shared Quick Dialog/full-screen editor, Apply/Cancel draft semantics, and appearance dismissal/search regression tests are implemented on `feature/phase-7-dashboard-ux`.
+- **Exact-head CI:** run [#38415822493](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38415822493) passed on commit `867f61f2f7f1d6baff42c8db1d3644ac126145e1`: JVM unit tests, debug APK build, minified release APK build, and instrumentation-test APK compilation passed.
+- **Still open for P0:** instrumentation tests have not been executed on an emulator/device. Compact-dialog keyboard/insets and scroll reachability, narrow/wide visual review, large text, reduced motion, contrast and TalkBack remain unverified. P0 must not be marked complete until available device checks are performed and recorded.
+- **P1 progress:** search regression coverage for title/body/category has been added, but combined filtering/sorting and the screen-by-screen Home/All notes/Categories/Reminders/More/Pinned/Archive/Settings audit remain incomplete.
+- **P2:** defer architecture/new-feature expansion until P0/P1 UI contracts are stable; then extract a tested repository boundary without a broad rewrite.
+- **P3:** release checklist now uses `KEYSTORE_BASE64`; verify the actual production certificate fingerprint, signed release publication, installation and upgrade behavior only with configured owner secrets and an available device. No production-signing proof is claimed here.
+- **PR #10:** remains open pending owner approval and outstanding P0 manual/device validation. CI success means compile/build/test-task success only; it is not a device/accessibility sign-off.
