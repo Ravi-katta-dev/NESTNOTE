@@ -515,3 +515,12 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - **Result:** success. The `Unit tests, API 36 debug build and release compilation` job completed successfully, including unit tests, debug APK build, minified release build, and instrumentation-test compilation.
 - **Cost adjustment:** hosted emulator job is removed. No emulator execution is claimed; device-level visual, keyboard/insets, TalkBack, large-font, and instrumentation execution remain unverified until run locally or on an available device.
 - **Follow-up:** roadmap now records CI evidence; PR #10 remains open and unmerged. Documentation-only evidence updates are on the branch after the validated workflow head and will trigger a fresh CI run.
+
+
+### Exact-head CI confirmation — 2026-10-13
+
+- **Workflow run:** https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38315774563
+- **Validated commit:** `fb6c096e85c55d78286e02c59aeb26f49efbcd0c` (exact head at run completion).
+- **Result:** success. JVM unit tests, API 36 debug APK build, minified release APK build, and Android instrumentation-test compilation all completed successfully.
+- **Validation boundary:** this workflow has no hosted emulator job. Instrumentation tests were compiled but not executed; keyboard/insets, large-font, TalkBack, narrow-layout and physical-device checks remain unverified.
+- PR #10 remains open and unmerged pending owner approval and outstanding P0 manual checks.
