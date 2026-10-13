@@ -574,3 +574,11 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - P3: corrected `RELEASE_CHECKLIST.md` to name the workflow's actual `KEYSTORE_BASE64` secret (commit `0e15a910b23b97e61b7d77696a7b24df5b6dcb45`); no secret values were read or changed.
 - Added explicit P0–P3 execution gates to `ROADMAP.md` (commit `66ffe96f5af34de2dd785714071da06c19ad10ca`).
 - Validation boundary: latest-head required CI is shown below if a run is associated with the head. The workflow compiles instrumentation tests but does not execute them; no device, TalkBack, signing-certificate, or installed-APK verification is claimed.
+
+
+### P3 release workflow audit follow-up — 2026-10-13
+
+- Corrected the release checklist secret name to `KEYSTORE_BASE64`, matching `.github/workflows/android-release.yml`.
+- Clarified the workflow's actual release paths: version tags publish version-named APKs; manual dispatch publishes only with a validated version tag; main pushes produce a signed workflow artifact and may repair an eligible existing release.
+- Commits: `0e15a910b23b97e61b7d77696a7b24df5b6dcb45`, `60c6541a65f9fbf6e2c9471eb9bbf8a2f8f99384`.
+- No keystore, alias, or password values were accessed or changed. Signature fingerprint verification and install testing remain unperformed.
