@@ -475,3 +475,10 @@ Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit → reference �
 - [ ] Validate compact-dialog keyboard/insets and scroll reachability at narrow sizes and large font settings.
 - [x] Confirm required CI passes on the exact branch head `fb6c096e85c55d78286e02c59aeb26f49efbcd0c` (run [#38315774563](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38315774563): unit tests, debug APK build, minified release compilation, and instrumentation-test compilation passed; hosted emulator execution intentionally excluded).
 - [ ] Execute instrumentation tests and manually verify compact-dialog keyboard/insets, narrow screens, large fonts, and accessibility on an available local device/emulator.
+
+
+### Appearance accessibility regression coverage — 2026-10-13
+- [x] Extend the appearance persistence regression test to assert the selected semantics state for chosen colour and background options (`assertIsSelected`).
+- [x] Required CI passed on commit `26608734f1bc53dc04b592c4542baf86619cbd8e` (run [#38386226195](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38386226195)): unit tests, debug APK, minified release build, and instrumentation-test compilation succeeded.
+- [ ] Execute instrumentation tests on a local emulator/device; CI compilation does not prove the Compose selection assertions execute successfully.
+- **P0 remains open** for keyboard/insets, narrow layouts, large-font and TalkBack/device verification.
