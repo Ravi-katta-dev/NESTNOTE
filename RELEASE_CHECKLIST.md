@@ -39,8 +39,8 @@ Use this checklist for every candidate. A successful build is necessary but does
 - [ ] Confirm privacy copy states local storage is encrypted and exported JSON is plaintext.
 
 ## 4. Production signing and APK integrity
-- [ ] Confirm repository Actions secrets exist without exposing values: SIGNING_KEY, KEY_ALIAS, KEY_STORE_PASSWORD, KEY_PASSWORD.
-- [ ] Confirm SIGNING_KEY decodes to the approved permanent production keystore; no keystore bytes are committed or logged.
+- [ ] Confirm repository Actions secrets exist without exposing values: KEYSTORE_BASE64, KEY_ALIAS, KEY_STORE_PASSWORD, KEY_PASSWORD.
+- [ ] Confirm KEYSTORE_BASE64 decodes to the approved permanent production keystore; no keystore bytes are committed or logged.
 - [ ] Confirm release workflow only publishes for version tags matching v*.*.*.
 - [ ] Confirm missing or invalid signing secrets fail the tagged workflow and prevent publication.
 - [ ] Confirm release APK is minified/resource-shrunk and named NESTNOTE-vX.Y.Z.apk.
