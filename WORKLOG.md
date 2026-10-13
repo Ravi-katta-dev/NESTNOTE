@@ -524,3 +524,12 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - **Result:** success. JVM unit tests, API 36 debug APK build, minified release APK build, and Android instrumentation-test compilation all completed successfully.
 - **Validation boundary:** this workflow has no hosted emulator job. Instrumentation tests were compiled but not executed; keyboard/insets, large-font, TalkBack, narrow-layout and physical-device checks remain unverified.
 - PR #10 remains open and unmerged pending owner approval and outstanding P0 manual checks.
+
+
+### Appearance selection semantics regression — 2026-10-13
+
+- Added `assertIsSelected()` assertions for the chosen colour swatch and background card in `appearancePickerChangesAndPersistsColorAndWallpaper()`.
+- Commit: `26608734f1bc53dc04b592c4542baf86619cbd8e`.
+- CI run [#38386226195](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38386226195) passed on that exact commit: JVM unit tests, debug APK build, minified release build, and instrumentation-test compilation.
+- Boundary: instrumentation tests were compiled, not executed on a device/emulator. The assertions still need local/device execution, as do keyboard/insets, narrow-layout, large-font, and TalkBack checks.
+- Follow-up documentation commit records this evidence in ROADMAP.md. A new CI run is required for the resulting branch head. PR #10 remains open and unmerged.
