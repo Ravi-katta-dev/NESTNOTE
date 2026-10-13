@@ -1613,11 +1613,13 @@ private fun AppearanceSidePanel(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Colour palette", style = MaterialTheme.typography.titleSmall, color = colors.onSurface)
             Text("Choose a soft tint", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Keep each swatch comfortably tappable; allow horizontal scrolling on
+            // narrow phones rather than shrinking seven targets below 48 dp.
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 noteAccents.forEachIndexed { index, tint ->
                     val isSelected = index == colorIndex
                     Box(
-                        Modifier.weight(1f).aspectRatio(1f).clip(CircleShape)
+                        Modifier.size(48.dp).clip(CircleShape)
                             .background(tint)
                             .border(if (isSelected) 2.dp else 1.dp, if (isSelected) colors.primary else colors.outlineVariant, CircleShape)
                             .clickable { onColorSelected(index) }
