@@ -533,3 +533,11 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - CI run [#38386226195](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38386226195) passed on that exact commit: JVM unit tests, debug APK build, minified release build, and instrumentation-test compilation.
 - Boundary: instrumentation tests were compiled, not executed on a device/emulator. The assertions still need local/device execution, as do keyboard/insets, narrow-layout, large-font, and TalkBack checks.
 - Follow-up documentation commit records this evidence in ROADMAP.md. A new CI run is required for the resulting branch head. PR #10 remains open and unmerged.
+
+
+### Responsive appearance panel follow-up — 2026-10-13
+
+- Updated the editor's Appearance panel width cap to be responsive: up to 360 dp on phone-sized windows and up to 480 dp when the available editor width is at least 600 dp.
+- The panel still occupies at most 88% of the available width, preserving the writing canvas as the primary surface on phones.
+- Commit: `1127653ce0ecc7f139082f53b93376fae117219b`.
+- Validation boundary: source change is committed; exact-head CI is pending. Wide-screen behavior has not been visually verified on a tablet/emulator, and this does not close P0 device/accessibility checks.
