@@ -582,3 +582,12 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Clarified the workflow's actual release paths: version tags publish version-named APKs; manual dispatch publishes only with a validated version tag; main pushes produce a signed workflow artifact and may repair an eligible existing release.
 - Commits: `0e15a910b23b97e61b7d77696a7b24df5b6dcb45`, `60c6541a65f9fbf6e2c9471eb9bbf8a2f8f99384`.
 - No keystore, alias, or password values were accessed or changed. Signature fingerprint verification and install testing remain unperformed.
+
+
+### UI/UX roadmap cross-check and exact-head CI — 2026-10-13
+
+- Cross-checked `ROADMAP.md`, `UI_UX_RULES.md`, `README.md`, and the PR #10 branch status against the active P0–P3 UI/UX sequence.
+- Fixed README's stale signing-secret name from `SIGNING_KEY` to `KEYSTORE_BASE64`, matching `.github/workflows/android-release.yml` and `RELEASE_CHECKLIST.md`.
+- Fixed the final instrumentation-test compilation failure by changing the single-node absence assertion to `assertDoesNotExist()` (commit `867f61f2f7f1d6baff42c8db1d3644ac126145e1`).
+- Exact-head Android CI run [#38415822493](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38415822493) passed on that commit: unit tests, debug APK, minified release APK, and instrumentation-test compilation.
+- P0 is **implementation-complete but validation-open**: instrumentation tests were compiled, not executed; keyboard/insets, compact dialog reachability, narrow/wide layouts, large fonts, reduced motion, contrast and TalkBack remain unverified. P1 app-wide audit is also still open. PR #10 remains open until those outstanding gates are addressed and owner approves merge.
