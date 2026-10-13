@@ -2,6 +2,7 @@ package com.nestnote.app
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
@@ -157,7 +158,9 @@ class NestNoteE2ETest {
         composeRule.onNodeWithText("Colour palette").assertIsDisplayed()
         composeRule.onNodeWithText("Backgrounds").assertIsDisplayed()
         composeRule.onNodeWithTag("note_color_2").performClick()
+        composeRule.onNodeWithTag("note_color_2").assertIsSelected()
         composeRule.onNodeWithTag("note_background_1").performClick()
+        composeRule.onNodeWithTag("note_background_1").assertIsSelected()
         composeRule.onNodeWithText("Apply").performClick()
         composeRule.onNodeWithText("Title").performTextInput("Wallpaper note")
         composeRule.onNodeWithText("Note").performTextInput("Illustrated background")
