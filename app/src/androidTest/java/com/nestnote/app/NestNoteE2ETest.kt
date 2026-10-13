@@ -239,6 +239,20 @@ class NestNoteE2ETest {
     }
 
     @Test
+    fun quickDialogUsesSharedEditorAndAppearanceFlow() {
+        composeRule.onNodeWithText("Settings").performClick()
+        val settings = composeRule.onNodeWithTag("settings_scroll")
+        settings.performScrollToNode(hasText("Quick dialog"))
+        composeRule.onNodeWithText("Quick dialog").performClick()
+        composeRule.onNodeWithContentDescription("Create note").performClick()
+        composeRule.onNodeWithText("Title").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Choose note appearance").performClick()
+        composeRule.onNodeWithText("Colour palette").assertIsDisplayed()
+        composeRule.onNodeWithTag("appearance_cancel").performClick()
+        composeRule.onNodeWithText("Cancel").performClick()
+    }
+
+    @Test
     fun editorChecklistButtonPrefixesTheCurrentLine() {
         composeRule.onNodeWithContentDescription("Create note").performClick()
         composeRule.onNodeWithText("Note").performTextInput("buy milk")
