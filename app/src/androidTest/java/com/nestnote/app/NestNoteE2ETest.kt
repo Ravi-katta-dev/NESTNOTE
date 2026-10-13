@@ -229,7 +229,7 @@ class NestNoteE2ETest {
             composeRule.activity.onBackPressedDispatcher.onBackPressed()
         }
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Colour palette").assertCountEquals(0)
+        composeRule.onNodeWithText("Colour palette").assertDoesNotExist()
         composeRule.onNodeWithText("Title").performTextInput("Back cancelled appearance")
         composeRule.onNodeWithText("Save note").performClick()
         composeRule.runOnIdle {
