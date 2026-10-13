@@ -492,3 +492,37 @@ Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit → reference �
 ### Appearance palette touch targets — 2026-10-13
 - [x] Set colour swatches to 48 dp touch targets and allow horizontal scrolling on narrow screens rather than compressing all seven swatches.
 - [ ] Verify palette discoverability and horizontal scroll behavior on a small device with TalkBack and large font settings.
+
+
+## Execution track — P0 through P3 (active as of 2026-10-13)
+
+This sequence is cumulative: later work must not bypass earlier safety gates.
+
+### P0 — Protect notes and finish the editor
+- [ ] Keep create/edit/save/discard and stale-draft protection regression-tested.
+- [ ] Cover Appearance panel Apply, Cancel, close, outside tap, and system Back rollback in instrumentation tests.
+- [ ] Re-verify encrypted storage, legacy migration, backup validation/merge, and recovery behavior with unit tests.
+- [ ] Close keyboard/insets, narrow-window, large-text, TalkBack, and device checks only when actually executed and recorded.
+- **Current status:** editor implementation is in place; additional dismissal tests were added on the active branch. Exact-head CI and device execution remain pending.
+
+### P1 — Audit and polish the whole app
+- [ ] Add regression coverage for search across title/body/category and combined filtering/sorting.
+- [ ] Review Home, All notes, Categories, Reminders, More, Pinned, Archive, Settings, menus, dialogs, and empty/error states.
+- [ ] Correct contrast, touch target, selected/disabled semantics, focus order, and large-text issues found in the audit.
+- [ ] Record every screen as pass, issue, or not tested; don't equate test tags/build success with accessibility verification.
+- **Current status:** search regression coverage is being expanded; whole-app and device review remain open.
+
+### P2 — Improve editing and architecture incrementally
+- [ ] Improve checklist interaction/cursor preservation without introducing a parallel rich-text model.
+- [ ] Extract the existing NoteStore behind a small repository boundary with tests before moving UI state.
+- [ ] Consider ViewModel/Room migration only after behavior and compatibility tests demonstrate the need.
+- [ ] Document migration, error, empty, and recovery states for each new feature.
+- **Gate:** no broad rewrite and no storage migration without backward-compatibility and recovery tests.
+
+### P3 — Release engineering and production proof
+- [ ] Align release checklist with actual GitHub Actions secret names and release triggers.
+- [ ] Verify the permanent keystore, alias, and certificate fingerprint without printing secrets or committing key material.
+- [ ] Confirm manual release dispatch produces a signed APK artifact; version-tag release publishes the version-named APK.
+- [ ] Verify APK signature and compare the certificate fingerprint to the approved production fingerprint.
+- [ ] Install/smoke-test the downloaded artifact and record owner approval before production release.
+- **Current status:** release workflow and checklist are under audit; signing and installed-APK proof must be run with the owner's configured secrets/device.
