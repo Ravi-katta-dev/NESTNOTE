@@ -565,3 +565,12 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Commits: `990ec55a88bee6dae7eb869bcc988394b4769163`, `611c7a2755aa87b2fdce7056b7f8190ba0c2a3e2`, `5072889751b544bd046c5e2b999da6a7f6fecaff`, `811f583b080f7e7f0f129a41f7f3cabb3bfbb900`.
 - P0 dismissal test additions are in `1f13cf49e5099fb767a358ff6a701987777c6f5b`.
 - Validation boundary: exact-head CI is running/awaiting result. Instrumentation test APK compilation does not execute these UI tests; local device/emulator execution remains required. No manual visual, keyboard/insets, or TalkBack verification is claimed.
+
+
+### P0–P3 execution started — 2026-10-13
+
+- P0: added UI regression coverage for Appearance system-Back and scrim dismissal rollback (`1f13cf49e5099fb767a358ff6a701987777c6f5b`).
+- P1: added a stable dashboard search test tag and search regression coverage for case-insensitive body/category matches (`990ec55a88bee6dae7eb869bcc988394b4769163`, `611c7a2755aa87b2fdce7056b7f8190ba0c2a3e2`, `5072889751b544bd046c5e2b999da6a7f6fecaff`, `811f583b080f7e7f0f129a41f7f3cabb3bfbb900`, `e1a567cfc7aba2bf1148c14d693face03d8e1067`).
+- P3: corrected `RELEASE_CHECKLIST.md` to name the workflow's actual `KEYSTORE_BASE64` secret (commit `0e15a910b23b97e61b7d77696a7b24df5b6dcb45`); no secret values were read or changed.
+- Added explicit P0–P3 execution gates to `ROADMAP.md` (commit `66ffe96f5af34de2dd785714071da06c19ad10ca`).
+- Validation boundary: latest-head required CI is shown below if a run is associated with the head. The workflow compiles instrumentation tests but does not execute them; no device, TalkBack, signing-certificate, or installed-APK verification is claimed.
