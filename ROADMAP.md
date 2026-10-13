@@ -487,3 +487,8 @@ Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit → reference �
 ### Responsive appearance panel — 2026-10-13
 - [x] Use a 360 dp max panel width on phone-sized windows and a 480 dp cap when the editor window is at least 600 dp wide, while retaining the 88% width limit.
 - [ ] Visually verify phone and tablet layouts on an available emulator/device; source-level responsive sizing is not device verification.
+
+
+### Appearance palette touch targets — 2026-10-13
+- [x] Set colour swatches to 48 dp touch targets and allow horizontal scrolling on narrow screens rather than compressing all seven swatches.
+- [ ] Verify palette discoverability and horizontal scroll behavior on a small device with TalkBack and large font settings.
