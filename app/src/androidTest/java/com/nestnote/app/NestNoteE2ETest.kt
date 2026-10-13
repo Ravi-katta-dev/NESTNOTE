@@ -147,12 +147,12 @@ class NestNoteE2ETest {
 
     @Test
     fun searchMatchesNoteBodyAndCategoryCaseInsensitively() {
-        composeRule.onNodeWithTag("note_search_field").performTextInput("high peaks")
+        composeRule.onNodeWithTag("note_search_field").performTextInput("quiet trail")
         composeRule.onNodeWithText("Trip to the Mountains").assertIsDisplayed()
         composeRule.onAllNodesWithText("Project Plan").assertCountEquals(0)
 
         composeRule.onNodeWithTag("note_search_field").performTextClearance()
-        composeRule.onNodeWithText("Search your notes").performTextInput("TRAVEL")
+        composeRule.onNodeWithText("Search your notes").performTextInput("PERSONAL")
         composeRule.onNodeWithText("Trip to the Mountains").assertIsDisplayed()
         composeRule.onAllNodesWithText("Project Plan").assertCountEquals(0)
     }
