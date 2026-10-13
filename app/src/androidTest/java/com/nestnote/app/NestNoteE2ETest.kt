@@ -247,7 +247,7 @@ class NestNoteE2ETest {
         composeRule.onNodeWithTag("note_background_4").performClick()
         composeRule.onNodeWithTag("appearance_scrim").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Colour palette").assertCountEquals(0)
+        composeRule.onNodeWithText("Colour palette").assertDoesNotExist()
         composeRule.onNodeWithText("Title").performTextInput("Scrim cancelled appearance")
         composeRule.onNodeWithText("Save note").performClick()
         composeRule.runOnIdle {
