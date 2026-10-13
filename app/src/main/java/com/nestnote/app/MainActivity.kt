@@ -1617,7 +1617,7 @@ private fun AppearanceSidePanel(
                             .background(tint)
                             .border(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant, CircleShape)
                             .clickable { onColorSelected(index) }
-                            .semantics { contentDescription = "Note colour " + (index + 1) + (if (selected) ", selected" else "") }
+                            .semantics { contentDescription = "Note colour " + (index + 1) + (if (selected) ", selected" else ""); this.selected = selected }
                             .testTag("note_color_$index"),
                         contentAlignment = Alignment.Center
                     ) {
@@ -1634,7 +1634,8 @@ private fun AppearanceSidePanel(
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(58.dp)
                         .testTag("note_background_$index")
-                        .clickable { onBackgroundSelected(index) },
+                        .clickable { onBackgroundSelected(index) }
+                        .semantics { contentDescription = (if (index == 0) "Plain colour" else listOf("", "Botanical", "Sunset", "Waves", "Soft shapes", "Paper")[index]) + (if (selected) ", selected" else ""); this.selected = selected },
                     shape = RoundedCornerShape(14.dp),
                     border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant),
                     color = noteTints[colorIndex]
