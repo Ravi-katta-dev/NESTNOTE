@@ -145,6 +145,18 @@ class NestNoteE2ETest {
     }
 
     @Test
+    fun searchMatchesNoteBodyAndCategoryCaseInsensitively() {
+        composeRule.onNodeWithText("Search your notes").performTextInput("high peaks")
+        composeRule.onNodeWithText("Trip to the Mountains").assertIsDisplayed()
+        composeRule.onAllNodesWithText("Project Plan").assertCountEquals(0)
+
+        composeRule.onNodeWithText("Search your notes").performClick()
+        composeRule.onNodeWithText("Search your notes").performTextInput("TRAVEL")
+        composeRule.onNodeWithText("Trip to the Mountains").assertIsDisplayed()
+        composeRule.onAllNodesWithText("Project Plan").assertCountEquals(0)
+    }
+
+    @Test
     fun searchWithNoMatchesShowsHelpfulEmptyState() {
         composeRule.onNodeWithText("Search your notes").performTextInput("no-note-should-match-this")
         composeRule.onNodeWithText("A fresh page awaits").assertIsDisplayed()
