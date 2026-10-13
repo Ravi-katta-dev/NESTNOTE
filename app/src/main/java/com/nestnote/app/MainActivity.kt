@@ -1524,7 +1524,10 @@ private fun NoteEditorContent(
         appearanceVisible = false
     }
     BackHandler(enabled = appearanceVisible) { dismissAppearance(discardDraft = true) }
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // Keep the writing canvas dominant on phones, while giving the appearance
+        // controls a little more room on tablets and other wide editor windows.
+        val appearancePanelMaxWidth = if (maxWidth >= 600.dp) 480.dp else 360.dp
         AnimatedVisibility(visible = appearanceVisible, enter = fadeIn(), exit = fadeOut()) {
             Box(Modifier.fillMaxSize().background(Color(0x660F0D17)).clickable { dismissAppearance(discardDraft = true) }.testTag("appearance_scrim"))
         }
@@ -1541,7 +1544,7 @@ private fun NoteEditorContent(
                 onBackgroundSelected = { backgroundIndex = it },
                 onDismiss = { dismissAppearance(discardDraft = true) },
                 onApply = { dismissAppearance(discardDraft = false) },
-                modifier = Modifier.fillMaxHeight().fillMaxWidth(0.88f).widthIn(max = 360.dp)
+                modifier = Modifier.fillMaxHeight().fillMaxWidth(0.88f).widthIn(max = appearancePanelMaxWidth)
                     .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
                     .background(MaterialTheme.colorScheme.surface)
                     .testTag("appearance_side_panel")
