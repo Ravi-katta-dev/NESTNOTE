@@ -1611,17 +1611,17 @@ private fun AppearanceSidePanel(
             Text("Choose a soft tint", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 noteAccents.forEachIndexed { index, tint ->
-                    val selected = index == colorIndex
+                    val isSelected = index == colorIndex
                     Box(
                         Modifier.weight(1f).aspectRatio(1f).clip(CircleShape)
                             .background(tint)
-                            .border(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant, CircleShape)
+                            .border(if (isSelected) 2.dp else 1.dp, if (isSelected) colors.primary else colors.outlineVariant, CircleShape)
                             .clickable { onColorSelected(index) }
-                            .semantics { contentDescription = "Note colour " + (index + 1) + (if (selected) ", selected" else ""); this.selected = selected }
+                            .semantics { contentDescription = "Note colour " + (index + 1) + (if (isSelected) ", selected" else ""); this.selected = isSelected }
                             .testTag("note_color_$index"),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (selected) Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF383044))
+                        if (isSelected) Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF383044))
                     }
                 }
             }
@@ -1630,14 +1630,14 @@ private fun AppearanceSidePanel(
             Text("Backgrounds", style = MaterialTheme.typography.titleSmall, color = colors.onSurface)
             Text("Add a little atmosphere", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
             (0..5).forEach { index ->
-                val selected = index == backgroundIndex
+                val isSelected = index == backgroundIndex
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(58.dp)
                         .testTag("note_background_$index")
                         .clickable { onBackgroundSelected(index) }
-                        .semantics { contentDescription = (if (index == 0) "Plain colour" else listOf("", "Botanical", "Sunset", "Waves", "Soft shapes", "Paper")[index]) + (if (selected) ", selected" else ""); this.selected = selected },
+                        .semantics { contentDescription = (if (index == 0) "Plain colour" else listOf("", "Botanical", "Sunset", "Waves", "Soft shapes", "Paper")[index]) + (if (isSelected) ", selected" else ""); this.selected = isSelected },
                     shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant),
+                    border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) colors.primary else colors.outlineVariant),
                     color = noteTints[colorIndex]
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp)) {
@@ -1651,7 +1651,7 @@ private fun AppearanceSidePanel(
                             style = MaterialTheme.typography.bodyMedium,
                             color = colors.onSurface
                         )
-                        if (selected) Icon(Icons.Default.Check, contentDescription = "Selected background", tint = colors.primary)
+                        if (isSelected) Icon(Icons.Default.Check, contentDescription = "Selected background", tint = colors.primary)
                     }
                 }
             }
