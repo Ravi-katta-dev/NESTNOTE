@@ -482,3 +482,8 @@ Every UI PR must follow [UI_UX_RULES.md](UI_UX_RULES.md): audit → reference �
 - [x] Required CI passed on commit `26608734f1bc53dc04b592c4542baf86619cbd8e` (run [#38386226195](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38386226195)): unit tests, debug APK, minified release build, and instrumentation-test compilation succeeded.
 - [ ] Execute instrumentation tests on a local emulator/device; CI compilation does not prove the Compose selection assertions execute successfully.
 - **P0 remains open** for keyboard/insets, narrow layouts, large-font and TalkBack/device verification.
+
+
+### Responsive appearance panel — 2026-10-13
+- [x] Use a 360 dp max panel width on phone-sized windows and a 480 dp cap when the editor window is at least 600 dp wide, while retaining the 88% width limit.
+- [ ] Visually verify phone and tablet layouts on an available emulator/device; source-level responsive sizing is not device verification.
