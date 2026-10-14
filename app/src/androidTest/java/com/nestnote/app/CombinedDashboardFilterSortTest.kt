@@ -59,6 +59,6 @@ class CombinedDashboardFilterSortTest {
         composeRule.onNodeWithTag("note_search_field").performTextInput("Project")
 
         composeRule.onNodeWithText("Project Plan").assertIsDisplayed()
-        composeRule.onNodeWithText("Trip to the Mountains").assertDoesNotExist()
+        composeRule.onAllNodesWithText("Trip to the Mountains").assertCountEquals(0)
     }
 }
