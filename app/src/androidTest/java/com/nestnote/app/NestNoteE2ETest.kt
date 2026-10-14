@@ -138,6 +138,27 @@ class NestNoteE2ETest {
     }
 
     @Test
+    fun settingsPreviewToggleUpdatesPreferenceOnceAndPersists() {
+        composeRule.onNodeWithText("Settings").performClick()
+        composeRule.onNodeWithText("Show note previews").assertIsDisplayed()
+        composeRule.onNodeWithText("Show note previews").performClick()
+
+        composeRule.runOnIdle {
+            val preferences = composeRule.activity.getSharedPreferences("nestnote_preferences", 0)
+            assertEquals(false, preferences.getBoolean("show_note_previews", true))
+        }
+
+        composeRule.activity.runOnUiThread { composeRule.activity.recreate() }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Settings").performClick()
+        composeRule.onNodeWithText("Show note previews").assertIsDisplayed()
+        composeRule.runOnIdle {
+            val preferences = composeRule.activity.getSharedPreferences("nestnote_preferences", 0)
+            assertEquals(false, preferences.getBoolean("show_note_previews", true))
+        }
+    }
+
+    @Test
     fun categorySelectionFiltersDashboardNotes() {
         composeRule.onNodeWithText("Categories").performClick()
         composeRule.onNodeWithText("Work").performClick()
