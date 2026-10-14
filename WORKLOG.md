@@ -591,3 +591,11 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Fixed the final instrumentation-test compilation failure by changing the single-node absence assertion to `assertDoesNotExist()` (commit `867f61f2f7f1d6baff42c8db1d3644ac126145e1`).
 - Exact-head Android CI run [#38415822493](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38415822493) passed on that commit: unit tests, debug APK, minified release APK, and instrumentation-test compilation.
 - P0 is **implementation-complete but validation-open**: instrumentation tests were compiled, not executed; keyboard/insets, compact dialog reachability, narrow/wide layouts, large fonts, reduced motion, contrast and TalkBack remain unverified. P1 app-wide audit is also still open. PR #10 remains open until those outstanding gates are addressed and owner approves merge.
+
+
+### Focused CI recovery and Settings interaction audit — 2026-10-14
+
+- Investigated Android CI run [#38520909916](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38520909916). Unit tests, debug APK build, and minified release APK build passed; instrumentation-test compilation failed because `assertDoesNotExist` is unavailable in this project's Compose test API.
+- Replaced the unsupported single-node assertion with the already-used `onAllNodesWithText(...).assertCountEquals(0)` pattern in `CombinedDashboardFilterSortTest.kt` (commit `30b1a4104a6a43ed996f8e77cc5fca1821db3fa4`).
+- During the wider Settings interaction audit, found `SwitchRow` had both a clickable parent row and an independently handled `Switch`; this could dispatch the same preference change twice when the switch itself was tapped. Changed the row to own accessible `Role.Switch` toggle semantics and made the child Switch presentation-only (`onCheckedChange = null`) (commit `240adb7479a53f127bb2dc76df7f7b9d9dd53941`).
+- Validation status: a new CI run for the current head has not yet been returned by the GitHub workflow lookup. Do not treat either change as CI-verified until an exact-head run completes. No hosted emulator has been added; device execution and visual/accessibility checks remain outstanding.
