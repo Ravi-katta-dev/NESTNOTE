@@ -160,8 +160,9 @@ class NestNoteE2ETest {
     @Test
     fun searchWithNoMatchesShowsHelpfulEmptyState() {
         composeRule.onNodeWithText("Search your notes").performTextInput("no-note-should-match-this")
-        composeRule.onNodeWithText("A fresh page awaits").assertIsDisplayed()
-        composeRule.onNodeWithText("Create a note and let ideas flow.").assertIsDisplayed()
+        composeRule.onNodeWithText("No matching notes").assertIsDisplayed()
+        composeRule.onNodeWithText("Try another search, or clear it to see all your notes.").assertIsDisplayed()
+        composeRule.onNodeWithText("Clear search").assertIsDisplayed()
     }
 
     @Test
