@@ -539,3 +539,10 @@ This section reconciles the implementation checklists above with the latest P0â€
 - **P2:** defer architecture/new-feature expansion until P0/P1 UI contracts are stable; then extract a tested repository boundary without a broad rewrite.
 - **P3:** release checklist now uses `KEYSTORE_BASE64`; verify the actual production certificate fingerprint, signed release publication, installation and upgrade behavior only with configured owner secrets and an available device. No production-signing proof is claimed here.
 - **PR #10:** remains open pending owner approval and outstanding P0 manual/device validation. CI success means compile/build/test-task success only; it is not a device/accessibility sign-off.
+
+
+### P1 implementation follow-up â€” 2026-10-14
+
+- Fixed the combined filter/sort instrumentation test's unsupported Compose assertion API after CI run [#38520909916](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38520909916) failed during instrumentation-test compilation. The run's unit tests and debug/minified release builds passed; test APK compilation did not.
+- Code audit identified a double-dispatch risk in Settings `SwitchRow`: both the parent row and nested Switch handled clicks. The row now owns the switch role/toggle semantics and the nested Switch has no independent change callback.
+- **Validation pending:** exact-head CI for commits `30b1a4104a6a43ed996f8e77cc5fca1821db3fa4` and `240adb7479a53f127bb2dc76df7f7b9d9dd53941` has not yet been confirmed. Keep P0/P1 gates open until CI passes and device/accessibility validation is actually performed.
