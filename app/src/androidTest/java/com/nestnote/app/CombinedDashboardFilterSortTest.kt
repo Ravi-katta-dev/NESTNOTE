@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -46,7 +47,7 @@ class CombinedDashboardFilterSortTest {
         composeRule.runOnIdle {
             val preferences = composeRule.activity
                 .getSharedPreferences("nestnote_preferences", 0)
-            assert(preferences.getString("default_sort", null) == "TITLE")
+            assertEquals("TITLE", preferences.getString("default_sort", null))
         }
     }
 
