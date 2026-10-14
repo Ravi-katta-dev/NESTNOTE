@@ -599,3 +599,11 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Replaced the unsupported single-node assertion with the already-used `onAllNodesWithText(...).assertCountEquals(0)` pattern in `CombinedDashboardFilterSortTest.kt` (commit `30b1a4104a6a43ed996f8e77cc5fca1821db3fa4`).
 - During the wider Settings interaction audit, found `SwitchRow` had both a clickable parent row and an independently handled `Switch`; this could dispatch the same preference change twice when the switch itself was tapped. Changed the row to own accessible `Role.Switch` toggle semantics and made the child Switch presentation-only (`onCheckedChange = null`) (commit `240adb7479a53f127bb2dc76df7f7b9d9dd53941`).
 - Validation status: a new CI run for the current head has not yet been returned by the GitHub workflow lookup. Do not treat either change as CI-verified until an exact-head run completes. No hosted emulator has been added; device execution and visual/accessibility checks remain outstanding.
+
+### P1 Settings preference regression coverage — 2026-10-14
+
+- Added `settingsCardMetadataTogglesUpdatePreferencesOnceAndPersist` in `NestNoteE2ETest.kt` to cover both card metadata settings: note previews and dates/reminders. The test checks the persisted values after toggling and again after Activity recreation.
+- Also retained the existing search-specific empty-state assertions and the Settings row's single-owner switch semantics.
+- Commit: `2f60fd1c98211f4272fe9b9074adb92ae2aa1c55`.
+- Exact-head Android CI passed: [run #38526668685](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38526668685). The run passed unit tests, API 36 debug build, and release compilation; the workflow compiles instrumentation tests but does not execute them on a device.
+- PR [#10](https://github.com/Ravi-katta-dev/NESTNOTE/pull/10) remains open and unmerged. Device validation (keyboard/insets, responsive widths, large text, contrast, reduced motion and TalkBack) remains open; no manual QA is claimed.
