@@ -1,6 +1,7 @@
 package com.nestnote.app
 
-import androidx.compose.ui.test.assertDoesNotExist
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -43,7 +44,7 @@ class CombinedDashboardFilterSortTest {
         composeRule.onNodeWithText("Title A–Z").performClick()
 
         composeRule.onNodeWithText("Project Plan").assertIsDisplayed()
-        composeRule.onNodeWithText("Trip to the Mountains").assertDoesNotExist()
+        composeRule.onAllNodesWithText("Trip to the Mountains").assertCountEquals(0)
         composeRule.runOnIdle {
             val preferences = composeRule.activity
                 .getSharedPreferences("nestnote_preferences", 0)
