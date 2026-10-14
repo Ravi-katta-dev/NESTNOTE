@@ -138,23 +138,28 @@ class NestNoteE2ETest {
     }
 
     @Test
-    fun settingsPreviewToggleUpdatesPreferenceOnceAndPersists() {
+    fun settingsCardMetadataTogglesUpdatePreferencesOnceAndPersist() {
         composeRule.onNodeWithContentDescription("Open settings").performClick()
         composeRule.onNodeWithText("Show note previews").assertIsDisplayed()
         composeRule.onNodeWithText("Show note previews").performClick()
+        composeRule.onNodeWithText("Show dates and reminders").assertIsDisplayed()
+        composeRule.onNodeWithText("Show dates and reminders").performClick()
 
         composeRule.runOnIdle {
             val preferences = composeRule.activity.getSharedPreferences("nestnote_preferences", 0)
             assertEquals(false, preferences.getBoolean("show_note_previews", true))
+            assertEquals(false, preferences.getBoolean("show_note_timestamps", true))
         }
 
         composeRule.activity.runOnUiThread { composeRule.activity.recreate() }
         composeRule.waitForIdle()
         composeRule.onNodeWithContentDescription("Open settings").performClick()
         composeRule.onNodeWithText("Show note previews").assertIsDisplayed()
+        composeRule.onNodeWithText("Show dates and reminders").assertIsDisplayed()
         composeRule.runOnIdle {
             val preferences = composeRule.activity.getSharedPreferences("nestnote_preferences", 0)
             assertEquals(false, preferences.getBoolean("show_note_previews", true))
+            assertEquals(false, preferences.getBoolean("show_note_timestamps", true))
         }
     }
 
