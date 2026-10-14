@@ -173,6 +173,18 @@ class NestNoteE2ETest {
     }
 
     @Test
+    fun systemBackReturnsFromSettingsToHome() {
+        composeRule.onNodeWithContentDescription("Open settings").performClick()
+        composeRule.onNodeWithText("Backup & privacy").assertIsDisplayed()
+
+        composeRule.activity.onBackPressedDispatcher.onBackPressed()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Your notes").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Create note").assertIsDisplayed()
+    }
+
+    @Test
     fun categorySelectionFiltersDashboardNotes() {
         composeRule.onNodeWithText("Categories").performClick()
         composeRule.onNodeWithText("Work").performClick()

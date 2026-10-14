@@ -287,6 +287,13 @@ private fun NestNoteApp(store: NoteStore) {
         }
     }
 
+    // System Back should unwind secondary destinations before leaving the app.
+    BackHandler(enabled = !editorVisible && selectedView != "Home") {
+        selectedView = "Home"
+        search = ""
+        searchVisible = false
+    }
+
     MaterialTheme(colorScheme = scheme) {
         val colors = MaterialTheme.colorScheme
         Scaffold(
@@ -350,7 +357,7 @@ private fun NestNoteApp(store: NoteStore) {
                                     "More" -> Icons.Default.MoreVert
                                     "Reminders" -> Icons.Default.NotificationsNone
                                     else -> Icons.Default.Check
-                                }, contentDescription = item)
+                                }, contentDescription = null)
                             },
                             label = { Text(item, maxLines = 1, fontSize = 10.sp) }
                         )
@@ -502,7 +509,7 @@ private fun NestNoteApp(store: NoteStore) {
                                     ) {
                                         Column(Modifier.fillMaxWidth().padding(16.dp)) {
                                             Text(category, style = MaterialTheme.typography.titleMedium)
-                                            Text("${notes.count { it.category == category }} notes", color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                                            Text("${notes.count { it.category == category && !it.archived }} active notes", color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                                         }
                                     }
                                 }
@@ -1026,7 +1033,8 @@ private fun OverviewTile(
 ) {
     val colors = MaterialTheme.colorScheme
     Surface(
-        modifier = modifier.clickable(onClick = onClick),
+        onClick = onClick,
+        modifier = modifier,
         shape = RoundedCornerShape(18.dp),
         color = colors.surfaceContainerLow,
         border = BorderStroke(1.dp, colors.outlineVariant)
