@@ -93,6 +93,15 @@ class NestNoteE2ETest {
                     .getString("default_sort", null)
             )
         }
+        composeRule.activity.runOnUiThread { composeRule.activity.recreate() }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle {
+            assertEquals(
+                "CREATED",
+                composeRule.activity.getSharedPreferences("nestnote_preferences", 0)
+                    .getString("default_sort", null)
+            )
+        }
     }
 
 
