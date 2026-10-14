@@ -139,7 +139,7 @@ class NestNoteE2ETest {
 
     @Test
     fun settingsPreviewToggleUpdatesPreferenceOnceAndPersists() {
-        composeRule.onNodeWithText("Settings").performClick()
+        composeRule.onNodeWithContentDescription("Open settings").performClick()
         composeRule.onNodeWithText("Show note previews").assertIsDisplayed()
         composeRule.onNodeWithText("Show note previews").performClick()
 
@@ -150,7 +150,7 @@ class NestNoteE2ETest {
 
         composeRule.activity.runOnUiThread { composeRule.activity.recreate() }
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Settings").performClick()
+        composeRule.onNodeWithContentDescription("Open settings").performClick()
         composeRule.onNodeWithText("Show note previews").assertIsDisplayed()
         composeRule.runOnIdle {
             val preferences = composeRule.activity.getSharedPreferences("nestnote_preferences", 0)
