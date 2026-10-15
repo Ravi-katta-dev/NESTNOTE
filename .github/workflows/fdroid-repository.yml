@@ -48,6 +48,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install Android APK verification tools
+        uses: android-actions/setup-android@v3
+      - name: Install Android build tools
+        run: sdkmanager "build-tools;36.0.0"
+
       - name: Install F-Droid server tools
         run: |
           python -m pip install --upgrade pip
@@ -116,7 +121,7 @@ jobs:
           # Verify every published APK is signed; this does not replace the
           # independent production-certificate fingerprint check in the release checklist.
           for apk in fdroid/repo/NESTNOTE-v*.apk; do
-            apksigner verify --verbose "$apk"
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
           done
 
       - name: Configure GitHub Pages
