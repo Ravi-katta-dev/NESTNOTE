@@ -639,3 +639,9 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Added parser regression tests for common formatting, lists, and links.
 - Implementation commit chain on `feature/markdown-preview-markor-parser`: `b071cb8f` (vendored parser), `df7b9bed` (adapter), `d29d2627` (editor toggle), `83da445d` (typography fix), `48751ab4` (parser tests).
 - Validation: Android CI has not yet been run for this branch. No emulator/device validation claimed. The upstream parser is intentionally limited to common Markdown syntax; this is not a full CommonMark implementation.
+
+
+### Markdown preview CI fix — 2026-10-15
+
+- Fixed Kotlin compilation failure in the Markdown preview's Android TextView initialization by using `setTextSize(TypedValue.COMPLEX_UNIT_SP, markdownBodySize)`, avoiding the outer editor `textSize` enum shadowing the TextView property.
+- Validation before fix: Android CI run #274 failed at `MainActivity.kt:1436` with “val cannot be reassigned” and a Float/EditorTextSize type mismatch. Awaiting exact-head CI after this fix; no device validation claimed.
