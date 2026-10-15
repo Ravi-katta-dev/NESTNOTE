@@ -623,3 +623,10 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Tubular and Metiq were identified as examples to inspect, but their GPL licensing means their source remains reference-only until NESTNOTE's project license and compatibility are confirmed. No code from either project has been copied.
 - Preserve NESTNOTE's note model, local persistence, and save/discard contracts; do not import another app's architecture wholesale.
 - This is a strategy decision, not a validation claim. Continue implementation on PR #16 using existing dependencies/components; record exact-head CI and manual/device validation separately.
+
+
+### Material 3 editor theme reuse — 2026-10-15
+
+- Continued PR #16 by reusing the app's existing Material 3 color scheme for reminder/archive/more/clear icons, category-chip outlines, editor divider, disabled save-button state, and Appearance scrim instead of keeping separate hard-coded light-only values.
+- Implementation commit: `17f6dac9d20332a512c8b0955568cd6fd10427b8`.
+- This is source-level work only. Exact-head Android CI and device/emulator visual checks have not yet been confirmed; no accessibility/device verification is claimed.
