@@ -69,7 +69,7 @@ jobs:
           keytool -list -keystore "$RUNNER_TEMP/fdroid-repo-signing.jks" -storepass "$FDROID_KEYSTORE_PASSWORD" -alias "$FDROID_KEY_ALIAS" >/dev/null
 
           cat > fdroid/config.yml <<EOF
-          repo_url: https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}
+          repo_url: https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/repo
           repo_name: NESTNOTE
           repo_description: Official NESTNOTE custom F-Droid repository.
           repo_icon: icon.png
@@ -123,7 +123,7 @@ jobs:
       - name: Upload repository site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: fdroid/repo
+          path: fdroid
 
       - name: Deploy repository site
         id: deployment
