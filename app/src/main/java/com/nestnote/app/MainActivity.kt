@@ -1290,7 +1290,7 @@ private fun NoteEditorContent(
                         Icon(
                             Icons.Default.NotificationsNone,
                             contentDescription = "Choose reminder time",
-                            tint = if (reminder.isNotBlank()) accent else Color(0xFF55515C)
+                            tint = if (reminder.isNotBlank()) accent else colors.onSurfaceVariant
                         )
                     }
                     DropdownMenu(expanded = reminderMenu, onDismissRequest = { reminderMenu = false }) {
@@ -1318,7 +1318,7 @@ private fun NoteEditorContent(
                 }
                 if (original != null) {
                     IconButton(onClick = { onSave(buildNote(archived = true)) }) {
-                        Icon(Icons.Default.Archive, contentDescription = "Archive note", tint = Color(0xFF55515C))
+                        Icon(Icons.Default.Archive, contentDescription = "Archive note", tint = colors.onSurfaceVariant)
                     }
                 }
                 IconButton(onClick = {
@@ -1330,7 +1330,7 @@ private fun NoteEditorContent(
                 }
                 Box {
                     IconButton(onClick = { moreMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More editor actions", tint = Color(0xFF55515C))
+                        Icon(Icons.Default.MoreVert, contentDescription = "More editor actions", tint = colors.onSurfaceVariant)
                     }
                     DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
                         DropdownMenuItem(
@@ -1438,7 +1438,7 @@ private fun NoteEditorContent(
                                 selectedContainerColor = accent,
                                 selectedLabelColor = colors.onPrimary
                             ),
-                            border = BorderStroke(1.dp, Color(0x33514783))
+                            border = BorderStroke(1.dp, colors.outlineVariant)
                         )
                     }
                 }
@@ -1462,7 +1462,7 @@ private fun NoteEditorContent(
                                 )
                             }
                             IconButton(onClick = { reminder = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear reminder", tint = Color(0xFF55515C))
+                                Icon(Icons.Default.Close, contentDescription = "Clear reminder", tint = colors.onSurfaceVariant)
                             }
                         }
                     }
@@ -1520,7 +1520,7 @@ private fun NoteEditorContent(
                     }
                 }
             }
-            HorizontalDivider(color = Color(0x1F6F6878))
+            HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.6f))
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactDialog) 8.dp else 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1537,8 +1537,8 @@ private fun NoteEditorContent(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = accent,
                         contentColor = colors.onPrimary,
-                        disabledContainerColor = Color(0xFFE2DFE9),
-                        disabledContentColor = accent
+                        disabledContainerColor = colors.surfaceVariant,
+                        disabledContentColor = colors.onSurfaceVariant
                     )
                 ) { Text("Save note") }
             }
@@ -1558,7 +1558,7 @@ private fun NoteEditorContent(
         // controls a little more room on tablets and other wide editor windows.
         val appearancePanelMaxWidth = if (maxWidth >= 600.dp) 480.dp else 360.dp
         AnimatedVisibility(visible = appearanceVisible, enter = fadeIn(), exit = fadeOut()) {
-            Box(Modifier.fillMaxSize().background(Color(0x660F0D17)).clickable { dismissAppearance(discardDraft = true) }.testTag("appearance_scrim"))
+            Box(Modifier.fillMaxSize().background(colors.scrim.copy(alpha = 0.40f)).clickable { dismissAppearance(discardDraft = true) }.testTag("appearance_scrim"))
         }
         AnimatedVisibility(
             visible = appearanceVisible,
