@@ -607,3 +607,12 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Commit: `2f60fd1c98211f4272fe9b9074adb92ae2aa1c55`.
 - Exact-head Android CI passed: [run #38526668685](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38526668685). The run passed unit tests, API 36 debug build, and release compilation; the workflow compiles instrumentation tests but does not execute them on a device.
 - PR [#10](https://github.com/Ravi-katta-dev/NESTNOTE/pull/10) remains open and unmerged. Device validation (keyboard/insets, responsive widths, large text, contrast, reduced motion and TalkBack) remains open; no manual QA is claimed.
+
+
+### Codebase audit and open-source comparison — 2026-10-15
+
+- Reviewed main at `935fd1f7a6892d6d87668b73930ec540335e9aaf`: Compose UI, storage/backup, text helpers, Android configuration, tests, CI, README, roadmap and UI/UX rules.
+- Refreshed `docs/P1_QUALITY_AUDIT.md` with prioritized source findings, validation gaps, feature candidates, comparison references (Material 3, Markor, Fossify Notes, Tubular, Metiq), and a reuse/license policy.
+- Highest-priority concerns: UI test workflow is manual-only (required CI compiles instrumentation but doesn't execute it), restore merge has avoidable quadratic membership work, large UI/state concentration in `MainActivity.kt`, and device/accessibility checks remain unverified.
+- Product opportunities identified: actual reminder delivery, optional autosave/draft recovery and undo/redo, quick-capture widget, and interoperable Markdown/text export. These need product/compatibility decisions; not all should be implemented automatically.
+- Source review only. No emulator/physical-device test was executed and no third-party source code was copied. Previously recorded issues should be re-verified against current `main` before implementation.
