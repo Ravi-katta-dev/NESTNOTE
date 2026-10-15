@@ -1165,9 +1165,16 @@ private fun NoteEditorContent(
     var moreMenu by remember { mutableStateOf(false) }
     val titleFocus = remember { FocusRequester() }
     val context = LocalContext.current
-    val ink = Color(0xFF292633)
-    val muted = Color(0xFF66616D)
-    val accent = Color(0xFF514783)
+    val colors = MaterialTheme.colorScheme
+    val darkEditor = colors.surface.red < 0.5f
+    val ink = if (darkEditor) colors.onSurface else Color(0xFF292633)
+    val muted = if (darkEditor) colors.onSurfaceVariant else Color(0xFF66616D)
+    val accent = if (darkEditor) colors.primary else Color(0xFF514783)
+    val editorCanvas = if (backgroundIndex == 0) {
+        if (darkEditor) colors.surface else noteTints[colorIndex]
+    } else {
+        colors.surface
+    }
     val hasUnsavedChanges = title != original?.title.orEmpty() ||
         body != original?.body.orEmpty() ||
         category != (original?.category ?: defaultNoteCategory) ||
@@ -1256,7 +1263,7 @@ private fun NoteEditorContent(
     Box(
         modifier = modifier
             .then(if (fullScreen) Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding() else Modifier.fillMaxWidth().navigationBarsPadding())
-            .background(if (backgroundIndex == 0) noteTints[colorIndex] else Color.White)
+            .background(editorCanvas)
     ) {
         if (backgroundIndex > 0) {
             NoteWallpaperArtwork(backgroundIndex, Modifier.fillMaxSize())
@@ -1268,14 +1275,14 @@ private fun NoteEditorContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { requestDismiss() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Close editor", tint = Color(0xFF45434A))
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Close editor", tint = if (darkEditor) colors.onSurface else Color(0xFF45434A))
                 }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = { pinned = !pinned }) {
                     Icon(
                         Icons.Default.PushPin,
                         contentDescription = if (pinned) "Unpin note" else "Pin note",
-                        tint = if (pinned) accent else Color(0xFF55515C)
+                        tint = if (pinned) accent else if (darkEditor) colors.onSurfaceVariant else Color(0xFF55515C)
                     )
                 }
                 Box {
@@ -1426,10 +1433,10 @@ private fun NoteEditorContent(
                             onClick = { category = item },
                             label = { Text(item) },
                             colors = FilterChipDefaults.filterChipColors(
-                                containerColor = Color.White.copy(alpha = 0.55f),
+                                containerColor = colors.surfaceVariant.copy(alpha = if (darkEditor) 0.72f else 0.55f),
                                 labelColor = ink,
                                 selectedContainerColor = accent,
-                                selectedLabelColor = Color.White
+                                selectedLabelColor = colors.onPrimary
                             ),
                             border = BorderStroke(1.dp, Color(0x33514783))
                         )
@@ -1440,7 +1447,7 @@ private fun NoteEditorContent(
                         onClick = { pickReminder() },
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp).fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
-                        color = Color.White.copy(alpha = 0.6f)
+                        color = colors.surfaceVariant.copy(alpha = if (darkEditor) 0.72f else 0.6f)
                     ) {
                         Row(
                             Modifier.padding(start = 14.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
@@ -1529,7 +1536,7 @@ private fun NoteEditorContent(
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = accent,
-                        contentColor = Color.White,
+                        contentColor = colors.onPrimary,
                         disabledContainerColor = Color(0xFFE2DFE9),
                         disabledContentColor = accent
                     )
