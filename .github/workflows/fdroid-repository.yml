@@ -32,8 +32,10 @@ jobs:
           FDROID_KEYSTORE_PASSWORD: ${{ secrets.F_DROID_KEYSTORE_PASSWORD }}
           FDROID_KEY_ALIAS: ${{ secrets.F_DROID_KEY_ALIAS }}
           FDROID_KEY_PASSWORD: ${{ secrets.F_DROID_KEY_PASSWORD }}
+          APP_SIGNING_CERT_SHA256: ${{ secrets.APP_SIGNING_CERT_SHA256 }}
         run: |
           set -euo pipefail
+          : "${APP_SIGNING_CERT_SHA256:?Configure APP_SIGNING_CERT_SHA256 with the production APK certificate SHA-256 fingerprint}"
           : "${FDROID_KEYSTORE_BASE64:?Configure F_DROID_KEYSTORE_BASE64}"
           : "${FDROID_KEYSTORE_PASSWORD:?Configure F_DROID_KEYSTORE_PASSWORD}"
           : "${FDROID_KEY_ALIAS:?Configure F_DROID_KEY_ALIAS}"
@@ -65,6 +67,7 @@ jobs:
           FDROID_KEYSTORE_PASSWORD: ${{ secrets.F_DROID_KEYSTORE_PASSWORD }}
           FDROID_KEY_ALIAS: ${{ secrets.F_DROID_KEY_ALIAS }}
           FDROID_KEY_PASSWORD: ${{ secrets.F_DROID_KEY_PASSWORD }}
+          APP_SIGNING_CERT_SHA256: ${{ secrets.APP_SIGNING_CERT_SHA256 }}
         shell: bash
         run: |
           set -euo pipefail
@@ -77,7 +80,6 @@ jobs:
           repo_url: https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/repo
           repo_name: NESTNOTE
           repo_description: Official NESTNOTE custom F-Droid repository.
-          repo_icon: icon.png
           archive_older: 0
           repo_keyalias: "$FDROID_KEY_ALIAS"
           keystore: "$RUNNER_TEMP/fdroid-repo-signing.jks"
@@ -118,10 +120,15 @@ jobs:
           test -s fdroid/repo/index-v1.jar
           unzip -t fdroid/repo/index.jar
           find fdroid/repo -maxdepth 1 -name 'NESTNOTE-v*.apk' -print -quit | grep -q .
-          # Verify every published APK is signed; this does not replace the
-          # independent production-certificate fingerprint check in the release checklist.
+          # Require every APK to use the expected permanent production signing certificate.
+          expected="$(printf '%s' "$APP_SIGNING_CERT_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           for apk in fdroid/repo/NESTNOTE-v*.apk; do
-            "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$apk" | tee "$RUNNER_TEMP/apksigner-verify.txt"
+            actual="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apksigner-verify.txt" | head -n1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+            if [[ -z "$actual" || "$actual" != "$expected" ]]; then
+              echo "::error::APK production signing certificate does not match APP_SIGNING_CERT_SHA256: $apk"
+              exit 1
+            fi
           done
 
       - name: Configure GitHub Pages
