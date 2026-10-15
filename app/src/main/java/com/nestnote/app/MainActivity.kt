@@ -1433,7 +1433,7 @@ private fun NoteEditorContent(
                             factory = { viewContext ->
                                 TextView(viewContext).apply {
                                     setTextColor(ink.toArgb())
-                                    textSize = markdownBodySize
+                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, markdownBodySize)
                                     setTextIsSelectable(true)
                                 }
                             },
