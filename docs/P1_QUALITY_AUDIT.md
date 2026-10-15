@@ -31,12 +31,16 @@ Evidence levels: **Confirmed** = reproduced by running code. **Source-confirmed*
 
 ## Validation performed
 
-No Android SDK/Gradle is available in this environment and no push credentials, so CI has not run for this branch.
+GitHub Actions CI passed on exact branch head `f13bf6768f2320cc12f3cf0fb4f4bddb4dac0090`: [run #38687195037](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38687195037).
 
-- Kotlin 2.1.20 compiler + a minimal JUnit shim compiled `NoteText.kt` with `NoteTextTest.kt` and ran every `@Test`.
-- Baseline on `main`: 15/15 pass. After the change: 21/21 pass. The 6 new tests all fail against `main`'s `NoteText.kt` (verified).
-- NOT run: `NoteStoreTest`, `NoteBackupTest` (Robolectric), instrumentation tests, `assembleDebug/Release`, any device check.
-- Required before merge: `gradle testDebugUnitTest assembleDebug assembleRelease assembleDebugAndroidTest` via the repo's Android CI.
+- Unit tests passed.
+- Debug APK build passed.
+- Minified release APK build passed.
+- Android instrumentation tests compiled successfully, but were **not executed on a device/emulator**.
+- CI uploaded its configured build artifact. This is not a production release/signing validation.
+- The six added tests cover indentation-aware checklist/bullet operations, list continuation/termination, checklist progress consistency, and late-day reminder boundaries.
+- NOT run: device/emulator interaction, visual review, TalkBack, keyboard/insets, large font, reduced motion, physical-device smoke test, or production APK certificate verification.
+- Required before merge: review the PR diff and retain the device-only checks above as explicitly outstanding.
 
 ## Files / overlap / merge order
 
