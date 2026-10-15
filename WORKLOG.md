@@ -614,3 +614,12 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Replaced the editor canvas's hard-coded white fallback with the active Material theme surface, so wallpaper-backed editors no longer flash/show a white base in dark mode.
 - Made editor foregrounds, toolbar icon tints, category chips, reminder surface and save-button foreground follow the active theme in dark mode while retaining the existing light-mode pastel palette.
 - Change is source-reviewed only at this point. Exact-head Android CI and visual verification on a dark-theme device/emulator are still required; do not mark the whole-app P1 audit complete from this patch alone.
+
+
+### UI implementation strategy — reuse-first — 2026-10-15
+
+- User direction: prefer adapting/copying mature open-source implementations and existing Material 3 / Jetpack Compose components over creating new UI code or adding new files.
+- Reuse order: (1) existing NESTNOTE components and theme tokens, (2) official AndroidX Material 3 components already in the app, (3) compatible, license-cleared open-source implementations where direct reuse offers a clear advantage.
+- Tubular and Metiq were identified as examples to inspect, but their GPL licensing means their source remains reference-only until NESTNOTE's project license and compatibility are confirmed. No code from either project has been copied.
+- Preserve NESTNOTE's note model, local persistence, and save/discard contracts; do not import another app's architecture wholesale.
+- This is a strategy decision, not a validation claim. Continue implementation on PR #16 using existing dependencies/components; record exact-head CI and manual/device validation separately.
