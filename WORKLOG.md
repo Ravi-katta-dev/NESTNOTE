@@ -607,3 +607,10 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Commit: `2f60fd1c98211f4272fe9b9074adb92ae2aa1c55`.
 - Exact-head Android CI passed: [run #38526668685](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38526668685). The run passed unit tests, API 36 debug build, and release compilation; the workflow compiles instrumentation tests but does not execute them on a device.
 - PR [#10](https://github.com/Ravi-katta-dev/NESTNOTE/pull/10) remains open and unmerged. Device validation (keyboard/insets, responsive widths, large text, contrast, reduced motion and TalkBack) remains open; no manual QA is claimed.
+
+
+## Dark-theme editor contrast fix — 2026-10-15
+
+- Replaced the editor canvas's hard-coded white fallback with the active Material theme surface, so wallpaper-backed editors no longer flash/show a white base in dark mode.
+- Made editor foregrounds, toolbar icon tints, category chips, reminder surface and save-button foreground follow the active theme in dark mode while retaining the existing light-mode pastel palette.
+- Change is source-reviewed only at this point. Exact-head Android CI and visual verification on a dark-theme device/emulator are still required; do not mark the whole-app P1 audit complete from this patch alone.
