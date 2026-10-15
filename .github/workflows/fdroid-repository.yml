@@ -113,7 +113,7 @@ jobs:
 
       - name: Validate signed APKs and repository index
         env:
-          FDROID_KEYSTORE_PASSWORD: ${{ secrets.F_DROID_KEYSTORE_PASSWORD }}
+          APP_SIGNING_CERT_SHA256: ${{ secrets.APP_SIGNING_CERT_SHA256 }}
         run: |
           set -euo pipefail
           test -s fdroid/repo/index.jar
