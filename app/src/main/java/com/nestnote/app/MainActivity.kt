@@ -1155,6 +1155,7 @@ private fun NoteEditorContent(
         mutableStateOf(TextFieldValue(original?.body.orEmpty()))
     }
     val body = bodyValue.text
+    val markdownBodySize = textSize.bodySp.toFloat()
     var category by rememberSaveable(original?.id) { mutableStateOf(original?.category ?: defaultNoteCategory) }
     var colorIndex by rememberSaveable(original?.id) { mutableIntStateOf(original?.color?.coerceIn(0, noteAccents.lastIndex) ?: 0) }
     var backgroundIndex by rememberSaveable(original?.id) { mutableIntStateOf(original?.background?.coerceIn(0, 5) ?: 0) }
@@ -1432,13 +1433,13 @@ private fun NoteEditorContent(
                             factory = { viewContext ->
                                 TextView(viewContext).apply {
                                     setTextColor(ink.toArgb())
-                                    textSize = textSize.bodySp.toFloat()
+                                    textSize = markdownBodySize
                                     setTextIsSelectable(true)
                                 }
                             },
                             update = { textView ->
                                 textView.setTextColor(ink.toArgb())
-                                textView.textSize = textSize.bodySp.toFloat()
+                                textView.textSize = markdownBodySize
                                 textView.text = MarkdownPreview.toSpanned(body)
                             }
                         )
