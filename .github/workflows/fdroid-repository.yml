@@ -101,6 +101,8 @@ jobs:
           fdroid update --create-metadata --pretty
           cd ..
           rm -f fdroid/repo/*.apk.idsig
+          # config.yml contains private signing passwords; never deploy it to Pages.
+          rm -f fdroid/config.yml
 
       - name: Validate signed APKs and repository index
         env:
