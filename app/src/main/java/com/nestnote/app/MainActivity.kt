@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.widget.TextView
 import android.app.TimePickerDialog
 import android.os.Build
@@ -934,6 +935,31 @@ private fun SettingsScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     FilledTonalButton(onClick = onExportNotes, modifier = Modifier.weight(1f)) { Text("Back up notes") }
                     OutlinedButton(onClick = onImportNotes, modifier = Modifier.weight(1f)) { Text("Restore backup") }
+                }
+            }
+        }
+        item {
+            SettingsSection(title = "About NESTNOTE", subtitle = "Open the project and get the latest release") {
+                Text(
+                    "NESTNOTE is open source. Visit GitHub for the source code, project updates, and release downloads.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant
+                )
+                FilledTonalButton(
+                    onClick = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Ravi-katta-dev/NESTNOTE")))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("View on GitHub")
+                }
+                OutlinedButton(
+                    onClick = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Ravi-katta-dev/NESTNOTE/releases")))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Download latest release")
                 }
             }
         }
