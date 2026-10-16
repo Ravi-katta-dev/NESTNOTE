@@ -34,51 +34,18 @@ jobs:
             echo "has_key=false" >> "$GITHUB_OUTPUT"
           fi
 
-  generate-keystore:
-    name: Generate repository keystore once
+  require-repository-key:
+    name: Require repository signing secrets
     needs: check-key
     if: ${{ needs.check-key.outputs.has_key == 'false' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Install Java, apksigner, and pipx
+      - name: Stop safely until repository key is configured
         run: |
-          sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk-headless apksigner pipx
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          pipx install fdroidserver
-          fdroid --version
-      - name: Generate a new private PKCS12 repository key
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p private-key
-          KEYSTORE_PASS="$(openssl rand -base64 36 | tr -d '\n')"
-          # PKCS12 keystores use the same password for the store and private key.
-          KEY_PASS="$KEYSTORE_PASS"
-          keytool -genkeypair -noprompt \
-            -keystore private-key/keystore.p12 -storetype PKCS12 \
-            -storepass "$KEYSTORE_PASS" -keypass "$KEY_PASS" \
-            -alias nestnote-repokey -keyalg RSA -keysize 4096 -validity 10000 \
-            -dname "CN=NESTNOTE Repo, OU=Development, O=Ravi-katta-dev, L=Unknown, S=Unknown, C=IN"
-          keytool -exportcert -keystore private-key/keystore.p12 \
-            -storetype PKCS12 -storepass "$KEYSTORE_PASS" -alias nestnote-repokey \
-            -file private-key/repo-cert.der
-          FINGERPRINT="$(keytool -printcert -file private-key/repo-cert.der | awk -F': ' '/SHA256:/{print $2; exit}')"
-          printf '%s\n' "$KEYSTORE_PASS" > private-key/FDROID_KEYSTORE_PASS.txt
-          printf '%s\n' "$KEY_PASS" > private-key/FDROID_KEY_PASS.txt
-          printf '%s\n' 'nestnote-repokey' > private-key/FDROID_KEY_ALIAS.txt
-          printf '%s\n' "$FINGERPRINT" > private-key/REPO_KEY_SHA256_FINGERPRINT.txt
-          printf '%s\n' "$FINGERPRINT" > "$RUNNER_TEMP/repo-fingerprint.txt"
-          base64 -w0 private-key/keystore.p12 > private-key/FDROID_KEYSTORE_BASE64.txt
-          echo "Repository certificate SHA-256 fingerprint: $FINGERPRINT"
-          echo "::notice::Download the short-retention fdroid-keystore-bootstrap artifact privately, then add its values as Actions secrets. Do not share or commit it."
-      - name: Upload one-time bootstrap bundle (private download only)
-        uses: actions/upload-artifact@v4
-        with:
-          name: fdroid-keystore-bootstrap
-          path: private-key/
-          retention-days: 1
-          if-no-files-found: error
+          echo "::error::F-Droid repository signing key is not configured."
+          echo "Generate the repository keystore on a trusted local machine, then add FDROID_KEYSTORE_BASE64, FDROID_KEYSTORE_PASS, FDROID_KEY_ALIAS, and FDROID_KEY_PASS as repository Actions secrets."
+          echo "Never upload a keystore or its passwords as a workflow artifact in this public repository."
+          exit 1
 
   build-repo:
     name: Build and publish repository index
