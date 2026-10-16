@@ -55,7 +55,20 @@ jobs:
           : "${FDROID_KEY_PASS:?Add FDROID_KEY_PASS repository secret}"
           printf '%s' "$FDROID_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > fdroid/keystore.p12
           test -s fdroid/keystore.p12
-          sed -i "s|\${FDROID_KEY_ALIAS}|$FDROID_KEY_ALIAS|g; s|\${FDROID_KEYSTORE_PASS}|$FDROID_KEYSTORE_PASS|g; s|\${FDROID_KEY_PASS}|$FDROID_KEY_PASS|g" fdroid/config.yml
+          # Replace only the explicit placeholders; never print the resulting config.
+          FDROID_KEYSTORE_PASS="$FDROID_KEYSTORE_PASS" FDROID_KEY_ALIAS="$FDROID_KEY_ALIAS" FDROID_KEY_PASS="$FDROID_KEY_PASS" python3 - <<'PY'
+          import os
+          from pathlib import Path
+          path = Path("fdroid/config.yml")
+          text = path.read_text()
+          for placeholder, env_name in (
+              ("${FDROID_KEY_ALIAS}", "FDROID_KEY_ALIAS"),
+              ("${FDROID_KEYSTORE_PASS}", "FDROID_KEYSTORE_PASS"),
+              ("${FDROID_KEY_PASS}", "FDROID_KEY_PASS"),
+          ):
+              text = text.replace(placeholder, os.environ[env_name])
+          path.write_text(text)
+          PY
           chmod 600 fdroid/keystore.p12
 
       - name: Prepare signed APK repository
@@ -70,8 +83,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/fdroid-pages"
-          cp -a fdroid/. "$RUNNER_TEMP/fdroid-pages/"
+          # Publish only generated public repository files. Never publish config.yml,
+          # metadata, or the private signing keystore to the gh-pages branch.
+          mkdir -p "$RUNNER_TEMP/fdroid-pages/fdroid"
+          cp -a fdroid/repo "$RUNNER_TEMP/fdroid-pages/fdroid/repo"
+          rm -f fdroid/keystore.p12
           cd "$RUNNER_TEMP/fdroid-pages"
           git init
           git config user.name "github-actions[bot]"
@@ -80,4 +96,3 @@ jobs:
           git add -A
           git commit -m "Publish NESTNOTE F-Droid repository for $RELEASE_TAG"
           git push --force "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" HEAD:gh-pages
-          rm -f fdroid/keystore.p12
