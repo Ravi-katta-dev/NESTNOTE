@@ -645,3 +645,9 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 
 - Fixed Kotlin compilation failure in the Markdown preview's Android TextView initialization by using `setTextSize(TypedValue.COMPLEX_UNIT_SP, markdownBodySize)`, avoiding the outer editor `textSize` enum shadowing the TextView property.
 - Validation before fix: Android CI run #274 failed at `MainActivity.kt:1436` with “val cannot be reassigned” and a Float/EditorTextSize type mismatch. Awaiting exact-head CI after this fix; no device validation claimed.
+
+### Settings — direct GitHub access (2026-10-16)
+
+- Added an **About NESTNOTE** section to Settings with separate actions to open the project repository and its GitHub Releases page. This gives users a direct path to source/project information and release APK downloads without implying F-Droid distribution or adding an in-app APK updater.
+- Implementation commit: `7164a19503b4c33124bdf7babd267cfdbd557521`.
+- Validation: exact-head Android CI has not yet been confirmed. The actions use Android's standard `ACTION_VIEW` intent to open HTTPS URLs; device-level link handling has not been manually tested.
