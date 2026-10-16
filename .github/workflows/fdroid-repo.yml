@@ -151,7 +151,9 @@ jobs:
           PY
           APK="$(find fdroid/repo -maxdepth 1 -name '*.apk' -print -quit)"
           apksigner verify --print-certs "$APK" > "$RUNNER_TEMP/apk-certs.txt"
-          grep -qi "$APK_FINGERPRINT" "$RUNNER_TEMP/apk-certs.txt"
+          APK_CERT_FINGERPRINT="$(awk -F': ' '/certificate SHA-256 digest:/{gsub(":","",$2); print toupper($2); exit}' "$RUNNER_TEMP/apk-certs.txt")"
+          test -n "$APK_CERT_FINGERPRINT"
+          test "$APK_FINGERPRINT" = "$APK_CERT_FINGERPRINT"
       - name: Generate F-Droid repository index
         working-directory: fdroid
         run: |
