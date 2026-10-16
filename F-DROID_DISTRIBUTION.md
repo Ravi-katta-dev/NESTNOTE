@@ -32,7 +32,7 @@ Make NESTNOTE installable and updateable through an F-Droid-compatible source wi
 
 ### Blocking questions / required fixes before submission
 
-1. **License is not yet established.** No root `LICENSE` file was found at the time of this audit. Confirm the intended project license and add the actual license text before submitting metadata. Do not guess a license or treat third-party source headers as the app's license.
+1. **License declared; verify rights and canonical text.** The owner selected GPL-3.0-only and a root `LICENSE` notice has been added. Before submission, confirm all copyright holders have authority to license the project under GPL-3.0-only and ensure the distribution includes the complete canonical license text (the current file points to the FSF text rather than embedding it). Do not treat third-party source headers as the app's license.
 2. **Release build reproducibility is not yet demonstrated.** Run a clean build from the exact source tag using the build recipe selected for F-Droid and record the result.
 3. **Dependency/source review is incomplete.** Audit all direct and transitive dependencies, embedded/vendored code, telemetry, network behavior, and any non-free build components against the current F-Droid inclusion policy.
 4. **Versioning must be made deterministic for source builds.** The Gradle defaults are versionCode 1/versionName 1.0.0 unless properties are supplied. Ensure each tagged release maps to unique, correctly increasing values in the F-Droid build recipe.
@@ -41,13 +41,13 @@ Make NESTNOTE installable and updateable through an F-Droid-compatible source wi
 
 ## Phase 2 — metadata preparation checklist
 
-Do not submit a final metadata file until the license and dependency review are complete. The likely metadata fields to prepare are:
+Do not submit a final metadata file until the license-rights check and dependency review are complete. The likely metadata fields to prepare are:
 
 - package ID: `com.nestnote.app`
 - source code URL: `https://github.com/Ravi-katta-dev/NESTNOTE`
 - issue tracker: `https://github.com/Ravi-katta-dev/NESTNOTE/issues`
 - changelog/release information: GitHub Releases
-- license: **blocked pending owner decision and root license file**
+- license: `GPL-3.0-only` (owner-selected; confirm contributor rights and include canonical license text before submission)
 - build recipe: pin an upstream version tag and use the supported Gradle/Android SDK build requirements
 - categories, summary, description, author/contact, and current version metadata: verify and populate from authoritative project details before submission
 
