@@ -1,0 +1,7 @@
+repo_url: https://raw.githubusercontent.com/Ravi-katta-dev/NESTNOTE/gh-pages/fdroid/repo
+repo_name: NESTNOTE F-Droid Repo
+repo_description: F-Droid repository for NESTNOTE, a local-first Android notes app.
+archive_older: 0
+keystore: keystore.p12
+repo_keyalias: nestnote-repokey
+keydname: CN=NESTNOTE Repo, OU=Development, O=Ravi-katta-dev, L=Unknown, S=Unknown, C=IN
