@@ -4,7 +4,9 @@ This directory contains the F-Droid server configuration and metadata. The repos
 
 ## One-time keystore generation
 
-1. Open the repository's **Actions** tab.
+**Important:** This is a `workflow_dispatch` workflow. GitHub only makes it manually runnable from the Actions UI after `.github/workflows/fdroid-keystore-init.yml` exists on the repository's default branch. Merge the PR containing this file first; while the PR is unmerged, the workflow will appear on the feature branch but not in the default-branch Actions workflow list.
+
+1. Open the repository's **Actions** tab after the change is merged.
 2. Select **Generate F-Droid Repo Keystore (Run Once)** and click **Run workflow**.
 3. Wait for the workflow to finish. Download both short-lived artifacts: `fdroid-keystore` and `fdroid-keystore-base64`. The artifacts expire after one day.
 4. Store the keystore securely as a backup. Never commit it to the repository or share it publicly.
