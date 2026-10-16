@@ -32,7 +32,7 @@ Make NESTNOTE installable and updateable through an F-Droid-compatible source wi
 
 ### Blocking questions / required fixes before submission
 
-1. **License declared; verify rights and canonical text.** The owner selected GPL-3.0-only and a root `LICENSE` notice has been added. Before submission, confirm all copyright holders have authority to license the project under GPL-3.0-only and ensure the distribution includes the complete canonical license text (the current file points to the FSF text rather than embedding it). Do not treat third-party source headers as the app's license.
+1. **License file added; rights review remains.** The owner selected GPL-3.0-only and the root `LICENSE` now contains the complete canonical license text. Before submission, confirm all copyright holders have authority to license the project under GPL-3.0-only. Do not treat third-party source headers as the app's license.
 2. **Release build reproducibility is not yet demonstrated.** Run a clean build from the exact source tag using the build recipe selected for F-Droid and record the result.
 3. **Dependency/source review is incomplete.** Audit all direct and transitive dependencies, embedded/vendored code, telemetry, network behavior, and any non-free build components against the current F-Droid inclusion policy.
 4. **Versioning must be made deterministic for source builds.** The Gradle defaults are versionCode 1/versionName 1.0.0 unless properties are supplied. Ensure each tagged release maps to unique, correctly increasing values in the F-Droid build recipe.
@@ -41,7 +41,7 @@ Make NESTNOTE installable and updateable through an F-Droid-compatible source wi
 
 ## Phase 2 — metadata preparation checklist
 
-Do not submit a final metadata file until the license-rights check and dependency review are complete. The likely metadata fields to prepare are:
+A metadata draft now exists in `F-DROID_METADATA_PROPOSAL.md`. Do not submit it until the license-rights check, dependency review, and F-Droid build validation are complete. The likely metadata fields to prepare are:
 
 - package ID: `com.nestnote.app`
 - source code URL: `https://github.com/Ravi-katta-dev/NESTNOTE`
