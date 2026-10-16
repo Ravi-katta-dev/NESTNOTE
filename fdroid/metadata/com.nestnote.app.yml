@@ -18,3 +18,4 @@ Description: |
   See the project README and release notes for current limitations and validation details.
 RepoType: git
 Repo: https://github.com/Ravi-katta-dev/NESTNOTE
+Binaries: https://github.com/Ravi-katta-dev/NESTNOTE/releases/download/v%v/NESTNOTE-%v.apk
