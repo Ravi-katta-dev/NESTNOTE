@@ -1,0 +1,10 @@
+# F-Droid repository signing material and generated indexes
+fdroid/keystore.p12
+fdroid/*.b64
+fdroid/keystore.b64
+fdroid/repo/*.apk
+fdroid/repo/index.jar
+fdroid/repo/index.xml
+fdroid/repo/index-v1.jar
+fdroid/repo/index-v1.json
+fdroid/repo/index-v2.json
