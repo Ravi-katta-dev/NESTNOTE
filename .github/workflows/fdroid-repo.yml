@@ -1,0 +1,184 @@
+name: Publish NESTNOTE F-Droid repository
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths:
+      - "fdroid/**"
+      - ".github/workflows/fdroid-repo.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fdroid-repository
+  cancel-in-progress: false
+
+jobs:
+  generate-keystore:
+    name: Generate repository keystore once
+    if: ${{ secrets.FDROID_KEYSTORE_BASE64 == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Java and fdroidserver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk-headless fdroidserver
+      - name: Generate a new private PKCS12 repository key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p private-key
+          KEYSTORE_PASS="$(openssl rand -base64 36 | tr -d '\n')"
+          KEY_PASS="$(openssl rand -base64 36 | tr -d '\n')"
+          keytool -genkeypair -noprompt \
+            -keystore private-key/keystore.p12 -storetype PKCS12 \
+            -storepass "$KEYSTORE_PASS" -keypass "$KEY_PASS" \
+            -alias nestnote-repokey -keyalg RSA -keysize 4096 -validity 10000 \
+            -dname "CN=NESTNOTE Repo, OU=Development, O=Ravi-katta-dev, L=Unknown, S=Unknown, C=IN"
+          keytool -exportcert -keystore private-key/keystore.p12 \
+            -storetype PKCS12 -storepass "$KEYSTORE_PASS" -alias nestnote-repokey \
+            -file private-key/repo-cert.der
+          FINGERPRINT="$(keytool -printcert -file private-key/repo-cert.der | awk -F': ' '/SHA256:/{print $2; exit}')"
+          printf '%s\n' "$KEYSTORE_PASS" > private-key/FDROID_KEYSTORE_PASS.txt
+          printf '%s\n' "$KEY_PASS" > private-key/FDROID_KEY_PASS.txt
+          printf '%s\n' 'nestnote-repokey' > private-key/FDROID_KEY_ALIAS.txt
+          printf '%s\n' "$FINGERPRINT" > private-key/REPO_KEY_SHA256_FINGERPRINT.txt
+          printf '%s\n' "$FINGERPRINT" > "$RUNNER_TEMP/repo-fingerprint.txt"
+          base64 -w0 private-key/keystore.p12 > private-key/FDROID_KEYSTORE_BASE64.txt
+          echo "Repository certificate SHA-256 fingerprint: $FINGERPRINT"
+          echo "::notice::Download the short-retention fdroid-keystore-bootstrap artifact privately, then add its values as Actions secrets. Do not share or commit it."
+      - name: Upload one-time bootstrap bundle (private download only)
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-keystore-bootstrap
+          path: private-key/
+          retention-days: 1
+          if-no-files-found: error
+
+  build-repo:
+    name: Build and publish repository index
+    if: ${{ secrets.FDROID_KEYSTORE_BASE64 != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Java 17, fdroidserver, and Android build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk-headless fdroidserver android-sdk-build-tools
+          echo "ANDROID_HOME=/usr/lib/android-sdk" >> "$GITHUB_ENV"
+          echo "/usr/lib/android-sdk/build-tools" >> "$GITHUB_PATH"
+      - name: Configure repository signing material
+        env:
+          FDROID_KEYSTORE_BASE64: ${{ secrets.FDROID_KEYSTORE_BASE64 }}
+          FDROID_KEYSTORE_PASS: ${{ secrets.FDROID_KEYSTORE_PASS }}
+          FDROID_KEY_ALIAS: ${{ secrets.FDROID_KEY_ALIAS }}
+          FDROID_KEY_PASS: ${{ secrets.FDROID_KEY_PASS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$FDROID_KEYSTORE_PASS"
+          test -n "$FDROID_KEY_ALIAS"
+          test -n "$FDROID_KEY_PASS"
+          printf '%s' "$FDROID_KEYSTORE_BASE64" | base64 --decode > fdroid/keystore.p12
+          chmod 600 fdroid/keystore.p12
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p = Path("fdroid/config.yml")
+          text = p.read_text()
+          text += "\nkeystorepass: " + repr(os.environ["FDROID_KEYSTORE_PASS"]) + "\n"
+          text += "keypass: " + repr(os.environ["FDROID_KEY_PASS"]) + "\n"
+          p.write_text(text)
+          PY
+      - name: Download latest published release APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p fdroid/repo
+          gh release download --repo "$GITHUB_REPOSITORY" --pattern 'NESTNOTE-*.apk' --dir fdroid/repo
+          test "$(find fdroid/repo -maxdepth 1 -name '*.apk' | wc -l)" -ge 1
+      - name: Verify APK signing identity and set metadata allowlist
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_STORE_PASSWORD"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/apk-signing-keystore"
+          keytool -exportcert -keystore "$RUNNER_TEMP/apk-signing-keystore" \
+            -storepass "$KEY_STORE_PASSWORD" -alias "$KEY_ALIAS" \
+            -file "$RUNNER_TEMP/apk-signing-cert.der"
+          APK_FINGERPRINT="$(keytool -printcert -file "$RUNNER_TEMP/apk-signing-cert.der" | awk -F': ' '/SHA256:/{gsub(":","",$2); print toupper($2); exit}')"
+          test -n "$APK_FINGERPRINT"
+          python3 - "$APK_FINGERPRINT" <<'PY'
+          from pathlib import Path
+          import sys
+          p = Path("fdroid/metadata/com.nestnote.app.yml")
+          text = p.read_text()
+          text += "\nAllowedAPKSigningKeys: " + sys.argv[1] + "\n"
+          p.write_text(text)
+          PY
+          APK="$(find fdroid/repo -maxdepth 1 -name '*.apk' -print -quit)"
+          apksigner verify --print-certs "$APK" > "$RUNNER_TEMP/apk-certs.txt"
+          grep -qi "$APK_FINGERPRINT" "$RUNNER_TEMP/apk-certs.txt"
+      - name: Generate F-Droid repository index
+        working-directory: fdroid
+        run: |
+          set -euo pipefail
+          fdroid update -c
+          fdroid update
+          test -s repo/index.jar
+          test -s repo/index.xml
+      - name: Publish repository files to gh-pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p "$RUNNER_TEMP/fdroid-publish"
+          cp -a fdroid/repo "$RUNNER_TEMP/fdroid-publish/repo"
+          git fetch origin gh-pages || true
+          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+            git worktree add "$RUNNER_TEMP/gh-pages" origin/gh-pages
+          else
+            git worktree add --detach "$RUNNER_TEMP/gh-pages" HEAD
+            cd "$RUNNER_TEMP/gh-pages"
+            git checkout --orphan gh-pages
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+          mkdir -p "$RUNNER_TEMP/gh-pages/fdroid"
+          rm -rf "$RUNNER_TEMP/gh-pages/fdroid/repo"
+          cp -a "$RUNNER_TEMP/fdroid-publish/repo" "$RUNNER_TEMP/gh-pages/fdroid/repo"
+          touch "$RUNNER_TEMP/gh-pages/.nojekyll"
+          cd "$RUNNER_TEMP/gh-pages"
+          git add fdroid/repo .nojekyll
+          if git diff --cached --quiet; then
+            echo "No repository changes to publish."
+          else
+            git commit -m "chore(fdroid): publish repository index"
+            git push origin HEAD:gh-pages
+          fi
+      - name: Print repository key fingerprint
+        env:
+          FDROID_KEYSTORE_BASE64: ${{ secrets.FDROID_KEYSTORE_BASE64 }}
+          FDROID_KEYSTORE_PASS: ${{ secrets.FDROID_KEYSTORE_PASS }}
+          FDROID_KEY_ALIAS: ${{ secrets.FDROID_KEY_ALIAS }}
+        run: |
+          printf '%s' "$FDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/fdroid-keystore.p12"
+          keytool -exportcert -keystore "$RUNNER_TEMP/fdroid-keystore.p12" -storetype PKCS12 \
+            -storepass "$FDROID_KEYSTORE_PASS" -alias "$FDROID_KEY_ALIAS" \
+            -file "$RUNNER_TEMP/fdroid-cert.der"
+          keytool -printcert -file "$RUNNER_TEMP/fdroid-cert.der" | grep -E 'Owner:|SHA256:'
