@@ -128,7 +128,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p fdroid/repo
-          gh release download --repo "$GITHUB_REPOSITORY" --pattern 'NESTNOTE-*.apk' --dir fdroid/repo
+          # Pin the APK input to the release that triggered this run; never
+          # silently publish a different (newer) release when replaying an old event.
+          test -n "${GITHUB_REF_NAME}"
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'NESTNOTE-*.apk' --dir fdroid/repo
           test "$(find fdroid/repo -maxdepth 1 -name '*.apk' | wc -l)" -ge 1
       - name: Verify APK signing identity and set metadata allowlist
         env:
