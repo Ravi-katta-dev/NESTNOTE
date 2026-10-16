@@ -53,7 +53,8 @@ jobs:
           set -euo pipefail
           mkdir -p private-key
           KEYSTORE_PASS="$(openssl rand -base64 36 | tr -d '\n')"
-          KEY_PASS="$(openssl rand -base64 36 | tr -d '\n')"
+          # PKCS12 keystores use the same password for the store and private key.
+          KEY_PASS="$KEYSTORE_PASS"
           keytool -genkeypair -noprompt \
             -keystore private-key/keystore.p12 -storetype PKCS12 \
             -storepass "$KEYSTORE_PASS" -keypass "$KEY_PASS" \
