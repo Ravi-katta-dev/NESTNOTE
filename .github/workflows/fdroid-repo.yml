@@ -40,10 +40,13 @@ jobs:
     if: ${{ needs.check-key.outputs.has_key == 'false' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Install Java and fdroidserver
+      - name: Install Java, apksigner, and pipx
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk-headless fdroidserver
+          sudo apt-get install -y openjdk-17-jdk-headless apksigner pipx
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          pipx install fdroidserver
+          fdroid --version
       - name: Generate a new private PKCS12 repository key
         shell: bash
         run: |
@@ -86,12 +89,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Install Java 17, fdroidserver, and Android build tools
+      - name: Install Java 17, apksigner, and fdroidserver
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk-headless fdroidserver android-sdk-build-tools
-          echo "ANDROID_HOME=/usr/lib/android-sdk" >> "$GITHUB_ENV"
-          echo "/usr/lib/android-sdk/build-tools" >> "$GITHUB_PATH"
+          sudo apt-get install -y openjdk-17-jdk-headless apksigner pipx
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          pipx install fdroidserver
+          fdroid --version
       - name: Configure repository signing material
         env:
           FDROID_KEYSTORE_BASE64: ${{ secrets.FDROID_KEYSTORE_BASE64 }}
@@ -111,8 +115,9 @@ jobs:
           import os
           p = Path("fdroid/config.yml")
           text = p.read_text()
-          text += "\nkeystorepass: " + repr(os.environ["FDROID_KEYSTORE_PASS"]) + "\n"
-          text += "keypass: " + repr(os.environ["FDROID_KEY_PASS"]) + "\n"
+          import json
+          text += "\nkeystorepass: " + json.dumps(os.environ["FDROID_KEYSTORE_PASS"]) + "\n"
+          text += "keypass: " + json.dumps(os.environ["FDROID_KEY_PASS"]) + "\n"
           p.write_text(text)
           PY
       - name: Download latest published release APK
