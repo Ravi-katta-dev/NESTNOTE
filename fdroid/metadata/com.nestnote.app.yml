@@ -1,0 +1,19 @@
+Categories:
+  - Writing
+License: GPL-3.0-only
+AuthorName: Ravi-katta-dev
+WebSite: https://github.com/Ravi-katta-dev/NESTNOTE
+SourceCode: https://github.com/Ravi-katta-dev/NESTNOTE
+IssueTracker: https://github.com/Ravi-katta-dev/NESTNOTE/issues
+AutoName: NESTNOTE
+Summary: A local-first, encrypted note-taking app for Android.
+Description: |
+  NESTNOTE is a local-first note-taking app built with Kotlin, Jetpack Compose, and Material 3.
+
+  Features include creating, editing, pinning, archiving, restoring, searching, sorting, and deleting notes; categories and note colours; light and dark themes; full-screen and quick editors; checklist and bullet tools; writing statistics; JSON backup and restore; and local-data recovery safeguards.
+
+  Notes are stored locally with encrypted payloads using AES-GCM and Android Keystore. NESTNOTE has no account or cloud sync. User-exported JSON backups are plaintext and should be stored securely.
+
+RepoType: git
+Repo: https://github.com/Ravi-katta-dev/NESTNOTE
+Binaries: https://github.com/Ravi-katta-dev/NESTNOTE/releases/download/v%v/NESTNOTE-v%v.apk
