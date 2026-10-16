@@ -1,0 +1,10 @@
+# Repository signing material must never be committed
+/keystore.p12
+/*.b64
+/keystore.b64
+/repo/*.apk
+/repo/index.jar
+/repo/index.xml
+/repo/index-v1.jar
+/repo/index-v1.json
+/repo/index-v2.json
