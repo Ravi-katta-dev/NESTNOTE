@@ -17,4 +17,3 @@ Description: |
 RepoType: git
 Repo: https://github.com/Ravi-katta-dev/NESTNOTE
 Binaries: https://github.com/Ravi-katta-dev/NESTNOTE/releases/download/v%v/NESTNOTE-v%v.apk
-AllowedAPKSigningKeys: # TODO: Add the SHA-256 fingerprint of the production APK signing certificate after verifying it from the release APK.
