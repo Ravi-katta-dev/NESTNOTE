@@ -66,7 +66,7 @@ jobs:
 
           "$APKSIGNER" verify --verbose "$APK_PATH"
           CERT_LINE="$("$APKSIGNER" verify --print-certs "$APK_PATH" | grep -m1 'Signer #1 certificate SHA-256 digest:')"
-          ACTUAL_CERT_SHA256="$(printf '%s\n' "$CERT_LINE" | sed 's/.*: //' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"
+          ACTUAL_CERT_SHA256="$(printf '%s\n' "$CERT_LINE" | sed 's/.*: //' | tr -d '[:space:]:-' | tr '[:upper:]' '[:lower:]')"
           EXPECTED_CERT_SHA256="$(printf '%s' "$FDROID_ALLOWED_APK_CERT_SHA256" | tr -d '[:space:]:-' | tr '[:upper:]' '[:lower:]')"
           [[ "$EXPECTED_CERT_SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::FDROID_ALLOWED_APK_CERT_SHA256 must be a SHA-256 certificate fingerprint."; exit 1; }
           [[ "$ACTUAL_CERT_SHA256" == "$EXPECTED_CERT_SHA256" ]] || { echo "::error::Release APK certificate does not match the pinned production certificate fingerprint."; exit 1; }
@@ -110,8 +110,6 @@ jobs:
           chmod 600 fdroid/keystore.p12
 
       - name: Prepare F-Droid metadata and repository
-        env:
-          APK_CERT_SHA256: ${{ env.APK_CERT_SHA256 }}
         run: |
           set -euo pipefail
           # The committed metadata deliberately has no unverified signing key.
