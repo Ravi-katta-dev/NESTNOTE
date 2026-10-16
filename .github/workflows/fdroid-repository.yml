@@ -1,0 +1,83 @@
+name: NESTNOTE F-Droid Repository
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fdroid-repository
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::F-Droid publishing requires a release tag like v1.2.3."
+            exit 1
+          fi
+          gh release download "$RELEASE_TAG" --pattern "NESTNOTE-$RELEASE_TAG.apk" --dir "$RUNNER_TEMP/apk"
+          test -s "$RUNNER_TEMP/apk/NESTNOTE-$RELEASE_TAG.apk"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+          echo "APK_PATH=$RUNNER_TEMP/apk/NESTNOTE-$RELEASE_TAG.apk" >> "$GITHUB_ENV"
+
+      - name: Install F-Droid server tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fdroidserver
+
+      - name: Configure repository signing
+        env:
+          FDROID_KEYSTORE_BASE64: ${{ secrets.FDROID_KEYSTORE_BASE64 }}
+          FDROID_KEYSTORE_PASS: ${{ secrets.FDROID_KEYSTORE_PASS }}
+          FDROID_KEY_ALIAS: ${{ secrets.FDROID_KEY_ALIAS }}
+          FDROID_KEY_PASS: ${{ secrets.FDROID_KEY_PASS }}
+        run: |
+          set -euo pipefail
+          : "${FDROID_KEYSTORE_BASE64:?Add FDROID_KEYSTORE_BASE64 repository secret}"
+          : "${FDROID_KEYSTORE_PASS:?Add FDROID_KEYSTORE_PASS repository secret}"
+          : "${FDROID_KEY_ALIAS:?Add FDROID_KEY_ALIAS repository secret}"
+          : "${FDROID_KEY_PASS:?Add FDROID_KEY_PASS repository secret}"
+          printf '%s' "$FDROID_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > fdroid/keystore.p12
+          test -s fdroid/keystore.p12
+          sed -i "s|\${FDROID_KEY_ALIAS}|$FDROID_KEY_ALIAS|g; s|\${FDROID_KEYSTORE_PASS}|$FDROID_KEYSTORE_PASS|g; s|\${FDROID_KEY_PASS}|$FDROID_KEY_PASS|g" fdroid/config.yml
+          chmod 600 fdroid/keystore.p12
+
+      - name: Prepare signed APK repository
+        run: |
+          set -euo pipefail
+          mkdir -p fdroid/repo
+          install -m 644 "$APK_PATH" "fdroid/repo/com.nestnote.app_${RELEASE_TAG#v}.apk"
+          fdroid update --config fdroid/config.yml --verbose
+
+      - name: Publish repository to GitHub Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/fdroid-pages"
+          cp -a fdroid/. "$RUNNER_TEMP/fdroid-pages/"
+          cd "$RUNNER_TEMP/fdroid-pages"
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b gh-pages
+          git add -A
+          git commit -m "Publish NESTNOTE F-Droid repository for $RELEASE_TAG"
+          git push --force "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" HEAD:gh-pages
+          rm -f fdroid/keystore.p12
