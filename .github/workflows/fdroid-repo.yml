@@ -18,9 +18,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check-key:
+    name: Check repository key setup
+    runs-on: ubuntu-latest
+    outputs:
+      has_key: ${{ steps.check.outputs.has_key }}
+    steps:
+      - id: check
+        env:
+          FDROID_KEYSTORE_BASE64: ${{ secrets.FDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$FDROID_KEYSTORE_BASE64" ]; then
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+          fi
+
   generate-keystore:
     name: Generate repository keystore once
-    if: ${{ secrets.FDROID_KEYSTORE_BASE64 == '' }}
+    needs: check-key
+    if: ${{ needs.check-key.outputs.has_key == 'false' }}
     runs-on: ubuntu-latest
     steps:
       - name: Install Java and fdroidserver
@@ -61,7 +78,8 @@ jobs:
 
   build-repo:
     name: Build and publish repository index
-    if: ${{ secrets.FDROID_KEYSTORE_BASE64 != '' }}
+    needs: check-key
+    if: ${{ needs.check-key.outputs.has_key == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
