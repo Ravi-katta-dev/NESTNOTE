@@ -1,7 +1,16 @@
 # Voice Notes — Foundation to Production Plan
 
-Status: **Planned; implementation and validation not yet complete**  
+Status: **In progress — encrypted storage and delete/Undo safeguards merged; recorder, editor UX, backup policy, and device validation remain**  
 Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28)
+
+## Progress snapshot (2026-10-17)
+
+- [x] Encrypted app-private attachment storage merged in [PR #30](https://github.com/Ravi-katta-dev/NESTNOTE/pull/30) (merge commit `38a18f1e964df09446962cbc2a53e428a54749e7`).
+- [x] Attachment deletion/orphan-cleanup helpers merged in [PR #31](https://github.com/Ravi-katta-dev/NESTNOTE/pull/31) (merge commit `8eeead7756916b6902d850ea918b26e956f4d555`). Orphan cleanup is a helper only; safe launch-time reconciliation is not wired in.
+- [x] Existing note delete/Undo flow preserves attachments during Undo and removes them only after the note remains deleted in [PR #32](https://github.com/Ravi-katta-dev/NESTNOTE/pull/32) (merge commit `9350182c2bc442c1c82857909e5dfd73a72bad2b`).
+- [x] Robolectric storage tests cover encryption round-trip, no plaintext stored, tamper/wrong-key rejection, invalid IDs, size bounds, write-failure cleanup, listing and deletion. PR #30 CI passed; PR #31 CI passed; PR #32 exact-head CI passed.
+- [ ] Not yet implemented: recorder/player engine, microphone permission UX, editor controls, manifest/reconciliation integration, audio backup/export policy, accessibility/device matrix, release signing and production rollout.
+- Device/emulator tests have **not** been run; CI/instrumentation compilation is not counted as device execution.
 
 ## Product contract for v1
 
@@ -19,10 +28,10 @@ Voice notes are user-initiated audio recordings attached to an existing NESTNOTE
 
 ## Phase 1 — Storage foundation
 
-- Implement an audio attachment repository independent of Compose.
-- Add atomic temp-to-final commits, validated metadata, bounded reads/writes, and safe delete semantics.
-- Store attachment manifests separately from audio bytes; ensure note deletion and attachment deletion cannot leave untracked files.
-- Add a reconciliation path for missing files and orphaned metadata.
+- [x] Implement an audio attachment repository independent of Compose (`VoiceAttachmentStore`).
+- [x] Add atomic temp-to-final encrypted commits, identity validation, bounded reads/writes, and safe delete semantics.
+- [ ] Store a durable attachment manifest separately from audio bytes. Note-delete cleanup after the Undo window is merged; manifest integration remains pending.
+- [x] Add a tested orphan-directory cleanup helper. [ ] Wire safe launch-time reconciliation and orphaned-manifest handling.
 - Inject key, filesystem and ID/time dependencies where practical to make failure tests deterministic.
 
 **Gate:** repository tests prove encrypted-at-rest storage, round-trip, wrong-key/tamper rejection, interrupted write behavior, cleanup, and safe metadata validation.
