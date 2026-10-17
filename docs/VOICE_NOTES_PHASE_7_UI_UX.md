@@ -22,10 +22,10 @@ Scope: user-facing voice-note interactions, accessibility, and regression handli
 - [x] Keep loading/disabled states understandable and leave controls recoverable after failures. (Starting/permission labels and gates; recording failures clear recording state and abandon audio focus; playback failures reset playback state.)
 
 ## 7.3 Backup disclosure and accessibility
-- [ ] Clearly disclose at the point of use and in backup/settings UI that v1 backups are notes-only and exclude voice audio.
-- [ ] Provide meaningful screen-reader labels and state descriptions with logical focus order; never rely on color or icons alone.
-- [ ] Check touch targets, text scaling, light/dark themes, contrast, and narrow-screen layouts using static/code-level checks where feasible.
-- [ ] Keep controls usable with keyboard/navigation accessibility where supported; avoid losing focus after state changes.
+- [x] Clearly disclose at the point of use and in backup/settings UI that v1 backups are notes-only and exclude voice audio. (Voice recording card explicitly says audio is excluded from note backups; Backup & privacy settings explain v1 backups contain notes/settings only and excluded audio will not return on restore.)
+- [x] Provide meaningful screen-reader labels and state descriptions with logical focus order; never rely on color or icons alone. (Record/Pause/Resume/Stop and per-recording Play/Stop actions expose explicit action descriptions and dynamic availability/playback state descriptions; visible text labels remain alongside icons. Controls are composed in reading order: Record, Pause/Resume, Stop, then attachment rows.)
+- [x] Check touch targets, text scaling, light/dark themes, contrast, and narrow-screen layouts using static/code-level checks where feasible. (Material 3 Button/OutlinedButton components provide standard minimum interactive sizing; typography and surfaces use MaterialTheme roles, and attachment labels wrap in a weighted column. Reviewed theme-based text/surface colors and responsive text wrapping statically; no device/visual verification claimed.)
+- [x] Keep controls usable with keyboard/navigation accessibility where supported; avoid losing focus after state changes. (Controls remain native Compose Material buttons with standard focus/click semantics and deterministic composition order; state updates do not conditionally remove the active recording-row control except when the attachment list itself changes. Static/code review only.)
 
 ## 7.4 Lifecycle and regression checks
 - [ ] Review backgrounding, audio-focus interruptions/incoming calls, rotation/configuration changes, and process recreation; add automated or code-level checks where feasible.
@@ -67,3 +67,10 @@ Mark an item complete only with code review, automated test, or recorded evidenc
 - Editor deletion now has a confirmation dialog explaining the Undo window; attachment cleanup still waits until the note deletion remains persisted after Undo expires.
 - Unsaved-change tracking already includes newly staged voice attachments. The warning now explains their fate accurately. The current UI has no per-attachment removal action, so no unsupported removal workflow is claimed.
 - Static/code review only; exact-head CI is still deferred until all Phase 7 work through §7.4 is complete. No device verification is claimed.
+
+
+### 7.3 completion evidence (PR #37 code review)
+- Backup exclusion is disclosed both beside the voice recording controls and in Backup & privacy settings; v1 restore does not claim voice-audio recovery.
+- Added explicit Compose accessibility content descriptions and dynamic state descriptions for Record, Pause/Resume, Stop recording, and each attachment's Play/Stop playback action. Visual text labels remain present, so actions are not conveyed by icon or color alone.
+- Static review confirmed themed Material 3 controls, theme typography/color roles, standard Material button interaction sizing, a deterministic reading order, and weighted/wrapping attachment text for narrow layouts and larger text. Keyboard/navigation support is provided through standard Compose Material button semantics.
+- Validation is static/code-level only; no emulator or physical-device accessibility, contrast, scaling, or visual test is claimed. Exact-head CI remains deferred until all Phase 7 work through §7.4 is complete.
