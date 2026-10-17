@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
@@ -68,6 +69,7 @@ private class EncryptedPcmRecording(
     private val onFinished: (Result<VoiceAttachment>) -> Unit
 ) {
     private val running = AtomicBoolean(false)
+    private val paused = AtomicBoolean(false)
     private val audioBytes = AtomicLong(0)
     private val limitExceeded = AtomicBoolean(false)
     private var audioRecord: AudioRecord? = null
@@ -113,6 +115,10 @@ private class EncryptedPcmRecording(
             try {
                 record.startRecording()
                 while (running.get()) {
+                    if (paused.get()) {
+                        Thread.sleep(30)
+                        continue
+                    }
                     val count = record.read(buffer, 0, buffer.size)
                     if (count > 0) {
                         val total = audioBytes.addAndGet(count.toLong())
@@ -122,7 +128,7 @@ private class EncryptedPcmRecording(
                             break
                         }
                         output.write(buffer, 0, count)
-                    } else if (count < 0) {
+                    } else if (count < 0 && !paused.get() && running.get()) {
                         throw IOException("Microphone read failed ($count)")
                     }
                 }
@@ -137,6 +143,24 @@ private class EncryptedPcmRecording(
                 runCatching { output.close() }
             }
         }, "nestnote-voice-record").apply { start() }
+    }
+
+    fun pause() {
+        if (running.get() && paused.compareAndSet(false, true)) {
+            runCatching { audioRecord?.stop() }
+        }
+    }
+
+    fun resume() {
+        if (running.get() && paused.compareAndSet(true, false)) {
+            try {
+                audioRecord?.startRecording()
+            } catch (error: Exception) {
+                running.set(false)
+                runCatching { pipeOutput?.close() }
+                throw IOException("Couldn't resume microphone recording", error)
+            }
+        }
     }
 
     fun stop() {
@@ -223,6 +247,7 @@ internal fun VoiceNoteControls(
     val attachmentManifest = remember(context) { VoiceAttachmentManifest(context) }
     var attachments by remember(noteId) { mutableStateOf(runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())) }
     var recording by remember { mutableStateOf(false) }
+    var recordingPaused by remember { mutableStateOf(false) }
     var playingId by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf("") }
     var pendingPermission by remember { mutableStateOf(false) }
@@ -236,9 +261,9 @@ internal fun VoiceNoteControls(
         if (granted && pendingPermission) {
             pendingPermission = false
             startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
-                { session, listener -> recordingSession = session; recording = true; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener },
+                { session, listener -> recordingSession = session; recording = true; recordingPaused = false; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener },
                 { message -> status = message },
-                { recordingSession?.stop(); recordingSession = null; recording = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
+                { recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
         } else {
             pendingPermission = false
             status = "Microphone permission is required to record voice notes."
@@ -249,6 +274,7 @@ internal fun VoiceNoteControls(
         recordingSession?.stop()
         recordingSession = null
         recording = false
+        recordingPaused = false
         if (requestedAudioFocus) {
             audioManager.abandonAudioFocus(audioFocusListener)
             requestedAudioFocus = false
@@ -275,6 +301,7 @@ internal fun VoiceNoteControls(
                 recordingSession?.stop()
                 recordingSession = null
                 recording = false
+                recordingPaused = false
                 playbackSession?.stop()
                 playbackSession = null
                 playingId = null
@@ -295,6 +322,7 @@ internal fun VoiceNoteControls(
     LaunchedEffect(status) {
         if (status == "Recording saved securely." || status.startsWith("Recording encrypted, but its metadata")) {
             recording = false
+            recordingPaused = false
             recordingSession = null
             requestedAudioFocus = false
             audioFocusListener = null
@@ -344,6 +372,23 @@ internal fun VoiceNoteControls(
                 ) {
                     Icon(Icons.Default.Mic, contentDescription = null)
                     Text("Record")
+                }
+                OutlinedButton(
+                    enabled = recording,
+                    onClick = {
+                        if (recordingPaused) {
+                            runCatching { recordingSession?.resume() }
+                                .onSuccess { recordingPaused = false; status = "Recording…" }
+                                .onFailure { stopRecording(); status = it.message ?: "Couldn't resume recording" }
+                        } else {
+                            recordingSession?.pause()
+                            recordingPaused = true
+                            status = "Recording paused."
+                        }
+                    }
+                ) {
+                    Icon(if (recordingPaused) Icons.Default.PlayArrow else Icons.Default.Pause, contentDescription = null)
+                    Text(if (recordingPaused) "Resume" else "Pause")
                 }
                 OutlinedButton(enabled = recording, onClick = { stopRecording() }) {
                     Icon(Icons.Default.Stop, contentDescription = null)
