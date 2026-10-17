@@ -378,7 +378,7 @@ internal fun VoiceNoteControls(
                         }
                     }
                 ) {
-                    Icon(Icons.Default.Mic, contentDescription = null)
+                    Icon(Icons.Default.Mic, contentDescription = "Record voice note")
                     Text(if (startingRecording || pendingPermission) "Starting…" else "Record")
                 }
                 OutlinedButton(
@@ -395,11 +395,11 @@ internal fun VoiceNoteControls(
                         }
                     }
                 ) {
-                    Icon(if (recordingPaused) Icons.Default.PlayArrow else Icons.Default.Pause, contentDescription = null)
+                    Icon(if (recordingPaused) Icons.Default.PlayArrow else Icons.Default.Pause, contentDescription = if (recordingPaused) "Resume recording" else "Pause recording")
                     Text(if (recordingPaused) "Resume" else "Pause")
                 }
                 OutlinedButton(enabled = recording, onClick = { stopRecording() }) {
-                    Icon(Icons.Default.Stop, contentDescription = null)
+                    Icon(Icons.Default.Stop, contentDescription = "Stop recording")
                     Text("Stop")
                 }
             }
@@ -420,12 +420,17 @@ internal fun VoiceNoteControls(
             } else {
                 attachments.forEachIndexed { index, attachment ->
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Recording ${index + 1}", modifier = Modifier.weight(1f))
+                        Text(
+                            if (attachment.attachmentId in addedThisSession) "Recording ${index + 1} · Not yet saved to note" else "Recording ${index + 1}",
+                            modifier = Modifier.weight(1f)
+                        )
                         OutlinedButton(
                             enabled = !recording && (playingId == null || playingId == attachment.attachmentId),
                             onClick = {
-                                if (playingId == attachment.attachmentId) stopPlayback()
-                                else {
+                                if (playingId == attachment.attachmentId) {
+                                    stopPlayback()
+                                    status = "Playback stopped."
+                                } else {
                                     stopPlayback()
                                     val focus = requestVoiceAudioFocus(audioManager) {
                                         stopPlayback()
@@ -436,6 +441,7 @@ internal fun VoiceNoteControls(
                                         requestedAudioFocus = true
                                         audioFocusListener = focus
                                         playingId = attachment.attachmentId
+                                        status = "Playing recording ${index + 1}."
                                         val player = PcmVoicePlayback(context, attachmentStore, attachment) { error ->
                                             playingId = null
                                             playbackSession = null
@@ -450,7 +456,7 @@ internal fun VoiceNoteControls(
                                 }
                             }
                         ) {
-                            Icon(if (playingId == attachment.attachmentId) Icons.Default.Stop else Icons.Default.PlayArrow, contentDescription = null)
+                            Icon(if (playingId == attachment.attachmentId) Icons.Default.Stop else Icons.Default.PlayArrow, contentDescription = if (playingId == attachment.attachmentId) "Stop playback" else "Play recording ${index + 1}")
                             Text(if (playingId == attachment.attachmentId) "Stop" else "Play")
                         }
                     }
