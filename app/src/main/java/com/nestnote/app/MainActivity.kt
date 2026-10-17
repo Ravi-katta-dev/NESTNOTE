@@ -684,7 +684,8 @@ private fun NestNoteApp(store: NoteStore) {
         }
 
         pendingRestore?.let { incoming ->
-            val preview = NoteStore.merge(notes, incoming)
+            val restoreIncoming = NoteStore.remapDraftIdCollisionForRestore(notes, incoming, editorDraftId)
+            val preview = NoteStore.merge(notes, restoreIncoming)
             val withinNoteLimit = NoteStore.isValidNoteCollection(preview.notes)
             AlertDialog(
                 onDismissRequest = { pendingRestore = null },
