@@ -366,6 +366,11 @@ internal fun VoiceNoteControls(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Text(
+                "Maximum recording size: 25 MiB. If the limit or a microphone error is reached, the partial recording is discarded.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     enabled = canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null),
@@ -426,10 +431,21 @@ internal fun VoiceNoteControls(
             } else {
                 attachments.forEachIndexed { index, attachment ->
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            if (attachment.attachmentId in addedThisSession) "Recording ${index + 1} · Not yet saved to note" else "Recording ${index + 1}",
-                            modifier = Modifier.weight(1f)
-                        )
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                if (attachment.attachmentId in addedThisSession) "Recording ${index + 1} · Not yet saved to note" else "Recording ${index + 1}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            // The encrypted envelope is 4-byte magic + 12-byte IV + 16-byte tag.
+                            // PCM16 mono at 16 kHz is 32,000 bytes/second.
+                            val audioBytes = (attachment.encryptedSizeBytes - 32L).coerceAtLeast(0L)
+                            val durationSeconds = audioBytes / (VOICE_SAMPLE_RATE * 2L)
+                            Text(
+                                if (audioBytes == 0L) "Duration unavailable" else "Duration %d:%02d".format(durationSeconds / 60, durationSeconds % 60),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         OutlinedButton(
                             enabled = !recording && (playingId == null || playingId == attachment.attachmentId),
                             onClick = {
