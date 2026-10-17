@@ -211,6 +211,38 @@ class NoteStoreTest {
     }
 
     @Test
+    fun editorDirtyStateTracksEditSaveDiscardAndVoiceChanges() {
+        val baseline = NestNote(
+            id = 900L, title = "Title", body = "Body", category = "Ideas",
+            color = 2, pinned = true, reminder = "Tomorrow", background = 1
+        )
+        fun dirty(
+            original: NestNote?,
+            title: String = "Title",
+            body: String = "Body",
+            category: String = "Ideas",
+            color: Int = 2,
+            background: Int = 1,
+            pinned: Boolean = true,
+            reminder: String = "Tomorrow",
+            voicePending: Boolean = false
+        ) = NoteStore.hasEditorChanges(
+            original, title, body, category, "Ideas", color, background, pinned, reminder, voicePending
+        )
+
+        assertFalse(dirty(baseline))
+        assertTrue(dirty(baseline, body = "Edited"))
+        // After saving, the saved content becomes the new baseline and is clean.
+        val saved = baseline.copy(body = "Edited")
+        assertFalse(dirty(saved, body = "Edited"))
+        // Discard/navigation must still treat an unsaved text edit or staged voice as dirty.
+        assertTrue(dirty(baseline, title = "Unsaved"))
+        assertTrue(dirty(baseline, voicePending = true))
+        assertFalse(dirty(null, title = "", body = "", category = "Ideas", color = 0,
+            background = 0, pinned = false, reminder = "", voicePending = false))
+    }
+
+    @Test
     fun versionGuardAllowsUnchangedNoteAndRejectsStaleDraft() {
         assertTrue(NoteStore.isSameNoteVersion(100L, 100L))
         assertFalse(NoteStore.isSameNoteVersion(100L, 101L))
