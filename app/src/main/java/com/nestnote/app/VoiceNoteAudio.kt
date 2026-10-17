@@ -7,6 +7,8 @@ import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.net.Uri
+import android.provider.Settings
 import android.os.Handler
 import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -38,6 +40,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -218,8 +223,13 @@ internal fun VoiceNoteControls(
     val attachmentManifest = remember(context) { VoiceAttachmentManifest(context) }
     var attachments by remember(noteId) { mutableStateOf(runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())) }
     var recording by remember { mutableStateOf(false) }
+    var startingRecording by remember { mutableStateOf(false) }
     var recordingPaused by remember { mutableStateOf(false) }
+    var elapsedRecordingSeconds by remember { mutableIntStateOf(0) }
+    var showPermissionSettings by remember { mutableStateOf(false) }
     var playingId by remember { mutableStateOf<String?>(null) }
+    var playbackPositionMs by remember { mutableIntStateOf(0) }
+    var playbackDurationMs by remember { mutableIntStateOf(0) }
     var status by remember { mutableStateOf("") }
     var pendingPermission by remember { mutableStateOf(false) }
     var recordingSession by remember { mutableStateOf<EncryptedPcmRecording?>(null) }
@@ -232,20 +242,34 @@ internal fun VoiceNoteControls(
         when (resolveVoicePermissionResult(granted, pendingPermission)) {
             VoicePermissionDecision.START_RECORDING -> {
                 pendingPermission = false
+                startingRecording = true
+                showPermissionSettings = false
                 startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
-                    { session, listener -> recordingSession = session; recording = true; recordingPaused = false; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener; onVoiceAttachmentAdded() },
-                    { message -> recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = message },
-                    { recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
+                    { session, listener -> startingRecording = false; recordingSession = session; recording = true; recordingPaused = false; elapsedRecordingSeconds = 0; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener; onVoiceAttachmentAdded() },
+                    { message ->
+                        startingRecording = false
+                        recordingSession = null
+                        recording = false
+                        recordingPaused = false
+                        if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
+                        requestedAudioFocus = false
+                        audioFocusListener = null
+                        status = message
+                    },
+                    { startingRecording = false; recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener); requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted. Tap Record to try again." })
             }
             VoicePermissionDecision.SHOW_PERMISSION_GUIDANCE -> {
                 pendingPermission = false
-                status = "Microphone permission is required to record voice notes."
+                startingRecording = false
+                showPermissionSettings = true
+                status = "Microphone permission was denied. Allow it in app settings to record voice notes."
             }
             VoicePermissionDecision.IGNORE_STALE_RESULT -> Unit
         }
     }
 
     fun stopRecording() {
+        startingRecording = false
         recordingSession?.stop()
         recording = false
         recordingPaused = false
@@ -259,11 +283,22 @@ internal fun VoiceNoteControls(
         playbackSession?.stop()
         playbackSession = null
         playingId = null
+        playbackPositionMs = 0
+        playbackDurationMs = 0
         if (requestedAudioFocus) {
             audioManager.abandonAudioFocus(audioFocusListener)
             requestedAudioFocus = false
         }
     }
+    LaunchedEffect(recording, recordingPaused) {
+        if (recording && !recordingPaused) {
+            while (recording && !recordingPaused) {
+                kotlinx.coroutines.delay(1_000)
+                if (recording && !recordingPaused) elapsedRecordingSeconds += 1
+            }
+        }
+    }
+
     LaunchedEffect(noteId) {
         attachments = runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())
         onAttachmentCountChanged(attachments.size)
@@ -271,11 +306,17 @@ internal fun VoiceNoteControls(
     DisposableEffect(lifecycleOwner, noteId) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
+                // A permission sheet or asynchronous microphone startup may still be in
+                // flight when the editor backgrounds. Invalidate both states so a stale
+                // permission result cannot leave Record permanently disabled.
+                pendingPermission = false
+                startingRecording = false
                 recordingSession?.stop()
                 recording = false
                 recordingPaused = false
                 if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
                 requestedAudioFocus = false
+                audioFocusListener = null
                 playbackSession?.stop()
                 playbackSession = null
                 playingId = null
@@ -341,25 +382,60 @@ internal fun VoiceNoteControls(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Text(
+                "Maximum recording size: 25 MiB. If the limit or a microphone error is reached, the partial recording is discarded.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    enabled = !recording,
+                    modifier = Modifier.semantics {
+                        contentDescription = "Record voice note"
+                        stateDescription = when {
+                            recording -> "Recording in progress"
+                            startingRecording -> "Preparing microphone"
+                            pendingPermission -> "Waiting for microphone permission"
+                            playingId != null -> "Unavailable while playback is active"
+                            else -> "Ready"
+                        }
+                    },
+                    enabled = canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null),
                     onClick = {
+                        if (!canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null)) return@Button
+                        startingRecording = true
+                        showPermissionSettings = false
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                             startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
-                                { session, listener -> recordingSession = session; recording = true; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener },
-                                { message -> status = message },
-                                { recordingSession?.stop(); recordingSession = null; recording = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
+                                { session, listener -> startingRecording = false; recordingSession = session; recording = true; recordingPaused = false; elapsedRecordingSeconds = 0; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener; onVoiceAttachmentAdded() },
+                                { message ->
+                                    startingRecording = false
+                                    recordingSession = null
+                                    recording = false
+                                    recordingPaused = false
+                                    if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
+                                    requestedAudioFocus = false
+                                    audioFocusListener = null
+                                    status = message
+                                },
+                                { startingRecording = false; recordingSession?.stop(); recordingSession = null; recording = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
                         } else {
                             pendingPermission = true
                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         }
                     }
                 ) {
-                    Icon(Icons.Default.Mic, contentDescription = null)
-                    Text("Record")
+                    Icon(Icons.Default.Mic, contentDescription = "Record voice note")
+                    Text(if (startingRecording || pendingPermission) "Starting…" else "Record")
                 }
                 OutlinedButton(
+                    modifier = Modifier.semantics {
+                        contentDescription = if (recordingPaused) "Resume voice recording" else "Pause voice recording"
+                        stateDescription = when {
+                            !recording -> "Unavailable when not recording"
+                            recordingPaused -> "Recording paused"
+                            else -> "Recording in progress"
+                        }
+                    },
                     enabled = recording,
                     onClick = {
                         if (recordingPaused) {
@@ -373,25 +449,81 @@ internal fun VoiceNoteControls(
                         }
                     }
                 ) {
-                    Icon(if (recordingPaused) Icons.Default.PlayArrow else Icons.Default.Pause, contentDescription = null)
+                    Icon(if (recordingPaused) Icons.Default.PlayArrow else Icons.Default.Pause, contentDescription = if (recordingPaused) "Resume recording" else "Pause recording")
                     Text(if (recordingPaused) "Resume" else "Pause")
                 }
-                OutlinedButton(enabled = recording, onClick = { stopRecording() }) {
-                    Icon(Icons.Default.Stop, contentDescription = null)
+                OutlinedButton(
+                    modifier = Modifier.semantics {
+                        contentDescription = "Stop voice recording"
+                        stateDescription = if (recording) "Available" else "Unavailable when not recording"
+                    },
+                    enabled = recording,
+                    onClick = { stopRecording() }
+                ) {
+                    Icon(Icons.Default.Stop, contentDescription = "Stop recording")
                     Text("Stop")
                 }
+            }
+            if (recording) {
+                val minutes = elapsedRecordingSeconds / 60
+                val seconds = elapsedRecordingSeconds % 60
+                Text(
+                    if (recordingPaused) "Recording paused • %02d:%02d".format(minutes, seconds)
+                    else "Recording • %02d:%02d".format(minutes, seconds),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else if (startingRecording || pendingPermission) {
+                Text("Preparing microphone…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (attachments.isEmpty()) {
                 Text("No recordings yet", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 attachments.forEachIndexed { index, attachment ->
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Recording ${index + 1}", modifier = Modifier.weight(1f))
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                if (attachment.attachmentId in addedThisSession) "Recording ${index + 1} · Not yet saved to note" else "Recording ${index + 1}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                formatVoiceDuration(attachment.encryptedSizeBytes),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (playingId == attachment.attachmentId && playbackDurationMs > 0) {
+                                val positionSeconds = playbackPositionMs / 1000
+                                val durationSeconds = playbackDurationMs / 1000
+                                Text(
+                                    "Playback %d:%02d / %d:%02d".format(
+                                        positionSeconds / 60, positionSeconds % 60,
+                                        durationSeconds / 60, durationSeconds % 60
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
                         OutlinedButton(
+                            modifier = Modifier.semantics {
+                                contentDescription = if (playingId == attachment.attachmentId) {
+                                    "Stop playback of recording ${index + 1}"
+                                } else {
+                                    "Play recording ${index + 1}"
+                                }
+                                stateDescription = when {
+                                    playingId == attachment.attachmentId -> "Playing"
+                                    playingId != null -> "Unavailable while another recording plays"
+                                    recording -> "Unavailable while recording"
+                                    else -> "Playback stopped"
+                                }
+                            },
                             enabled = !recording && (playingId == null || playingId == attachment.attachmentId),
                             onClick = {
-                                if (playingId == attachment.attachmentId) stopPlayback()
-                                else {
+                                if (playingId == attachment.attachmentId) {
+                                    stopPlayback()
+                                    status = "Playback stopped."
+                                } else {
                                     stopPlayback()
                                     val focus = requestVoiceAudioFocus(audioManager) {
                                         stopPlayback()
@@ -402,27 +534,55 @@ internal fun VoiceNoteControls(
                                         requestedAudioFocus = true
                                         audioFocusListener = focus
                                         playingId = attachment.attachmentId
-                                        val player = PcmVoicePlayback(context, attachmentStore, attachment) { error ->
+                                        playbackPositionMs = 0
+                                        playbackDurationMs = 0
+                                        status = "Playing recording ${index + 1}."
+                                        val player = PcmVoicePlayback(
+                                            context,
+                                            attachmentStore,
+                                            attachment,
+                                            onProgress = { positionMs, durationMs ->
+                                                playbackPositionMs = positionMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                                                playbackDurationMs = durationMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                                            }
+                                        ) { error ->
                                             playingId = null
                                             playbackSession = null
                                             audioManager.abandonAudioFocus(focus)
                                             audioFocusListener = null
                                             requestedAudioFocus = false
-                                            status = error ?: ""
+                                            status = error ?: "Playback finished."
                                         }
                                         playbackSession = player
-                                        player.start()
+                                        runCatching { player.start() }.onFailure { error ->
+                                            playbackSession = null
+                                            playingId = null
+                                            audioManager.abandonAudioFocus(focus)
+                                            audioFocusListener = null
+                                            requestedAudioFocus = false
+                                            status = error.message ?: "Couldn't start playback. Try again."
+                                        }
                                     }
                                 }
                             }
                         ) {
-                            Icon(if (playingId == attachment.attachmentId) Icons.Default.Stop else Icons.Default.PlayArrow, contentDescription = null)
+                            Icon(if (playingId == attachment.attachmentId) Icons.Default.Stop else Icons.Default.PlayArrow, contentDescription = if (playingId == attachment.attachmentId) "Stop playback" else "Play recording ${index + 1}")
                             Text(if (playingId == attachment.attachmentId) "Stop" else "Play")
                         }
                     }
                 }
             }
             if (status.isNotBlank()) Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (showPermissionSettings) {
+                OutlinedButton(onClick = {
+                    showPermissionSettings = false
+                    runCatching {
+                        context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+                    }.onFailure { status = "Open Android Settings and allow microphone access for NESTNOTE." }
+                }) {
+                    Text("Open app settings")
+                }
+            }
         }
     }
 }

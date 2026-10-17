@@ -752,6 +752,15 @@ private fun NestNoteApp(store: NoteStore) {
                     }
                 }
                 closeEditor()
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        if (editorNote == null) {
+                            "Draft discarded, including its unsaved voice recordings."
+                        } else {
+                            "Unsaved changes discarded. Previously saved voice recordings were kept."
+                        }
+                    )
+                }
             }
             val dismissEditor = { if (editorHasUnsavedChanges) confirmSystemDiscard = true else discardEditor() }
             val saveNote: (NestNote) -> Unit = { draft ->
@@ -832,7 +841,15 @@ private fun NestNoteApp(store: NoteStore) {
                 AlertDialog(
                     onDismissRequest = { confirmSystemDiscard = false },
                     title = { Text("Discard changes?") },
-                    text = { Text("Your unsaved changes will be lost.") },
+                    text = {
+                        Text(
+                            if (editorNote == null) {
+                                "Your unsaved note and any voice recordings attached to this new draft will be discarded."
+                            } else {
+                                "Your unsaved changes and newly staged voice recordings will be discarded. Voice recordings already saved to this note will be kept."
+                            }
+                        )
+                    },
                     confirmButton = { TextButton(onClick = discardEditor) { Text("Discard") } },
                     dismissButton = { TextButton(onClick = { confirmSystemDiscard = false }) { Text("Keep editing") } }
                 )
@@ -1223,6 +1240,7 @@ private fun NoteEditorContent(
     var appearanceStartColor by remember { mutableIntStateOf(colorIndex) }
     var appearanceStartBackground by remember { mutableIntStateOf(backgroundIndex) }
     var discardConfirmation by remember { mutableStateOf(false) }
+    var deleteConfirmation by remember { mutableStateOf(false) }
     var reminderMenu by remember { mutableStateOf(false) }
     var moreMenu by remember { mutableStateOf(false) }
     val titleFocus = remember { FocusRequester() }
@@ -1722,7 +1740,7 @@ private fun NoteEditorContent(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (onDelete != null) TextButton(onClick = onDelete) { Text("Delete") }
+                if (onDelete != null) TextButton(onClick = { deleteConfirmation = true }) { Text("Delete") }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { requestDismiss() }, colors = ButtonDefaults.textButtonColors(contentColor = accent)) { Text("Cancel") }
                 Button(
@@ -1775,6 +1793,25 @@ private fun NoteEditorContent(
                     .testTag("appearance_side_panel")
             )
         }
+    }
+
+    if (deleteConfirmation && onDelete != null) {
+        AlertDialog(
+            onDismissRequest = { deleteConfirmation = false },
+            title = { Text("Delete this note?") },
+            text = {
+                Text("The note will be removed. You can undo deletion during the brief Undo window. Voice recordings are removed only after that window expires.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    deleteConfirmation = false
+                    onDelete()
+                }) { Text("Delete note") }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteConfirmation = false }) { Text("Keep note") }
+            }
+        )
     }
 
     if (discardConfirmation) {
