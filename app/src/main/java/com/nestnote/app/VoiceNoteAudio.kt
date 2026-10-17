@@ -256,7 +256,7 @@ internal fun VoiceNoteControls(
                         audioFocusListener = null
                         status = message
                     },
-                    { startingRecording = false; recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
+                    { startingRecording = false; recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener); requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted. Tap Record to try again." })
             }
             VoicePermissionDecision.SHOW_PERMISSION_GUIDANCE -> {
                 pendingPermission = false
