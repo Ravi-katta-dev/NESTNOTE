@@ -112,6 +112,51 @@ class VoiceAttachmentManifestTest {
 
 
     @Test
+    fun discardingNewDraftRemovesOnlyItsStagedAttachments() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val root = Files.createTempDirectory("nestnote-draft-discard").toFile()
+        val key = newKey()
+        val store = VoiceAttachmentStore(context, { key }, root)
+        val manifest = VoiceAttachmentManifest(context, root)
+        val savedNoteId = 700L
+        val draftId = 701L
+
+        val savedPayload = byteArrayOf(9, 8, 7, 6)
+        val saved = store.save(savedNoteId, "saved_recording", ByteArrayInputStream(savedPayload))
+        val savedMetadata = VoiceAttachmentMetadata(
+            noteId = savedNoteId,
+            attachmentId = "saved_recording",
+            createdAtMillis = 1L,
+            durationMillis = 1L,
+            encryptedSizeBytes = saved.encryptedSizeBytes,
+            displayName = "Saved recording"
+        )
+        manifest.put(savedMetadata, store)
+
+        val stagedPayload = byteArrayOf(1, 2, 3, 4)
+        val staged = store.save(draftId, "new_draft_recording", ByteArrayInputStream(stagedPayload))
+        manifest.put(
+            VoiceAttachmentMetadata(
+                noteId = draftId,
+                attachmentId = "new_draft_recording",
+                createdAtMillis = 2L,
+                durationMillis = 1L,
+                encryptedSizeBytes = staged.encryptedSizeBytes,
+                displayName = "Draft recording"
+            ),
+            store
+        )
+
+        assertTrue(store.deleteAll(draftId))
+        manifest.removeNote(draftId)
+
+        assertTrue(store.list(draftId).isEmpty())
+        assertTrue(manifest.list(draftId, store).isEmpty())
+        assertEquals(savedPayload.toList(), store.read(savedNoteId, "saved_recording").toList())
+        assertEquals(listOf(savedMetadata), manifest.list(savedNoteId, store))
+    }
+
+    @Test
     fun attachmentStagedBeforeFirstSaveRemainsBoundToReservedDraftId() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val root = Files.createTempDirectory("nestnote-draft-identity").toFile()
