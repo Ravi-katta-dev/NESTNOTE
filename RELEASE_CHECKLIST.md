@@ -1,6 +1,6 @@
 # NESTNOTE Release & Validation Checklist
 
-Last updated: 2026-10-12
+Last updated: 2026-10-17
 
 Use this checklist for every candidate. A successful build is necessary but does not establish release readiness. Record the exact commit, CI run, device, results, and accepted risks in WORKLOG.md. Do not mark a check complete without evidence.
 
@@ -26,6 +26,7 @@ Use this checklist for every candidate. A successful build is necessary but does
 
 ## 3. Backup, encryption, and recovery
 - [ ] Export a backup and confirm expected note fields round-trip.
+- [ ] Verify backup/restore is **notes-only**: voice audio attachments are excluded, and the export/restore UI clearly warns that recordings are not included.
 - [ ] Restore versioned backup and legacy JSON-array backup.
 - [ ] Preview restore additions/updates before applying.
 - [ ] Confirm newer incoming notes update existing notes; older/equal timestamps do not overwrite.
@@ -42,9 +43,9 @@ Use this checklist for every candidate. A successful build is necessary but does
 - [ ] Confirm privacy copy states local storage is encrypted and exported JSON is plaintext.
 
 ## 4. Production signing and APK integrity
-- [ ] Confirm repository Actions secrets exist without exposing values: KEYSTORE_BASE64, KEY_ALIAS, KEY_STORE_PASSWORD, KEY_PASSWORD.
+- [ ] Confirm repository Actions secrets exist without exposing values: KEYSTORE_BASE64, KEY_ALIAS, KEYSTORE_PASSWORD, KEY_PASSWORD.
 - [ ] Confirm KEYSTORE_BASE64 decodes to the approved permanent production keystore; no keystore bytes are committed or logged.
-- [ ] Confirm a version tag matching vMAJOR.MINOR.PATCH publishes a version-named APK, and manual dispatch publishes only when a validated release_tag is supplied; a main-branch push produces a signed workflow artifact and only repairs an eligible existing release.
+- [ ] Confirm the release workflow runs for version tags matching `v*.*.*` or manual dispatch with a validated `release_tag`; it does not trigger on ordinary pushes to `main`.
 - [ ] Confirm missing or invalid signing secrets fail the tagged workflow and prevent publication.
 - [ ] Confirm release APK is minified/resource-shrunk and named NESTNOTE-vX.Y.Z.apk.
 - [ ] Verify the published APK signature using Android apksigner.
