@@ -684,7 +684,8 @@ private fun NestNoteApp(store: NoteStore) {
         }
 
         pendingRestore?.let { incoming ->
-            val preview = NoteStore.merge(notes, incoming)
+            val restoreIncoming = NoteStore.remapDraftIdCollisionForRestore(notes, incoming, editorDraftId)
+            val preview = NoteStore.merge(notes, restoreIncoming)
             val withinNoteLimit = NoteStore.isValidNoteCollection(preview.notes)
             AlertDialog(
                 onDismissRequest = { pendingRestore = null },
@@ -778,12 +779,18 @@ private fun NestNoteApp(store: NoteStore) {
                     }
                 } else {
                     val savedId = existing?.id ?: editorDraftId ?: NoteStore.allocateNoteId(notes)
-                    // Recheck against the latest collection at commit time; another path
-                    // (for example restore) may have introduced the reserved ID meanwhile.
-                    val collisionSafeId = if (existing == null && notes.any { it.id == savedId }) {
-                        NoteStore.allocateNoteId(notes)
-                    } else savedId
-                    val updated = draft.copy(id = collisionSafeId, updated = System.currentTimeMillis())
+                    // Never silently change identity after audio is staged against this ID.
+                    // Restore remaps colliding incoming drafts; if another writer still creates
+                    // a collision, preserve this draft and ask the user to reopen safely.
+                    if (existing == null && NoteStore.hasDraftIdCollision(notes, savedId)) {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(
+                                "This draft ID is now in use. Your draft and recordings are preserved; close and reopen a new note to continue."
+                            )
+                        }
+                        return@saveNote
+                    }
+                    val updated = draft.copy(id = savedId, updated = System.currentTimeMillis())
                     val next = if (existing == null) notes + updated else notes.map {
                         if (it.id == existing.id) updated.copy(id = existing.id) else it
                     }
