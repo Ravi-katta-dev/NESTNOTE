@@ -215,6 +215,7 @@ internal fun VoiceNoteControls(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val attachmentStore = remember(context) { VoiceAttachmentStore(context) }
+    val attachmentManifest = remember(context) { VoiceAttachmentManifest(context) }
     var attachments by remember(noteId) { mutableStateOf(runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())) }
     var recording by remember { mutableStateOf(false) }
     var playingId by remember { mutableStateOf<String?>(null) }
@@ -229,7 +230,7 @@ internal fun VoiceNoteControls(
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted && pendingPermission) {
             pendingPermission = false
-            startVoiceRecording(context, audioManager, attachmentStore, noteId, addedThisSession,
+            startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
                 { session, listener -> recordingSession = session; recording = true; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener },
                 { message -> status = message },
                 { recordingSession?.stop(); recordingSession = null; recording = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
@@ -300,7 +301,10 @@ internal fun VoiceNoteControls(
 
     androidx.compose.runtime.SideEffect {
         onDiscardHandlerReady {
-            addedThisSession.toList().forEach { id -> runCatching { attachmentStore.delete(noteId, id) } }
+            addedThisSession.toList().forEach { id ->
+                runCatching { attachmentStore.delete(noteId, id) }
+                runCatching { attachmentManifest.remove(noteId, id) }
+            }
             addedThisSession.clear()
             attachments = runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())
             onAttachmentCountChanged(attachments.size)
@@ -323,7 +327,7 @@ internal fun VoiceNoteControls(
                     enabled = !recording && playingId == null,
                     onClick = {
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                            startVoiceRecording(context, audioManager, attachmentStore, noteId, addedThisSession,
+                            startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
                                 { session, listener -> recordingSession = session; recording = true; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener },
                                 { message -> status = message },
                                 { recordingSession?.stop(); recordingSession = null; recording = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
@@ -393,6 +397,7 @@ private fun startVoiceRecording(
     context: Context,
     audioManager: AudioManager,
     store: VoiceAttachmentStore,
+    manifest: VoiceAttachmentManifest,
     noteId: Long,
     addedIds: MutableSet<String>,
     onStarted: (EncryptedPcmRecording, AudioManager.OnAudioFocusChangeListener) -> Unit,
@@ -409,8 +414,27 @@ private fun startVoiceRecording(
         audioManager.abandonAudioFocus(focusListener)
         when {
             result.isSuccess -> {
+                val attachment = result.getOrThrow()
                 addedIds.add(id)
-                onStatus("Recording saved securely.")
+                runCatching {
+                    val plaintextBytes = (attachment.encryptedSizeBytes - 32L).coerceAtLeast(0L)
+                    val durationMillis = plaintextBytes * 1000L / (VOICE_SAMPLE_RATE * 2L)
+                    manifest.put(
+                        VoiceAttachmentMetadata(
+                            noteId = noteId,
+                            attachmentId = id,
+                            createdAtMillis = System.currentTimeMillis(),
+                            durationMillis = durationMillis,
+                            encryptedSizeBytes = attachment.encryptedSizeBytes,
+                            displayName = "Voice recording"
+                        ),
+                        store
+                    )
+                }.onSuccess {
+                    onStatus("Recording saved securely.")
+                }.onFailure {
+                    onStatus("Recording encrypted, but its metadata could not be saved. Keep this note and try again.")
+                }
             }
             else -> onStatus(result.exceptionOrNull()?.message ?: "Couldn't save recording")
         }
