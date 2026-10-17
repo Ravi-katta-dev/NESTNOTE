@@ -135,15 +135,18 @@ private class EncryptedPcmRecording(
                 )
                 if (captured > 0L) audioBytes.set(captured)
             } catch (error: PcmCaptureSizeLimitException) {
+                lifecycle.fail()
                 limitExceeded.set(true)
                 running.set(false)
             } catch (error: Exception) {
                 if (running.get() && !limitExceeded.get()) {
+                    lifecycle.fail()
                     recordingFailure.compareAndSet(null, IOException("Recording failed: ${error.message ?: "unknown error"}", error))
                     running.set(false)
                 }
             } finally {
                 captureAdapter = null
+                audioRecord = null
             }
         }, "nestnote-voice-record").apply { start() }
     }
