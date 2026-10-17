@@ -40,6 +40,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -459,6 +461,13 @@ internal fun VoiceNoteControls(
                             }
                         }
                         OutlinedButton(
+                            modifier = Modifier.semantics {
+                                stateDescription = if (playingId == attachment.attachmentId) {
+                                    "Playing recording"
+                                } else {
+                                    "Playback stopped"
+                                }
+                            },
                             enabled = !recording && (playingId == null || playingId == attachment.attachmentId),
                             onClick = {
                                 if (playingId == attachment.attachmentId) {
