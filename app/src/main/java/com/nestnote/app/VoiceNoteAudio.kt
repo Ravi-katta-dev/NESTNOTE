@@ -245,7 +245,16 @@ internal fun VoiceNoteControls(
                 showPermissionSettings = false
                 startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
                     { session, listener -> startingRecording = false; recordingSession = session; recording = true; recordingPaused = false; elapsedRecordingSeconds = 0; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener; onVoiceAttachmentAdded() },
-                    { message -> startingRecording = false; recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = message },
+                    { message ->
+                        startingRecording = false
+                        recordingSession = null
+                        recording = false
+                        recordingPaused = false
+                        if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
+                        requestedAudioFocus = false
+                        audioFocusListener = null
+                        status = message
+                    },
                     { startingRecording = false; recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
             }
             VoicePermissionDecision.SHOW_PERMISSION_GUIDANCE -> {
@@ -387,7 +396,16 @@ internal fun VoiceNoteControls(
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                             startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
                                 { session, listener -> startingRecording = false; recordingSession = session; recording = true; recordingPaused = false; elapsedRecordingSeconds = 0; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener; onVoiceAttachmentAdded() },
-                                { message -> startingRecording = false; status = message },
+                                { message ->
+                                    startingRecording = false
+                                    recordingSession = null
+                                    recording = false
+                                    recordingPaused = false
+                                    if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
+                                    requestedAudioFocus = false
+                                    audioFocusListener = null
+                                    status = message
+                                },
                                 { startingRecording = false; recordingSession?.stop(); recordingSession = null; recording = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
                         } else {
                             pendingPermission = true
