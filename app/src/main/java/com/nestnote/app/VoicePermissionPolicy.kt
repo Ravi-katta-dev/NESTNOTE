@@ -18,3 +18,11 @@ internal fun resolveVoicePermissionResult(
     granted -> VoicePermissionDecision.START_RECORDING
     else -> VoicePermissionDecision.SHOW_PERMISSION_GUIDANCE
 }
+
+/** Prevents overlapping Record requests while permission, capture startup, or playback is active. */
+internal fun canStartVoiceRecording(
+    recording: Boolean,
+    starting: Boolean,
+    permissionRequestPending: Boolean,
+    playbackActive: Boolean
+): Boolean = !recording && !starting && !permissionRequestPending && !playbackActive
