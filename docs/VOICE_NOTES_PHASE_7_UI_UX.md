@@ -39,5 +39,13 @@ Scope: user-facing voice-note interactions, accessibility, and regression handli
 - Permission denial now provides concise guidance and an explicit app-settings action; permission-policy tests already cover denial, retry, and stale callbacks.
 - These changes are not marked complete until the Android CI checks pass on the exact PR head. No emulator/physical-device verification is claimed.
 
+## Follow-up implementation notes (CI pending)
+- Added a shared Record action gate covering active recording, startup, pending microphone permission, and active playback, with a JVM test for each blocked state.
+- Added an elapsed recording timer and visible active/paused/starting feedback.
+- Added permission-denial guidance with an explicit app-settings action.
+- Marked newly staged attachments as not yet saved to the note and added descriptive content descriptions to recording/playback controls.
+- Playback start/stop status feedback is now visible.
+- These are implementation updates only. Keep checklist boxes open until automated Android CI passes on the exact PR head; no device verification is claimed.
+
 ## Completion evidence
 Mark an item complete only with code review, automated test, or recorded evidence. Do not claim device verification without evidence. Emulator and physical-device execution remains archived and is not required for this milestone.
