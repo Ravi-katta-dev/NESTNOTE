@@ -230,6 +230,7 @@ private fun NestNoteApp(store: NoteStore) {
                 // The Undo window has expired and deletion remains persisted. Only now is it safe
                 // to remove the deleted note's encrypted audio; never clean up during recovery.
                 runCatching { VoiceAttachmentStore(context).deleteAll(note.id) }
+                runCatching { VoiceAttachmentManifest(context).removeNote(note.id) }
             }
         }
     }
