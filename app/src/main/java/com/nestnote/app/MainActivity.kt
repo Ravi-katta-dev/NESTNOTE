@@ -973,7 +973,7 @@ private fun SettingsScreen(
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    "NESTNOTE does not sync to a cloud account. Back up your notes to a file you choose, and restore it any time. Restoring adds missing notes and keeps the most recently edited copy of notes that already exist; nothing is deleted.",
+                    "NESTNOTE does not sync to a cloud account. Backups contain note text and note settings only; voice recordings are excluded and will not return when you restore. Back up your notes to a file you choose, and restore it any time. Restoring adds missing notes and keeps the most recently edited copy of notes that already exist; nothing is deleted.",
                     style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
