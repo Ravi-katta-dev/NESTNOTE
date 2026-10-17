@@ -111,7 +111,7 @@ Observed:
 - Production release workflow triggers on version tags matching `v*.*.*` and manual dispatch with a validated `release_tag`.
 - It runs unit tests, builds a versioned release APK, requires signing secrets, signs/verifies the APK, and publishes a GitHub Release.
 - The release workflow does **not** currently trigger on pushes to `main`.
-- Workflow secret mapping is `KEYSTORE_BASE64`, `KEY_ALIAS`, `KEYSTORE_PASSWORD`, and `KEY_PASSWORD`. The checklist currently names `KEY_STORE_PASSWORD`, which is inconsistent with the workflow.
+- Workflow secret mapping is `KEYSTORE_BASE64`, `KEY_ALIAS`, `KEYSTORE_PASSWORD`, and `KEY_PASSWORD`. README and release checklist must use those exact names.
 
 Required follow-up:
 1. Correct README/checklist to match the actual tag/manual-dispatch trigger and secret names (unless a deliberate workflow change is separately approved).
