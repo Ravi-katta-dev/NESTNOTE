@@ -493,7 +493,12 @@ private fun startVoiceRecording(
         session.start()
         onStarted(session, focusListener)
     } catch (error: Exception) {
-        session.stop()
+        // A partially started session may already have a storage worker. Mark this
+        // attachment discarded first, then wait for workers before deleting its payload.
+        addedIds.remove(id)
+        runCatching { session.discardAndWait() }
+        runCatching { store.delete(noteId, id) }
+        runCatching { manifest.remove(noteId, id) }
         audioManager.abandonAudioFocus(focusListener)
         onStatus(error.message ?: "Couldn't start recording")
     }
