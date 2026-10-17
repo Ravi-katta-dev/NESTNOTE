@@ -28,3 +28,8 @@ Scope: automated CI evidence, security/regression review, merge gates, and artif
 
 ## Completion rule
 Automated CI and emulator-independent tests are the validation gate. Do not claim device-only behavior has been verified without evidence. Do not merge or mark release-ready until applicable checks and evidence are complete.
+
+
+### Exact-head CI follow-up (2026-10-17)
+- The previously inspected PR #38 head `f0790d24a0e1a19317ac83b670a31f83a982a836` had no PR-triggered workflow run recorded by GitHub's commit-runs query.
+- This checklist update requests a fresh PR CI run on the new resulting commit. Keep the two unchecked 8.1 items unchecked until that run completes successfully and its head SHA is confirmed to match the reviewed PR head.
