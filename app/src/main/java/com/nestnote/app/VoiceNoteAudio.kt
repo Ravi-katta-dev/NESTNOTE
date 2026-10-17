@@ -67,6 +67,7 @@ private class EncryptedPcmRecording(
     private val attachmentId: String,
     private val onFinished: (Result<VoiceAttachment>) -> Unit
 ) {
+    private val lifecycle = VoiceRecordingLifecycle()
     private val running = AtomicBoolean(false)
     private val paused = AtomicBoolean(false)
     private val discarded = AtomicBoolean(false)
@@ -92,6 +93,12 @@ private class EncryptedPcmRecording(
         }
         val input = PipedInputStream(64 * 1024)
         val output = PipedOutputStream(input)
+        if (!lifecycle.start()) {
+            record.release()
+            input.close()
+            output.close()
+            throw IOException("This recording session has already been started or closed")
+        }
         audioRecord = record
         pipeOutput = output
         running.set(true)
@@ -164,14 +171,15 @@ private class EncryptedPcmRecording(
     }
 
     @Synchronized fun pause() {
-        if (running.get() && !discarded.get()) paused.set(true)
+        if (lifecycle.pause()) paused.set(true)
     }
 
     @Synchronized fun resume() {
-        if (running.get() && !discarded.get()) paused.set(false)
+        if (lifecycle.resume()) paused.set(false)
     }
 
     @Synchronized fun stop() {
+        lifecycle.stop()
         running.set(false)
         paused.set(false)
         runCatching { audioRecord?.stop() }
@@ -182,7 +190,8 @@ private class EncryptedPcmRecording(
      * Prevents a queued main-thread completion callback from recreating metadata after discard.
      * The caller must remove the attachment from its session set before waiting for workers.
      */
-    fun discardAndWait() {
+    @Synchronized fun discardAndWait() {
+        lifecycle.discard()
         discarded.set(true)
         stopAndWait()
     }
