@@ -288,6 +288,10 @@ internal fun VoiceNoteControls(
 
     LaunchedEffect(status) {
         if (status == "Recording saved securely.") {
+            recording = false
+            recordingSession = null
+            requestedAudioFocus = false
+            audioFocusListener = null
             attachments = runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())
             onAttachmentCountChanged(attachments.size)
             onVoiceAttachmentAdded()
