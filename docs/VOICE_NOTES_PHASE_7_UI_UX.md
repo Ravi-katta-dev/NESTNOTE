@@ -81,3 +81,9 @@ Mark an item complete only with code review, automated test, or recorded evidenc
 - Existing JVM regression coverage in `VoiceRecordingLifecycleTest` exercises pause/resume/stop ordering, terminal failure/discard, repeated operations, overflow/read-failure cleanup, discard-vs-completion races, and pause/resume-vs-stop races. `VoicePermissionPolicyTest` covers denied permission, retry, stale results, action gating, and duration edge cases.
 - Reviewed recovery for capture/startup errors, playback errors/natural completion, permission denial, draft discard, and saved-attachment preservation. Fixed the audio-focus interruption callback to abandon the requested focus and present an explicit retry instruction.
 - Static/code review only. No emulator/physical-device behavior is claimed; those checks remain archived by project decision. CI remains pending: the Android CI workflow is configured for pull requests targeting main, pushes to main, or manual workflow_dispatch. PR #37 currently targets docs/voice-backup-exclusion, so no exact-head run was created. The connected GitHub actions do not expose workflow_dispatch, and the PR base was not changed without approval.
+
+
+### Current validation status (2026-10-17, after retargeting)
+- PR #37 has been retargeted to `main` with maintainer approval.
+- Exact-head Android CI is still required. Existing test coverage is documented above, but no passing CI result is claimed until the workflow completes on the current head.
+- The 7.4 review and JVM test coverage are recorded; emulator/physical-device E2E remains archived by project decision and has not been run. This means 7.4's code-review/regression-review tasks are addressed, but full runtime/device validation is not claimed.
