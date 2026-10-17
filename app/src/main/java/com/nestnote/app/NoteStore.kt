@@ -277,6 +277,28 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
             return incoming.map { note -> if (note.id == draftId) note.copy(id = replacementId) else note }
         }
 
+        /** Shared dirty-state policy for editor fields and staged voice changes. */
+        fun hasEditorChanges(
+            original: NestNote?,
+            title: String,
+            body: String,
+            category: String,
+            defaultCategory: String,
+            color: Int,
+            background: Int,
+            pinned: Boolean,
+            reminder: String,
+            voiceChangesPending: Boolean
+        ): Boolean =
+            title != original?.title.orEmpty() ||
+                body != original?.body.orEmpty() ||
+                category != (original?.category ?: defaultCategory) ||
+                color != (original?.color ?: 0) ||
+                background != (original?.background ?: 0) ||
+                pinned != (original?.pinned ?: false) ||
+                reminder != original?.reminder.orEmpty() ||
+                voiceChangesPending
+
         /** True when a new draft's reserved ID is already owned by a persisted note. */
         fun hasDraftIdCollision(notes: Collection<NestNote>, draftId: Long): Boolean =
             notes.any { it.id == draftId }
