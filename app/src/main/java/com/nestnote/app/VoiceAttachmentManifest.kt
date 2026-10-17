@@ -93,6 +93,9 @@ class VoiceAttachmentManifest internal constructor(
     private fun readAll(): Map<String, VoiceAttachmentMetadata> {
         if (!file.exists()) return emptyMap()
         return try {
+            if (file.length() > MAX_MANIFEST_BYTES) {
+                throw IOException("Attachment manifest exceeds size limit")
+            }
             val root = JSONObject(file.readText(Charsets.UTF_8))
             if (root.optInt("schemaVersion", -1) != SCHEMA_VERSION) throw IOException("Unsupported attachment manifest version")
             val array = root.getJSONArray("attachments")
@@ -154,6 +157,8 @@ class VoiceAttachmentManifest internal constructor(
         private const val MANIFEST_NAME = "manifest_v1.json"
         private const val SCHEMA_VERSION = 1
         private const val MAX_ATTACHMENTS = 10000
+        // Prevent unbounded allocation before JSON parsing; leaves room for 10,000 bounded records.
+        private const val MAX_MANIFEST_BYTES = 4 * 1024 * 1024
         private val ID_PATTERN = Regex("[A-Za-z0-9_-]{1,80}")
     }
 }
