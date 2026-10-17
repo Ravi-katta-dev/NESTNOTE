@@ -227,15 +227,19 @@ internal fun VoiceNoteControls(
     val addedThisSession = remember(noteId) { mutableSetOf<String>() }
     val audioManager = remember(context) { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted && pendingPermission) {
-            pendingPermission = false
-            startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
-                { session, listener -> recordingSession = session; recording = true; recordingPaused = false; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener; onVoiceAttachmentAdded() },
-                { message -> recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = message },
-                { recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
-        } else {
-            pendingPermission = false
-            status = "Microphone permission is required to record voice notes."
+        when (resolveVoicePermissionResult(granted, pendingPermission)) {
+            VoicePermissionDecision.START_RECORDING -> {
+                pendingPermission = false
+                startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
+                    { session, listener -> recordingSession = session; recording = true; recordingPaused = false; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener; onVoiceAttachmentAdded() },
+                    { message -> recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = message },
+                    { recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
+            }
+            VoicePermissionDecision.SHOW_PERMISSION_GUIDANCE -> {
+                pendingPermission = false
+                status = "Microphone permission is required to record voice notes."
+            }
+            VoicePermissionDecision.IGNORE_STALE_RESULT -> Unit
         }
     }
 
