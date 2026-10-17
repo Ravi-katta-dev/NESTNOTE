@@ -31,7 +31,7 @@ class VoiceAttachmentManifest internal constructor(
     fun list(noteId: Long, store: VoiceAttachmentStore): List<VoiceAttachmentMetadata> {
         require(noteId > 0)
         val saved = readAll()
-        val actual = store.list(noteId).associateBy { it.attachmentId }
+        val actual = store.list(noteId).associateBy { key(it.noteId, it.attachmentId) }
         // Reconcile index entries with files; missing files are omitted, not recreated.
         val valid = saved.filter { (_, item) -> item.noteId != noteId || actual.containsKey(key(item.noteId, item.attachmentId)) }
         if (valid.size != saved.size) writeAll(valid)
