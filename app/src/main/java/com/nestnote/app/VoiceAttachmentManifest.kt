@@ -33,7 +33,7 @@ class VoiceAttachmentManifest internal constructor(
         val saved = readAll()
         val actual = store.list(noteId).associateBy { it.attachmentId }
         // Reconcile index entries with files; missing files are omitted, not recreated.
-        val valid = saved.filter { (key, item) -> item.noteId != noteId || actual.containsKey(key(item.noteId, item.attachmentId)) }
+        val valid = saved.filter { (_, item) -> item.noteId != noteId || actual.containsKey(key(item.noteId, item.attachmentId)) }
         if (valid.size != saved.size) writeAll(valid)
         return valid.values.filter { it.noteId == noteId }.sortedBy { it.createdAtMillis }
     }
@@ -71,9 +71,10 @@ class VoiceAttachmentManifest internal constructor(
         val before = items.size
         val actual = liveNoteIds.flatMap { id -> store.list(id).map { id to it } }
             .associate { (id, attachment) -> key(id, attachment.attachmentId) to (id to attachment) }
-        items.entries.removeAll { (id, metadata) ->
-            metadata.noteId !in liveNoteIds || actual[key(metadata.noteId, id)]?.first != metadata.noteId ||
-                actual[key(metadata.noteId, id)]?.second?.encryptedSizeBytes != metadata.encryptedSizeBytes
+        items.entries.removeAll { (_, metadata) ->
+            val actualAttachment = actual[key(metadata.noteId, metadata.attachmentId)]
+            metadata.noteId !in liveNoteIds || actualAttachment?.first != metadata.noteId ||
+                actualAttachment?.second?.encryptedSizeBytes != metadata.encryptedSizeBytes
         }
         if (items.size != before) writeAll(items)
         return before - items.size
