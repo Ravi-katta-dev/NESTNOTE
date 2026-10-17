@@ -69,6 +69,8 @@ private class EncryptedPcmRecording(
 ) {
     private val running = AtomicBoolean(false)
     private val paused = AtomicBoolean(false)
+    private val discarded = AtomicBoolean(false)
+    val isDiscarded: Boolean get() = discarded.get()
     private val audioBytes = AtomicLong(0)
     private val limitExceeded = AtomicBoolean(false)
     private val recordingFailure = AtomicReference<IOException?>(null)
@@ -161,18 +163,28 @@ private class EncryptedPcmRecording(
         }, "nestnote-voice-record").apply { start() }
     }
 
-    fun pause() {
-        if (running.get()) paused.set(true)
+    @Synchronized fun pause() {
+        if (running.get() && !discarded.get()) paused.set(true)
     }
 
-    fun resume() {
-        if (running.get()) paused.set(false)
+    @Synchronized fun resume() {
+        if (running.get() && !discarded.get()) paused.set(false)
     }
 
-    fun stop() {
+    @Synchronized fun stop() {
         running.set(false)
+        paused.set(false)
         runCatching { audioRecord?.stop() }
         runCatching { pipeOutput?.close() }
+    }
+
+    /**
+     * Prevents a queued main-thread completion callback from recreating metadata after discard.
+     * The caller must remove the attachment from its session set before waiting for workers.
+     */
+    fun discardAndWait() {
+        discarded.set(true)
+        stopAndWait()
     }
 
     fun stopAndWait() {
@@ -288,7 +300,17 @@ internal fun VoiceNoteControls(
 
     androidx.compose.runtime.SideEffect {
         onDiscardHandlerReady {
-            recordingSession?.stopAndWait()
+            recordingSession?.let { session ->
+                recordingSession = null
+                // Remove identities first: completion callbacks already queued on the main
+                // thread will observe the discard and cannot recreate manifest entries.
+                addedThisSession.toList().forEach { id ->
+                    runCatching { attachmentStore.delete(noteId, id) }
+                    runCatching { attachmentManifest.remove(noteId, id) }
+                }
+                addedThisSession.clear()
+                session.discardAndWait()
+            }
             recordingSession = null
             recording = false
             recordingPaused = false
@@ -421,6 +443,13 @@ private fun startVoiceRecording(
     addedIds.add(id)
     val session = EncryptedPcmRecording(context, store, noteId, id) { result ->
         audioManager.abandonAudioFocus(focusListener)
+        // Discard can finish before this main-thread callback is dispatched. Never let a
+        // late successful worker callback recreate the manifest entry for discarded audio.
+        if (id !in addedIds) {
+            runCatching { store.delete(noteId, id) }
+            runCatching { manifest.remove(noteId, id) }
+            return@EncryptedPcmRecording
+        }
         when {
             result.isSuccess -> {
                 val attachment = result.getOrThrow()
