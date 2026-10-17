@@ -730,3 +730,10 @@ Reference links: [PR #6](https://github.com/Ravi-katta-dev/NESTNOTE/pull/6), [PR
 - Current published upstream release observed: `v1.2.4`. Do not use it as the F-Droid source revision if it predates the license file. Publish a new version tag after the licensing change is merged and validated.
 - Official F-Droid metadata submission is not complete. The metadata proposal must be transferred to the official `fdroiddata` repository and reviewed; this repository PR does not create an F-Droid listing or index.
 - Validation evidence: GitHub Android CI was observed in progress for the PR before the latest documentation commits. Exact-head CI must be checked again. No local F-Droid build, APK installation, reproducibility comparison, or device validation was performed in this session.
+
+
+## Voice notes delivery plan — 2026-10-17
+
+- Opened [issue #28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28) to track voice notes from architecture through production.
+- Added [docs/VOICE_NOTES_PLAN.md](docs/VOICE_NOTES_PLAN.md) defining the v1 product contract, encrypted app-private attachment storage, recorder/player state machine, editor UX, backup policy, automated/manual test matrix, and production release gates.
+- Status: planning foundation only. No voice recording code is implemented and no recording/device tests have run yet. Next step is storage design and testable encrypted attachment repository; implementation must not be presented as production-ready until the defined gates pass.
