@@ -33,5 +33,11 @@ Scope: user-facing voice-note interactions, accessibility, and regression handli
 - [ ] Capture and resolve UI regressions found during implementation.
 - [ ] ~~Manual emulator and physical-device usability pass~~ Archived by project decision; not a release gate.
 
+## Implementation progress (validation pending)
+- Record startup now has a single-action gate covering active recording, startup, permission requests, and playback; a JVM regression test covers each blocked state.
+- Recording UI now shows an elapsed `mm:ss` indicator and distinguishes paused from active capture.
+- Permission denial now provides concise guidance and an explicit app-settings action; permission-policy tests already cover denial, retry, and stale callbacks.
+- These changes are not marked complete until the Android CI checks pass on the exact PR head. No emulator/physical-device verification is claimed.
+
 ## Completion evidence
 Mark an item complete only with code review, automated test, or recorded evidence. Do not claim device verification without evidence. Emulator and physical-device execution remains archived and is not required for this milestone.
