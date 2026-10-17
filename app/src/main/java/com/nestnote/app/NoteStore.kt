@@ -277,6 +277,10 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
             return incoming.map { note -> if (note.id == draftId) note.copy(id = replacementId) else note }
         }
 
+        /** True when a new draft's reserved ID is already owned by a persisted note. */
+        fun hasDraftIdCollision(notes: Collection<NestNote>, draftId: Long): Boolean =
+            notes.any { it.id == draftId }
+
         /** Prevents a draft based on an older saved version from replacing newer content. */
         fun isSameNoteVersion(expectedUpdated: Long, currentUpdated: Long): Boolean =
             expectedUpdated == currentUpdated
