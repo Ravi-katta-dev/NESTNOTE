@@ -290,11 +290,17 @@ internal fun VoiceNoteControls(
     DisposableEffect(lifecycleOwner, noteId) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
+                // A permission sheet or asynchronous microphone startup may still be in
+                // flight when the editor backgrounds. Invalidate both states so a stale
+                // permission result cannot leave Record permanently disabled.
+                pendingPermission = false
+                startingRecording = false
                 recordingSession?.stop()
                 recording = false
                 recordingPaused = false
                 if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
                 requestedAudioFocus = false
+                audioFocusListener = null
                 playbackSession?.stop()
                 playbackSession = null
                 playingId = null
