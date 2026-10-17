@@ -131,7 +131,18 @@ private class EncryptedPcmRecording(
                     maxBytes = VoiceAttachmentStore.MAX_AUDIO_BYTES,
                     shouldContinue = { running.get() },
                     isPaused = { paused.get() },
-                    onBytesCaptured = { audioBytes.set(it) }
+                    onBytesCaptured = { audioBytes.set(it) },
+                    onCaptureFailure = { error ->
+                        lifecycle.fail()
+                        if (error is PcmCaptureSizeLimitException) {
+                            limitExceeded.set(true)
+                        } else if (running.get()) {
+                            recordingFailure.compareAndSet(
+                                null, IOException("Recording failed: " + (error.message ?: "unknown error"), error)
+                            )
+                        }
+                        running.set(false)
+                    }
                 )
                 if (captured > 0L) audioBytes.set(captured)
             } catch (error: PcmCaptureSizeLimitException) {

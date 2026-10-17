@@ -26,7 +26,8 @@ internal object PcmCapturePump {
         maxBytes: Long,
         shouldContinue: () -> Boolean,
         isPaused: () -> Boolean,
-        onBytesCaptured: (Long) -> Unit
+        onBytesCaptured: (Long) -> Unit,
+        onCaptureFailure: (Exception) -> Unit = {}
     ): Long {
         require(maxBytes >= 0) { "maxBytes must not be negative" }
         var total = 0L
@@ -57,6 +58,10 @@ internal object PcmCapturePump {
                 onBytesCaptured(total)
             }
             return total
+        } catch (error: Exception) {
+            // Record the failure before closing the pipe so storage cannot commit partial PCM.
+            onCaptureFailure(error)
+            throw error
         } finally {
             runCatching { capture.stop() }
             runCatching { capture.release() }
