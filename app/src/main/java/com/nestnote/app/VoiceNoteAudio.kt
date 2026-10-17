@@ -3,11 +3,9 @@ package com.nestnote.app
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioRecord
-import android.media.AudioTrack
 import android.media.MediaRecorder
 import android.os.Handler
 import android.os.Looper
@@ -55,7 +53,6 @@ import javax.crypto.Cipher
 
 private const val VOICE_SAMPLE_RATE = 16_000
 private const val VOICE_CHANNEL_IN = android.media.AudioFormat.CHANNEL_IN_MONO
-private const val VOICE_CHANNEL_OUT = android.media.AudioFormat.CHANNEL_OUT_MONO
 private const val VOICE_ENCODING = android.media.AudioFormat.ENCODING_PCM_16BIT
 
 /**
@@ -177,70 +174,6 @@ private class EncryptedPcmRecording(
     }
 }
 
-private class PcmVoicePlayback(
-    private val context: Context,
-    private val store: VoiceAttachmentStore,
-    private val attachment: VoiceAttachment,
-    private val onFinished: (String?) -> Unit
-) {
-    private val running = AtomicBoolean(true)
-    @Volatile private var track: AudioTrack? = null
-    private var thread: Thread? = null
-
-    fun start() {
-        thread = Thread({
-            var errorMessage: String? = null
-            try {
-                // read() returns only after the attachment's AES-GCM tag authenticates.
-                val pcm = store.read(attachment.noteId, attachment.attachmentId)
-                val minBuffer = AudioTrack.getMinBufferSize(VOICE_SAMPLE_RATE, VOICE_CHANNEL_OUT, VOICE_ENCODING)
-                if (minBuffer <= 0) throw IOException("Audio playback is unavailable on this device")
-                val player = AudioTrack.Builder()
-                    .setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_MEDIA)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                            .build()
-                    )
-                    .setAudioFormat(
-                        AudioFormat.Builder()
-                            .setSampleRate(VOICE_SAMPLE_RATE)
-                            .setChannelMask(VOICE_CHANNEL_OUT)
-                            .setEncoding(VOICE_ENCODING)
-                            .build()
-                    )
-                    .setTransferMode(AudioTrack.MODE_STREAM)
-                    .setBufferSizeInBytes(maxOf(minBuffer, 8192))
-                    .build()
-                track = player
-                player.play()
-                var offset = 0
-                while (running.get() && offset < pcm.size) {
-                    val written = player.write(pcm, offset, minOf(pcm.size - offset, 8192))
-                    if (written < 0) throw IOException("Audio playback failed ($written)")
-                    if (written == 0) continue
-                    offset += written
-                }
-                player.stop()
-            } catch (error: Exception) {
-                errorMessage = error.message ?: "Couldn't play this recording"
-            } finally {
-                track?.release()
-                track = null
-                Handler(Looper.getMainLooper()).post { onFinished(errorMessage) }
-            }
-        }, "nestnote-voice-play").apply { start() }
-    }
-
-    fun stop() {
-        running.set(false)
-        runCatching { track?.pause() }
-        runCatching { track?.flush() }
-        runCatching { track?.stop() }
-        thread?.interrupt()
-    }
-}
-
 @Composable
 internal fun VoiceNoteControls(
     noteId: Long,
@@ -255,11 +188,9 @@ internal fun VoiceNoteControls(
     var attachments by remember(noteId) { mutableStateOf(runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())) }
     var recording by remember { mutableStateOf(false) }
     var recordingPaused by remember { mutableStateOf(false) }
-    var playingId by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf("") }
     var pendingPermission by remember { mutableStateOf(false) }
     var recordingSession by remember { mutableStateOf<EncryptedPcmRecording?>(null) }
-    var playbackSession by remember { mutableStateOf<PcmVoicePlayback?>(null) }
     var requestedAudioFocus by remember { mutableStateOf(false) }
     var audioFocusListener by remember { mutableStateOf<AudioManager.OnAudioFocusChangeListener?>(null) }
     val addedThisSession = remember(noteId) { mutableSetOf<String>() }
@@ -287,16 +218,6 @@ internal fun VoiceNoteControls(
         }
         status = "Finishing encrypted recording…"
     }
-    fun stopPlayback() {
-        playbackSession?.stop()
-        playbackSession = null
-        playingId = null
-        if (requestedAudioFocus) {
-            audioManager.abandonAudioFocus(audioFocusListener)
-            requestedAudioFocus = false
-        }
-    }
-
     LaunchedEffect(noteId) {
         attachments = runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())
         onAttachmentCountChanged(attachments.size)
@@ -307,19 +228,15 @@ internal fun VoiceNoteControls(
                 recordingSession?.stop()
                 recording = false
                 recordingPaused = false
-                playbackSession?.stop()
-                playbackSession = null
-                playingId = null
                 if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
                 requestedAudioFocus = false
-                status = "Recording/playback stopped when the app left the foreground."
+                status = "Recording stopped when the app left the foreground. Playback is disabled until format validation is complete."
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             recordingSession?.stop()
-            playbackSession?.stop()
             if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
         }
     }
@@ -366,7 +283,7 @@ internal fun VoiceNoteControls(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    enabled = !recording && playingId == null,
+                    enabled = !recording,
                     onClick = {
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                             startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
@@ -407,44 +324,11 @@ internal fun VoiceNoteControls(
             if (attachments.isEmpty()) {
                 Text("No recordings yet", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
-                attachments.forEachIndexed { index, attachment ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("Recording ${index + 1}", modifier = Modifier.weight(1f))
-                        OutlinedButton(
-                            enabled = !recording && (playingId == null || playingId == attachment.attachmentId),
-                            onClick = {
-                                if (playingId == attachment.attachmentId) {
-                                    stopPlayback()
-                                } else {
-                                    stopPlayback()
-                                    val focusListener = requestVoiceAudioFocus(audioManager) { stopPlayback(); status = "Playback stopped because audio focus was interrupted." }
-                                    if (focusListener == null) {
-                                        status = "Audio focus is unavailable. Try again."
-                                    } else {
-                                        requestedAudioFocus = true
-                                        audioFocusListener = focusListener
-                                        playingId = attachment.attachmentId
-                                        val player = PcmVoicePlayback(context, attachmentStore, attachment) { error ->
-                                            playingId = null
-                                            playbackSession = null
-                                            audioManager.abandonAudioFocus(focusListener)
-                                            audioFocusListener = null
-                                            requestedAudioFocus = false
-                                            status = error ?: ""
-                                        }
-                                        playbackSession = player
-                                        player.start()
-                                    }
-                                }
-                            }
-                        ) {
-                            Icon(if (playingId == attachment.attachmentId) Icons.Default.Stop else Icons.Default.PlayArrow, contentDescription = null)
-                            Text(if (playingId == attachment.attachmentId) "Stop" else "Play")
-                        }
-                    }
+                attachments.forEachIndexed { index, _ ->
+                    Text(
+                        "Recording ${index + 1} saved encrypted (playback pending format validation).",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
             if (status.isNotBlank()) Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
