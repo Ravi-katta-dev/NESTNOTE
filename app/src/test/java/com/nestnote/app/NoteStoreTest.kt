@@ -168,7 +168,7 @@ class NoteStoreTest {
 
         assertEquals(listOf(200L, 201L), incoming.map { it.id })
         assertEquals(listOf(202L, 201L), remapped.map { it.id })
-        assertEquals(existing, existing)
+        assertEquals(100L, existing.single().id)
         assertEquals("Imported collision", remapped.first().title)
         assertTrue((existing + remapped).map { it.id }.distinct().size == 3)
     }
