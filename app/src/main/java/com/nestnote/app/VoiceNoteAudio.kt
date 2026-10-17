@@ -74,8 +74,8 @@ private class EncryptedPcmRecording(
     private val audioBytes = AtomicLong(0)
     private val limitExceeded = AtomicBoolean(false)
     private val recordingFailure = AtomicReference<IOException?>(null)
-    private var audioRecord: AudioRecord? = null
-    private var pipeOutput: PipedOutputStream? = null
+    @Volatile private var audioRecord: AudioRecord? = null
+    @Volatile private var pipeOutput: PipedOutputStream? = null
     private var recorderThread: Thread? = null
     private var storageThread: Thread? = null
 
