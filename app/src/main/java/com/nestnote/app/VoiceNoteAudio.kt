@@ -168,6 +168,12 @@ private class EncryptedPcmRecording(
         runCatching { audioRecord?.stop() }
         runCatching { pipeOutput?.close() }
     }
+
+    fun stopAndWait() {
+        stop()
+        runCatching { recorderThread?.join(2_000) }
+        runCatching { storageThread?.join(5_000) }
+    }
 }
 
 private class PcmVoicePlayback(
@@ -261,8 +267,8 @@ internal fun VoiceNoteControls(
         if (granted && pendingPermission) {
             pendingPermission = false
             startVoiceRecording(context, audioManager, attachmentStore, attachmentManifest, noteId, addedThisSession,
-                { session, listener -> recordingSession = session; recording = true; recordingPaused = false; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener },
-                { message -> status = message },
+                { session, listener -> recordingSession = session; recording = true; recordingPaused = false; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener; onVoiceAttachmentAdded() },
+                { message -> recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = message },
                 { recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
         } else {
             pendingPermission = false
@@ -272,7 +278,6 @@ internal fun VoiceNoteControls(
 
     fun stopRecording() {
         recordingSession?.stop()
-        recordingSession = null
         recording = false
         recordingPaused = false
         if (requestedAudioFocus) {
@@ -299,7 +304,6 @@ internal fun VoiceNoteControls(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
                 recordingSession?.stop()
-                recordingSession = null
                 recording = false
                 recordingPaused = false
                 playbackSession?.stop()
@@ -334,6 +338,10 @@ internal fun VoiceNoteControls(
 
     androidx.compose.runtime.SideEffect {
         onDiscardHandlerReady {
+            recordingSession?.stopAndWait()
+            recordingSession = null
+            recording = false
+            recordingPaused = false
             addedThisSession.toList().forEach { id ->
                 runCatching { attachmentStore.delete(noteId, id) }
                 runCatching { attachmentManifest.remove(noteId, id) }
