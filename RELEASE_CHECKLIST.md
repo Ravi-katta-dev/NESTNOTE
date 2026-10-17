@@ -5,12 +5,12 @@ Last updated: 2026-10-17
 Use this checklist for every candidate. A successful build is necessary but does not establish release readiness. Record the exact commit, CI run, device, results, and accepted risks in WORKLOG.md. Do not mark a check complete without evidence.
 
 ## 1. Candidate and CI
-- [x] Candidate commit SHA recorded and matches the commit being tested (`618aa0896bcbc35b6ef912fdd9e72a8a38c87ef2`).
-- [x] Required Android CI passes on that exact commit ([run #39048049532](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/39048049532)).
-- [x] Unit tests pass.
-- [x] Debug APK builds successfully for API 36.
-- [x] Minified/R8 release APK builds successfully.
-- [x] Instrumentation tests compile; actual execution on a device/emulator is separately recorded.
+- [ ] Candidate commit SHA recorded and matches the commit being tested.
+- [ ] Required Android CI passes on that exact commit.
+- [ ] Unit tests pass.
+- [ ] Debug APK builds successfully for API 36.
+- [ ] Minified/R8 release APK builds successfully.
+- [ ] Instrumentation tests compile; actual execution on a device/emulator is separately recorded.
 - [ ] No unexplained build warnings, vulnerable dependencies, or new manifest permissions remain.
 - [ ] Release notes, version, and known limitations reviewed.
 
@@ -42,13 +42,18 @@ Use this checklist for every candidate. A successful build is necessary but does
 - [ ] Verify the shipped manifest and Android backup/data-extraction behavior on supported versions.
 - [ ] Confirm privacy copy states local storage is encrypted and exported JSON is plaintext.
 
-## Voice recording JVM acceptance checklist
-- [x] Recording state transitions are isolated in an Android-independent lifecycle component.
-- [x] Fake PCM capture tests cover valid chunks, empty capture, simulated read failure, and size-limit overflow.
-- [x] Deterministic latch-based tests cover stop/discard and pause/resume/stop races.
-- [x] CI passes on the commit containing these tests; do not tick until a matching workflow run is green.
+## Historical voice-recording JVM acceptance evidence
 
-Evidence: [Android CI run #39048049532 passed](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/39048049532) on commit `618aa0896bcbc35b6ef912fdd9e72a8a38c87ef2` (2026-10-17). CI ran unit tests, API 36 debug build, minified release compilation, and instrumentation-test compilation. Device/emulator execution is not claimed.
+This section records historical evidence only; it does **not** mark the current candidate, current `main`, or a release as validated.
+
+- [x] Recording state transitions are isolated in an Android-independent lifecycle component.
+- [x] Fake PCM capture regression tests cover ordered chunks, empty capture, read failure/resource release, size overflow, and refusal to publish a partial clip. These tests were restored additively in PR #39; require the exact-head CI result below before treating this recovery as validated.
+- [x] Latch-based lifecycle tests cover stop/discard and pause/resume/stop races.
+- [x] Historical Android CI run [#39048049532](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/39048049532) passed on commit `618aa0896bcbc35b6ef912fdd9e72a8a38c87ef2` (2026-10-17): unit tests, API 36 debug build, minified release compilation, and instrumentation-test compilation. This run predates PR #36's merge commit and is not proof that the current candidate passed.
+- [ ] Exact-head Android CI for the PR #39 recovery commit passes. Record the run URL before checking this item.
+- [ ] Post-merge CI and APK artifact availability are verified for the resulting `main` commit.
+
+Device/emulator execution is not claimed; it remains archived by project decision. General candidate and production-signing checklist items below remain unchecked until independently evidenced.
 
 ## 4. Production signing and APK integrity
 - [ ] Confirm repository Actions secrets exist without exposing values: KEYSTORE_BASE64, KEY_ALIAS, KEYSTORE_PASSWORD, KEY_PASSWORD.
