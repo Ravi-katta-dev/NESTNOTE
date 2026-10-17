@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
@@ -388,6 +389,16 @@ internal fun VoiceNoteControls(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
+                    modifier = Modifier.semantics {
+                        contentDescription = "Record voice note"
+                        stateDescription = when {
+                            recording -> "Recording in progress"
+                            startingRecording -> "Preparing microphone"
+                            pendingPermission -> "Waiting for microphone permission"
+                            playingId != null -> "Unavailable while playback is active"
+                            else -> "Ready"
+                        }
+                    },
                     enabled = canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null),
                     onClick = {
                         if (!canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null)) return@Button
@@ -417,6 +428,14 @@ internal fun VoiceNoteControls(
                     Text(if (startingRecording || pendingPermission) "Starting…" else "Record")
                 }
                 OutlinedButton(
+                    modifier = Modifier.semantics {
+                        contentDescription = if (recordingPaused) "Resume voice recording" else "Pause voice recording"
+                        stateDescription = when {
+                            !recording -> "Unavailable when not recording"
+                            recordingPaused -> "Recording paused"
+                            else -> "Recording in progress"
+                        }
+                    },
                     enabled = recording,
                     onClick = {
                         if (recordingPaused) {
@@ -433,7 +452,14 @@ internal fun VoiceNoteControls(
                     Icon(if (recordingPaused) Icons.Default.PlayArrow else Icons.Default.Pause, contentDescription = if (recordingPaused) "Resume recording" else "Pause recording")
                     Text(if (recordingPaused) "Resume" else "Pause")
                 }
-                OutlinedButton(enabled = recording, onClick = { stopRecording() }) {
+                OutlinedButton(
+                    modifier = Modifier.semantics {
+                        contentDescription = "Stop voice recording"
+                        stateDescription = if (recording) "Available" else "Unavailable when not recording"
+                    },
+                    enabled = recording,
+                    onClick = { stopRecording() }
+                ) {
                     Icon(Icons.Default.Stop, contentDescription = "Stop recording")
                     Text("Stop")
                 }
@@ -480,10 +506,16 @@ internal fun VoiceNoteControls(
                         }
                         OutlinedButton(
                             modifier = Modifier.semantics {
-                                stateDescription = if (playingId == attachment.attachmentId) {
-                                    "Playing recording"
+                                contentDescription = if (playingId == attachment.attachmentId) {
+                                    "Stop playback of recording ${index + 1}"
                                 } else {
-                                    "Playback stopped"
+                                    "Play recording ${index + 1}"
+                                }
+                                stateDescription = when {
+                                    playingId == attachment.attachmentId -> "Playing"
+                                    playingId != null -> "Unavailable while another recording plays"
+                                    recording -> "Unavailable while recording"
+                                    else -> "Playback stopped"
                                 }
                             },
                             enabled = !recording && (playingId == null || playingId == attachment.attachmentId),
