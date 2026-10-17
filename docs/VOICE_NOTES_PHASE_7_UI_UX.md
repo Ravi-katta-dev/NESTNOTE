@@ -6,20 +6,20 @@ Scope: user-facing voice-note interactions, accessibility, and regression handli
 
 ## 7.1 Interaction states and recording flow
 - [x] Audit editor styling against existing NESTNOTE typography, spacing, colors, and components. (Code review: voice UI uses the existing Material 3 Card/Button/OutlinedButton/Text components, theme typography and colorScheme, consistent 14 dp card padding/10 dp vertical spacing, and 8 dp control spacing; status/helper text uses onSurfaceVariant.)
-- [ ] Make Record, Pause, Resume, Stop, Play, and playback Stop controls clearly labeled, easy to tap, and visually distinct by state.
-- [ ] Show recording/playback state at a glance; prevent invalid simultaneous actions.
-- [ ] Show elapsed recording time and playback progress/duration where available; handle unknown duration gracefully.
-- [ ] Distinguish a new unsaved recording from recordings already saved to the note.
-- [ ] Prevent rapid repeated taps from creating duplicate recordings, saves, or playback sessions.
+- [x] Make Record, Pause, Resume, Stop, Play, and playback Stop controls clearly labeled, easy to tap, and visually distinct by state. (Text labels accompany icons; action labels change between Play/Stop and Pause/Resume.)
+- [x] Show recording/playback state at a glance; prevent invalid simultaneous actions. (Record gating covers startup/permission/recording/playback; playback controls disable during recording and other playback.)
+- [x] Show elapsed recording time and playback progress/duration where available; handle unknown duration gracefully. (Elapsed timer, playback progress and tested duration fallback implemented.)
+- [x] Distinguish a new unsaved recording from recordings already saved to the note. (New staged rows display “Not yet saved to note”.)
+- [x] Prevent rapid repeated taps from creating duplicate recordings, saves, or playback sessions. (Record gate and guarded playback startup.)
 - [x] Verify empty, one-recording, multiple-recording, long-title, error, and restored-note states. (Code-path review: empty state has “No recordings yet”; attachments render from the store in an indexed list; row titles are in a weighted Column with wrapping Text; status surfaces permission/start/save/playback errors; noteId effect reloads persisted attachments and refreshes the count. Static/code review only; no device verification claimed.)
 
 ## 7.2 Feedback, errors, and destructive actions
-- [ ] Show concise permission-denied guidance and a clear retry/settings path without repeatedly prompting.
-- [ ] Provide feedback for recording started, paused, resumed, saved, stopped, discarded, playback started/stopped, and failures.
-- [ ] Confirm destructive discard/delete actions where needed; explain what is removed and preserve previously saved attachments when discarding an editor draft.
-- [ ] Ensure unsaved-change warnings accurately reflect adding, removing, saving, or discarding a recording.
-- [ ] Display the 25 MiB limit and explain what happens when the limit or a recording error is reached.
-- [ ] Keep loading/disabled states understandable and leave controls recoverable after failures.
+- [x] Show concise permission-denied guidance and a clear retry/settings path without repeatedly prompting. (Denial status and explicit Open app settings action; another Record tap retries.)
+- [x] Provide feedback for recording started, paused, resumed, saved, stopped, discarded, playback started/stopped, and failures. (Status text covers recording start/pause/resume/finish/save/failures; playback start/manual stop/natural completion/failure; discard closes with a context-specific snackbar.)
+- [x] Confirm destructive discard/delete actions where needed; explain what is removed and preserve previously saved attachments when discarding an editor draft. (Discard confirmation explains staged-vs-saved behavior; editor delete has confirmation and note deletion retains an Undo window before audio cleanup.)
+- [x] Ensure unsaved-change warnings accurately reflect adding, removing, saving, or discarding a recording. (Adding a recording marks editor dirty; the warning explains staged recordings are discarded while existing saved audio is kept. There is no per-attachment remove action in this UI.)
+- [x] Display the 25 MiB limit and explain what happens when the limit or a recording error is reached. (Visible point-of-use disclosure says partial audio is discarded.)
+- [x] Keep loading/disabled states understandable and leave controls recoverable after failures. (Starting/permission labels and gates; recording failures clear recording state and abandon audio focus; playback failures reset playback state.)
 
 ## 7.3 Backup disclosure and accessibility
 - [ ] Clearly disclose at the point of use and in backup/settings UI that v1 backups are notes-only and exclude voice audio.
@@ -58,3 +58,12 @@ Mark an item complete only with code review, automated test, or recorded evidenc
 - Reviewed `VoiceNoteAudio.kt` against the existing Material 3 design system: themed Card and buttons, theme typography/color roles, consistent spacing, and text labels alongside icons. No bespoke colors or typography were introduced.
 - Walked the empty, single/multiple attachment, long row-title, permission/startup/playback error, and restored-note code paths. The empty-state text is explicit; attachments are rendered from the durable store; each row uses a weighted text column so titles can wrap; status feedback covers asynchronous failures; and changing `noteId` reloads the stored attachment list and count.
 - This is a static/code-level review, not a visual/device test. Per project decision emulator and physical-device execution remain archived. Exact-head CI remains deferred until all Phase 7 tasks through §7.4 are complete.
+
+
+### 7.2 completion evidence (PR #37 code review)
+- Recording status covers active start, pause, resume, finish, successful encrypted save, limit/capture failures, and audio-focus interruption. Playback reports start, explicit stop, natural completion, unavailable focus, and errors.
+- Recovery path now clears recording/startup state and abandons audio focus after capture/startup failures so Record can be tried again.
+- Editor discard confirmation distinguishes a new draft (including its staged recordings are discarded) from an existing note (new staged audio is discarded but previously saved recordings are preserved). Closing via discard reports the outcome in a snackbar.
+- Editor deletion now has a confirmation dialog explaining the Undo window; attachment cleanup still waits until the note deletion remains persisted after Undo expires.
+- Unsaved-change tracking already includes newly staged voice attachments. The warning now explains their fate accurately. The current UI has no per-attachment removal action, so no unsupported removal workflow is claimed.
+- Static/code review only; exact-head CI is still deferred until all Phase 7 work through §7.4 is complete. No device verification is claimed.
