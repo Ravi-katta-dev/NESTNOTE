@@ -469,7 +469,14 @@ internal fun VoiceNoteControls(
                                             status = error ?: ""
                                         }
                                         playbackSession = player
-                                        player.start()
+                                        runCatching { player.start() }.onFailure { error ->
+                                            playbackSession = null
+                                            playingId = null
+                                            audioManager.abandonAudioFocus(focus)
+                                            audioFocusListener = null
+                                            requestedAudioFocus = false
+                                            status = error.message ?: "Couldn't start playback. Try again."
+                                        }
                                     }
                                 }
                             }
