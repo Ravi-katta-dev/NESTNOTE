@@ -752,6 +752,15 @@ private fun NestNoteApp(store: NoteStore) {
                     }
                 }
                 closeEditor()
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        if (editorNote == null) {
+                            "Draft discarded, including its unsaved voice recordings."
+                        } else {
+                            "Unsaved changes discarded. Previously saved voice recordings were kept."
+                        }
+                    )
+                }
             }
             val dismissEditor = { if (editorHasUnsavedChanges) confirmSystemDiscard = true else discardEditor() }
             val saveNote: (NestNote) -> Unit = { draft ->
@@ -832,7 +841,15 @@ private fun NestNoteApp(store: NoteStore) {
                 AlertDialog(
                     onDismissRequest = { confirmSystemDiscard = false },
                     title = { Text("Discard changes?") },
-                    text = { Text("Your unsaved changes will be lost.") },
+                    text = {
+                        Text(
+                            if (editorNote == null) {
+                                "Your unsaved note and any voice recordings attached to this new draft will be discarded."
+                            } else {
+                                "Your unsaved changes and newly staged voice recordings will be discarded. Voice recordings already saved to this note will be kept."
+                            }
+                        )
+                    },
                     confirmButton = { TextButton(onClick = discardEditor) { Text("Discard") } },
                     dismissButton = { TextButton(onClick = { confirmSystemDiscard = false }) { Text("Keep editing") } }
                 )
