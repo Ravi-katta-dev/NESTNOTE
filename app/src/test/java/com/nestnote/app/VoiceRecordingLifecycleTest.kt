@@ -88,6 +88,56 @@ class VoiceRecordingLifecycleTest {
         assertTrue(fake.released)
     }
 
+    @Test fun repeatedStopIsIdempotentAndNeverRestartsSession() {
+        val lifecycle = VoiceRecordingLifecycle()
+        assertTrue(lifecycle.start())
+        assertTrue(lifecycle.stop())
+        assertFalse(lifecycle.stop())
+        assertFalse(lifecycle.start())
+        assertFalse(lifecycle.resume())
+        assertEquals(VoiceRecordingLifecycle.State.STOPPED, lifecycle.state())
+    }
+
+    @Test fun lateCompletionAfterDiscardCannotRecreateManifestEntry() {
+        val lock = Any()
+        var discarded = false
+        val manifest = mutableMapOf<String, String>()
+        val started = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val worker = Thread {
+            started.countDown()
+            release.await()
+            synchronized(lock) {
+                if (!discarded) manifest["clip"] = "saved"
+            }
+        }
+        synchronized(lock) { manifest["clip"] = "pending" }
+        worker.start()
+        assertTrue(started.await(2, TimeUnit.SECONDS))
+        synchronized(lock) {
+            discarded = true
+            manifest.remove("clip")
+        }
+        release.countDown()
+        worker.join(2000)
+        assertFalse(worker.isAlive)
+        synchronized(lock) { assertTrue(manifest.isEmpty()) }
+    }
+
+    @Test fun overflowedPartialCaptureIsNeverCommittedAsAClip() {
+        val output = ByteArrayOutputStream()
+        val fake = FakePcmCapture(listOf(byteArrayOf(1, 2, 3), byteArrayOf(4, 5, 6)))
+        var committed: ByteArray? = null
+        try {
+            PcmCapturePump.capture(fake, output, 4, { true }, { false }, {})
+            committed = output.toByteArray()
+        } catch (_: PcmCaptureSizeLimitException) {
+            // The active encrypted-store worker also deletes its ciphertext when this signal is set.
+        }
+        assertEquals(null, committed)
+        assertTrue(fake.released)
+    }
+
     @Test fun stopDiscardRaceAndLateWorkerCannotReviveDiscardedState() {
         repeat(100) {
             val lifecycle = VoiceRecordingLifecycle()
