@@ -157,6 +157,44 @@ class VoiceAttachmentManifestTest {
     }
 
     @Test
+    fun discardingEditorSessionRemovesOnlyNewlyStagedAttachmentForSavedNote() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val root = Files.createTempDirectory("nestnote-existing-note-discard").toFile()
+        val key = newKey()
+        val store = VoiceAttachmentStore(context, { key }, root)
+        val manifest = VoiceAttachmentManifest(context, root)
+        val noteId = 702L
+
+        fun saveAndIndex(id: String, bytes: ByteArray, created: Long) {
+            val saved = store.save(noteId, id, ByteArrayInputStream(bytes))
+            manifest.put(
+                VoiceAttachmentMetadata(
+                    noteId = noteId,
+                    attachmentId = id,
+                    createdAtMillis = created,
+                    durationMillis = 1L,
+                    encryptedSizeBytes = saved.encryptedSizeBytes,
+                    displayName = id
+                ),
+                store
+            )
+        }
+
+        val originalBytes = byteArrayOf(4, 3, 2, 1)
+        val newlyStagedBytes = byteArrayOf(5, 6, 7, 8)
+        saveAndIndex("original_recording", originalBytes, 1L)
+        saveAndIndex("staged_recording", newlyStagedBytes, 2L)
+
+        // Mirrors the editor's session-discard handler: remove only identities created this session.
+        assertTrue(store.delete(noteId, "staged_recording"))
+        manifest.remove(noteId, "staged_recording")
+
+        assertEquals(originalBytes.toList(), store.read(noteId, "original_recording").toList())
+        assertEquals(listOf("original_recording"), manifest.list(noteId, store).map { it.attachmentId })
+        assertTrue(store.list(noteId).none { it.attachmentId == "staged_recording" })
+    }
+
+    @Test
     fun attachmentStagedBeforeFirstSaveRemainsBoundToReservedDraftId() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val root = Files.createTempDirectory("nestnote-draft-identity").toFile()
