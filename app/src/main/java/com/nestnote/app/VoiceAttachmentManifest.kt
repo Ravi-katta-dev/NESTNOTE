@@ -33,7 +33,7 @@ class VoiceAttachmentManifest internal constructor(
         val saved = readAll()
         val actual = store.list(noteId).associateBy { it.attachmentId }
         // Reconcile index entries with files; missing files are omitted, not recreated.
-        val valid = saved.filter { (id, item) -> item.noteId != noteId || actual.containsKey(id) }
+        val valid = saved.filter { (key, item) -> item.noteId != noteId || actual.containsKey(key(item.noteId, item.attachmentId)) }
         if (valid.size != saved.size) writeAll(valid)
         return valid.values.filter { it.noteId == noteId }.sortedBy { it.createdAtMillis }
     }
@@ -47,7 +47,7 @@ class VoiceAttachmentManifest internal constructor(
             throw IOException("Attachment size does not match encrypted payload")
         }
         val items = readAll().toMutableMap()
-        items[metadata.attachmentId] = metadata
+        items[key(metadata.noteId, metadata.attachmentId)] = metadata
         writeAll(items)
     }
 
@@ -55,9 +55,10 @@ class VoiceAttachmentManifest internal constructor(
     fun remove(noteId: Long, attachmentId: String) {
         require(noteId > 0 && attachmentId.matches(ID_PATTERN))
         val items = readAll().toMutableMap()
-        val current = items[attachmentId]
+        val itemKey = key(noteId, attachmentId)
+        val current = items[itemKey]
         if (current?.noteId == noteId) {
-            items.remove(attachmentId)
+            items.remove(itemKey)
             writeAll(items)
         }
     }
@@ -69,10 +70,10 @@ class VoiceAttachmentManifest internal constructor(
         val items = readAll().toMutableMap()
         val before = items.size
         val actual = liveNoteIds.flatMap { id -> store.list(id).map { id to it } }
-            .associate { (id, attachment) -> attachment.attachmentId to (id to attachment) }
+            .associate { (id, attachment) -> key(id, attachment.attachmentId) to (id to attachment) }
         items.entries.removeAll { (id, metadata) ->
-            metadata.noteId !in liveNoteIds || actual[id]?.first != metadata.noteId ||
-                actual[id]?.second?.encryptedSizeBytes != metadata.encryptedSizeBytes
+            metadata.noteId !in liveNoteIds || actual[key(metadata.noteId, id)]?.first != metadata.noteId ||
+                actual[key(metadata.noteId, id)]?.second?.encryptedSizeBytes != metadata.encryptedSizeBytes
         }
         if (items.size != before) writeAll(items)
         return before - items.size
@@ -97,7 +98,7 @@ class VoiceAttachmentManifest internal constructor(
                         displayName = o.getString("displayName")
                     )
                     validate(item)
-                    require(put(item.attachmentId, item) == null) { "Duplicate attachment ID" }
+                    require(put(key(item.noteId, item.attachmentId), item) == null) { "Duplicate attachment identity" }
                 }
             }
         } catch (error: Exception) {
@@ -122,12 +123,15 @@ class VoiceAttachmentManifest internal constructor(
             java.io.FileOutputStream(temp).use { stream ->
                 stream.write(payload.toByteArray(Charsets.UTF_8)); stream.flush(); stream.fd.sync()
             }
-            if (file.exists() && !file.delete()) throw IOException("Cannot replace attachment metadata")
-            if (!temp.renameTo(file)) throw IOException("Cannot commit attachment metadata")
+            // Rename the fully synced temporary file over the old manifest without
+            // deleting the old copy first. If replacement fails, the previous manifest survives.
+            if (!temp.renameTo(file)) throw IOException("Cannot atomically replace attachment metadata")
         } finally {
             if (temp.exists()) temp.delete()
         }
     }
+
+    private fun key(noteId: Long, attachmentId: String): String = "$noteId:$attachmentId"
 
     private fun validate(item: VoiceAttachmentMetadata) {
         require(item.noteId > 0 && item.attachmentId.matches(ID_PATTERN))
