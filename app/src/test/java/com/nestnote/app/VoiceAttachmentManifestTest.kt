@@ -110,4 +110,38 @@ class VoiceAttachmentManifestTest {
         assertTrue(File(File(root, "45"), "keep_large_index.nva").isFile)
     }
 
+
+    @Test
+    fun attachmentStagedBeforeFirstSaveRemainsBoundToReservedDraftId() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val root = Files.createTempDirectory("nestnote-draft-identity").toFile()
+        val key = newKey()
+        val store = VoiceAttachmentStore(context, { key }, root)
+        val manifest = VoiceAttachmentManifest(context, root)
+        val existing = listOf(NestNote(id = 500L, title = "Existing", body = ""))
+        val draftId = NoteStore.allocateNoteId(existing, nowMillis = 500L)
+        assertEquals(501L, draftId)
+
+        // The editor can stage audio before its note is persisted, using its reserved identity.
+        val pcm = byteArrayOf(1, 2, 3, 4)
+        val attachment = store.save(draftId, "draft_recording", ByteArrayInputStream(pcm))
+        val metadata = VoiceAttachmentMetadata(
+            noteId = draftId,
+            attachmentId = "draft_recording",
+            createdAtMillis = 1234L,
+            durationMillis = 1L,
+            encryptedSizeBytes = attachment.encryptedSizeBytes,
+            displayName = "Voice recording"
+        )
+        manifest.put(metadata, store)
+        assertTrue(manifest.list(draftId, store).isNotEmpty())
+
+        // Saving the first note uses the exact reserved ID; the authenticated payload and
+        // metadata therefore remain discoverable under the newly persisted note.
+        val savedDraft = NestNote(id = draftId, title = "Draft with audio", body = "Text")
+        assertEquals(draftId, savedDraft.id)
+        assertEquals(pcm.toList(), store.read(savedDraft.id, "draft_recording").toList())
+        assertEquals(listOf(metadata), manifest.list(savedDraft.id, store))
+    }
+
 }
