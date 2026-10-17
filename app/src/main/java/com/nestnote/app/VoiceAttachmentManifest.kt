@@ -51,6 +51,16 @@ class VoiceAttachmentManifest internal constructor(
         writeAll(items)
     }
 
+    /** Remove index entries for a note draft only after its owning note is discarded. */
+    @Synchronized
+    fun removeNote(noteId: Long) {
+        require(noteId > 0)
+        val items = readAll().toMutableMap()
+        val before = items.size
+        items.entries.removeAll { (_, metadata) -> metadata.noteId == noteId }
+        if (items.size != before) writeAll(items)
+    }
+
     @Synchronized
     fun remove(noteId: Long, attachmentId: String) {
         require(noteId > 0 && attachmentId.matches(ID_PATTERN))
