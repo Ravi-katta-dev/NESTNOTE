@@ -501,7 +501,7 @@ internal fun VoiceNoteControls(
                                             audioManager.abandonAudioFocus(focus)
                                             audioFocusListener = null
                                             requestedAudioFocus = false
-                                            status = error ?: ""
+                                            status = error ?: "Playback finished."
                                         }
                                         playbackSession = player
                                         runCatching { player.start() }.onFailure { error ->
