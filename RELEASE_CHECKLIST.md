@@ -42,6 +42,12 @@ Use this checklist for every candidate. A successful build is necessary but does
 - [ ] Verify the shipped manifest and Android backup/data-extraction behavior on supported versions.
 - [ ] Confirm privacy copy states local storage is encrypted and exported JSON is plaintext.
 
+## Voice recording JVM acceptance checklist
+- [x] Recording state transitions are isolated in an Android-independent lifecycle component.
+- [x] Fake PCM capture tests cover valid chunks, empty capture, simulated read failure, and size-limit overflow.
+- [x] Deterministic latch-based tests cover stop/discard and pause/resume/stop races.
+- [ ] CI passes on the commit containing these tests; do not tick until a matching workflow run is green.
+
 ## 4. Production signing and APK integrity
 - [ ] Confirm repository Actions secrets exist without exposing values: KEYSTORE_BASE64, KEY_ALIAS, KEYSTORE_PASSWORD, KEY_PASSWORD.
 - [ ] Confirm KEYSTORE_BASE64 decodes to the approved permanent production keystore; no keystore bytes are committed or logged.

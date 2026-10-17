@@ -76,6 +76,7 @@ private class EncryptedPcmRecording(
     private val limitExceeded = AtomicBoolean(false)
     private val recordingFailure = AtomicReference<IOException?>(null)
     @Volatile private var audioRecord: AudioRecord? = null
+    @Volatile private var captureAdapter: AudioRecordPcmCapture? = null
     @Volatile private var pipeOutput: PipedOutputStream? = null
     private var recorderThread: Thread? = null
     private var storageThread: Thread? = null
@@ -120,52 +121,29 @@ private class EncryptedPcmRecording(
             Handler(Looper.getMainLooper()).post { onFinished(result) }
         }, "nestnote-voice-encrypt").apply { start() }
 
+        val capture = AudioRecordPcmCapture(record)
+        captureAdapter = capture
         recorderThread = Thread({
-            val buffer = ByteArray(maxOf(minBuffer, 4096))
-            var audioRecordStarted = false
             try {
-                while (running.get()) {
-                    if (paused.get()) {
-                        if (audioRecordStarted) {
-                            record.stop()
-                            audioRecordStarted = false
-                        }
-                        Thread.sleep(30)
-                        continue
-                    }
-                    if (!audioRecordStarted) {
-                        record.startRecording()
-                        audioRecordStarted = true
-                    }
-                    val count = record.read(buffer, 0, buffer.size)
-                    if (count > 0) {
-                        if (paused.get()) continue
-                        val total = audioBytes.addAndGet(count.toLong())
-                        if (total > VoiceAttachmentStore.MAX_AUDIO_BYTES) {
-                            limitExceeded.set(true)
-                            running.set(false)
-                            break
-                        }
-                        output.write(buffer, 0, count)
-                    } else if (count < 0 && running.get() && !paused.get()) {
-                        throw IOException("Microphone read failed ($count)")
-                    }
-                }
-            } catch (error: IllegalStateException) {
-                if (running.get() && !paused.get()) {
-                    recordingFailure.compareAndSet(null, IOException("Microphone stopped unexpectedly", error))
-                    running.set(false)
-                }
+                val captured = PcmCapturePump.capture(
+                    capture = capture,
+                    output = output,
+                    maxBytes = VoiceAttachmentStore.MAX_AUDIO_BYTES,
+                    shouldContinue = { running.get() },
+                    isPaused = { paused.get() },
+                    onBytesCaptured = { audioBytes.set(it) }
+                )
+                if (captured > 0L) audioBytes.set(captured)
+            } catch (error: PcmCaptureSizeLimitException) {
+                limitExceeded.set(true)
+                running.set(false)
             } catch (error: Exception) {
                 if (running.get() && !limitExceeded.get()) {
                     recordingFailure.compareAndSet(null, IOException("Recording failed: ${error.message ?: "unknown error"}", error))
                     running.set(false)
                 }
             } finally {
-                runCatching { record.stop() }
-                record.release()
-                audioRecord = null
-                runCatching { output.close() }
+                captureAdapter = null
             }
         }, "nestnote-voice-record").apply { start() }
     }
@@ -182,6 +160,7 @@ private class EncryptedPcmRecording(
         lifecycle.stop()
         running.set(false)
         paused.set(false)
+        runCatching { captureAdapter?.stop() }
         runCatching { audioRecord?.stop() }
         runCatching { pipeOutput?.close() }
     }
