@@ -209,6 +209,7 @@ private class PcmVoicePlayback(
 internal fun VoiceNoteControls(
     noteId: Long,
     onAttachmentCountChanged: (Int) -> Unit,
+    onVoiceAttachmentAdded: () -> Unit,
     onDiscardHandlerReady: (() -> Unit) -> Unit
 ) {
     val context = LocalContext.current
@@ -222,14 +223,16 @@ internal fun VoiceNoteControls(
     var recordingSession by remember { mutableStateOf<EncryptedPcmRecording?>(null) }
     var playbackSession by remember { mutableStateOf<PcmVoicePlayback?>(null) }
     var requestedAudioFocus by remember { mutableStateOf(false) }
+    var audioFocusListener by remember { mutableStateOf<AudioManager.OnAudioFocusChangeListener?>(null) }
     val addedThisSession = remember(noteId) { mutableSetOf<String>() }
     val audioManager = remember(context) { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted && pendingPermission) {
             pendingPermission = false
             startVoiceRecording(context, audioManager, attachmentStore, noteId, addedThisSession,
-                { session -> recordingSession = session; recording = true; status = "Recording…"; requestedAudioFocus = true },
-                { message -> status = message })
+                { session, listener -> recordingSession = session; recording = true; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener },
+                { message -> status = message },
+                { recordingSession?.stop(); recordingSession = null; recording = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
         } else {
             pendingPermission = false
             status = "Microphone permission is required to record voice notes."
@@ -241,7 +244,7 @@ internal fun VoiceNoteControls(
         recordingSession = null
         recording = false
         if (requestedAudioFocus) {
-            audioManager.abandonAudioFocus(null)
+            audioManager.abandonAudioFocus(audioFocusListener)
             requestedAudioFocus = false
         }
         status = "Finishing encrypted recording…"
@@ -251,7 +254,7 @@ internal fun VoiceNoteControls(
         playbackSession = null
         playingId = null
         if (requestedAudioFocus) {
-            audioManager.abandonAudioFocus(null)
+            audioManager.abandonAudioFocus(audioFocusListener)
             requestedAudioFocus = false
         }
     }
@@ -269,7 +272,7 @@ internal fun VoiceNoteControls(
                 playbackSession?.stop()
                 playbackSession = null
                 playingId = null
-                if (requestedAudioFocus) audioManager.abandonAudioFocus(null)
+                if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
                 requestedAudioFocus = false
                 status = "Recording/playback stopped when the app left the foreground."
             }
@@ -279,14 +282,16 @@ internal fun VoiceNoteControls(
             lifecycleOwner.lifecycle.removeObserver(observer)
             recordingSession?.stop()
             playbackSession?.stop()
-            if (requestedAudioFocus) audioManager.abandonAudioFocus(null)
+            if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
         }
     }
 
-    LaunchedEffect(recordingSession) {
-        val session = recordingSession ?: return@LaunchedEffect
-        // The encrypted store callback refreshes the durable attachment list after the pipe closes.
-        // Completion is delivered by the session's main-thread callback.
+    LaunchedEffect(status) {
+        if (status == "Recording saved securely.") {
+            attachments = runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())
+            onAttachmentCountChanged(attachments.size)
+            onVoiceAttachmentAdded()
+        }
     }
 
     androidx.compose.runtime.SideEffect {
@@ -315,8 +320,9 @@ internal fun VoiceNoteControls(
                     onClick = {
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                             startVoiceRecording(context, audioManager, attachmentStore, noteId, addedThisSession,
-                                { session -> recordingSession = session; recording = true; status = "Recording…"; requestedAudioFocus = true },
-                                { message -> status = message })
+                                { session, listener -> recordingSession = session; recording = true; status = "Recording…"; requestedAudioFocus = true; audioFocusListener = listener },
+                                { message -> status = message },
+                                { recordingSession?.stop(); recordingSession = null; recording = false; requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted." })
                         } else {
                             pendingPermission = true
                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -347,16 +353,18 @@ internal fun VoiceNoteControls(
                                     stopPlayback()
                                 } else {
                                     stopPlayback()
-                                    val focusGranted = requestVoiceAudioFocus(audioManager) { stopPlayback() }
-                                    if (!focusGranted) {
+                                    val focusListener = requestVoiceAudioFocus(audioManager) { stopPlayback(); status = "Playback stopped because audio focus was interrupted." }
+                                    if (focusListener == null) {
                                         status = "Audio focus is unavailable. Try again."
                                     } else {
                                         requestedAudioFocus = true
+                                        audioFocusListener = focusListener
                                         playingId = attachment.attachmentId
                                         val player = PcmVoicePlayback(context, attachmentStore, attachment) { error ->
                                             playingId = null
                                             playbackSession = null
-                                            audioManager.abandonAudioFocus(null)
+                                            audioManager.abandonAudioFocus(focusListener)
+                                            audioFocusListener = null
                                             requestedAudioFocus = false
                                             status = error ?: ""
                                         }
@@ -383,16 +391,18 @@ private fun startVoiceRecording(
     store: VoiceAttachmentStore,
     noteId: Long,
     addedIds: MutableSet<String>,
-    onStarted: (EncryptedPcmRecording) -> Unit,
-    onStatus: (String) -> Unit
+    onStarted: (EncryptedPcmRecording, AudioManager.OnAudioFocusChangeListener) -> Unit,
+    onStatus: (String) -> Unit,
+    onInterrupted: () -> Unit
 ) {
-    if (!requestVoiceAudioFocus(audioManager) {}) {
+    val focusListener = requestVoiceAudioFocus(audioManager, onInterrupted)
+    if (focusListener == null) {
         onStatus("Audio focus is unavailable. Stop other audio and try again.")
         return
     }
     val id = UUID.randomUUID().toString()
     val session = EncryptedPcmRecording(context, store, noteId, id) { result ->
-        audioManager.abandonAudioFocus(null)
+        audioManager.abandonAudioFocus(focusListener)
         when {
             result.isSuccess -> {
                 addedIds.add(id)
@@ -403,20 +413,23 @@ private fun startVoiceRecording(
     }
     try {
         session.start()
-        onStarted(session)
+        onStarted(session, focusListener)
     } catch (error: Exception) {
         session.stop()
-        audioManager.abandonAudioFocus(null)
+        audioManager.abandonAudioFocus(focusListener)
         onStatus(error.message ?: "Couldn't start recording")
     }
 }
 
 @Suppress("DEPRECATION")
-private fun requestVoiceAudioFocus(audioManager: AudioManager, onInterrupted: () -> Unit): Boolean {
+private fun requestVoiceAudioFocus(
+    audioManager: AudioManager,
+    onInterrupted: () -> Unit
+): AudioManager.OnAudioFocusChangeListener? {
     val listener = AudioManager.OnAudioFocusChangeListener { change ->
         if (change <= AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) onInterrupted()
     }
-    return audioManager.requestAudioFocus(
+    return if (audioManager.requestAudioFocus(
         listener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
-    ) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    ) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) listener else null
 }
