@@ -738,6 +738,17 @@ private fun NestNoteApp(store: NoteStore) {
                 editorVisible = false
                 editorDraftId = null
             }
+            val discardEditor = {
+                // New-note attachments are staged under the reserved draft ID. Discard
+                // removes both payloads and index entries; saved-note attachments are untouched.
+                if (editorNote == null) {
+                    editorDraftId?.let { draftId ->
+                        runCatching { VoiceAttachmentStore(context).deleteAll(draftId) }
+                        runCatching { VoiceAttachmentManifest(context).removeNote(draftId) }
+                    }
+                }
+                closeEditor()
+            }
             val dismissEditor = { if (editorHasUnsavedChanges) confirmSystemDiscard = true else closeEditor() }
             val saveNote: (NestNote) -> Unit = { draft ->
                 val existing = editorNote
@@ -817,7 +828,7 @@ private fun NestNoteApp(store: NoteStore) {
                     onDismissRequest = { confirmSystemDiscard = false },
                     title = { Text("Discard changes?") },
                     text = { Text("Your unsaved changes will be lost.") },
-                    confirmButton = { TextButton(onClick = closeEditor) { Text("Discard") } },
+                    confirmButton = { TextButton(onClick = discardEditor) { Text("Discard") } },
                     dismissButton = { TextButton(onClick = { confirmSystemDiscard = false }) { Text("Keep editing") } }
                 )
             }
