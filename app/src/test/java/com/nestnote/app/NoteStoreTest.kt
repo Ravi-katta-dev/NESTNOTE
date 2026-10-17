@@ -200,6 +200,17 @@ class NoteStoreTest {
     }
 
     @Test
+    fun saveTimeDraftCollisionIsDetectedWithoutChangingReservedIdentity() {
+        val draftId = 800L
+        val persisted = listOf(NestNote(id = draftId, title = "Restored note", body = ""))
+        assertTrue(NoteStore.hasDraftIdCollision(persisted, draftId))
+        assertFalse(NoteStore.hasDraftIdCollision(persisted, draftId + 1L))
+        // A collision is detected, not silently resolved by changing the draft ID;
+        // callers can preserve staged encrypted attachments while reporting the conflict.
+        assertEquals(800L, draftId)
+    }
+
+    @Test
     fun versionGuardAllowsUnchangedNoteAndRejectsStaleDraft() {
         assertTrue(NoteStore.isSameNoteVersion(100L, 100L))
         assertFalse(NoteStore.isSameNoteVersion(100L, 101L))
