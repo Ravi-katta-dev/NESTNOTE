@@ -152,6 +152,54 @@ class NoteStoreTest {
     }
 
     @Test
+    fun restoreRemapsIncomingReservedDraftIdWithoutChangingExistingNotes() {
+        val existing = listOf(NestNote(id = 100L, title = "Saved", body = "Keep"))
+        val incoming = listOf(
+            NestNote(id = 200L, title = "Imported collision", body = "Restore me"),
+            NestNote(id = 201L, title = "Other import", body = "Keep ID")
+        )
+
+        val remapped = NoteStore.remapDraftIdCollisionForRestore(
+            existing = existing,
+            incoming = incoming,
+            reservedDraftId = 200L,
+            nowMillis = 200L
+        )
+
+        assertEquals(listOf(200L, 201L), incoming.map { it.id })
+        assertEquals(listOf(202L, 201L), remapped.map { it.id })
+        assertEquals(existing, existing)
+        assertEquals("Imported collision", remapped.first().title)
+        assertTrue((existing + remapped).map { it.id }.distinct().size == 3)
+    }
+
+    @Test
+    fun restoreDoesNotRemapReservedIdWhenItAlreadyBelongsToSavedNote() {
+        val existing = listOf(NestNote(id = 200L, title = "Saved", body = "Current"))
+        val incoming = listOf(NestNote(id = 200L, title = "Backup", body = "Imported"))
+
+        val result = NoteStore.remapDraftIdCollisionForRestore(
+            existing = existing,
+            incoming = incoming,
+            reservedDraftId = 200L,
+            nowMillis = 300L
+        )
+
+        assertEquals(incoming, result)
+        assertEquals("Saved", NoteStore.merge(existing, result).notes.single().title)
+    }
+
+    @Test
+    fun restoreLeavesIncomingIdsAloneWhenNoDraftCollisionExists() {
+        val incoming = listOf(NestNote(id = 300L, title = "Import", body = "No collision"))
+
+        assertEquals(
+            incoming,
+            NoteStore.remapDraftIdCollisionForRestore(emptyList(), incoming, 200L, nowMillis = 300L)
+        )
+    }
+
+    @Test
     fun versionGuardAllowsUnchangedNoteAndRejectsStaleDraft() {
         assertTrue(NoteStore.isSameNoteVersion(100L, 100L))
         assertFalse(NoteStore.isSameNoteVersion(100L, 101L))
