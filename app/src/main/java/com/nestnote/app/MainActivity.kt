@@ -1247,14 +1247,18 @@ private fun NoteEditorContent(
     } else {
         colors.surface
     }
-    val hasUnsavedChanges = title != original?.title.orEmpty() ||
-        body != original?.body.orEmpty() ||
-        category != (original?.category ?: defaultNoteCategory) ||
-        colorIndex != (original?.color ?: 0) ||
-        backgroundIndex != (original?.background ?: 0) ||
-        pinned != (original?.pinned ?: false) ||
-        reminder != original?.reminder.orEmpty() ||
-        voiceChangesPending
+    val hasUnsavedChanges = NoteStore.hasEditorChanges(
+        original = original,
+        title = title,
+        body = body,
+        category = category,
+        defaultCategory = defaultNoteCategory,
+        color = colorIndex,
+        background = backgroundIndex,
+        pinned = pinned,
+        reminder = reminder,
+        voiceChangesPending = voiceChangesPending
+    )
 
     fun requestDismiss() {
         if (hasUnsavedChanges) discardConfirmation = true else onDismiss()
