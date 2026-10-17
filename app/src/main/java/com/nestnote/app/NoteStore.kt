@@ -257,6 +257,26 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
             return candidate
         }
 
+        /**
+         * Keeps a reserved, unsaved editor draft ID available when restoring a backup.
+         * A restore can introduce that ID while the editor is open; remap only the incoming
+         * record so staged voice attachments remain owned by the draft's original identity.
+         * If the ID already belongs to a saved note, normal merge-by-ID semantics are retained.
+         */
+        fun remapDraftIdCollisionForRestore(
+            existing: List<NestNote>,
+            incoming: List<NestNote>,
+            reservedDraftId: Long?,
+            nowMillis: Long = System.currentTimeMillis()
+        ): List<NestNote> {
+            val draftId = reservedDraftId ?: return incoming
+            if (existing.any { it.id == draftId } || incoming.none { it.id == draftId }) return incoming
+
+            val usedIds = existing + incoming + NestNote(id = draftId, title = "", body = "")
+            val replacementId = allocateNoteId(usedIds, nowMillis)
+            return incoming.map { note -> if (note.id == draftId) note.copy(id = replacementId) else note }
+        }
+
         /** Prevents a draft based on an older saved version from replacing newer content. */
         fun isSameNoteVersion(expectedUpdated: Long, currentUpdated: Long): Boolean =
             expectedUpdated == currentUpdated
