@@ -28,9 +28,9 @@ Scope: user-facing voice-note interactions, accessibility, and regression handli
 - [x] Keep controls usable with keyboard/navigation accessibility where supported; avoid losing focus after state changes. (Controls remain native Compose Material buttons with standard focus/click semantics and deterministic composition order; state updates do not conditionally remove the active recording-row control except when the attachment list itself changes. Static/code review only.)
 
 ## 7.4 Lifecycle and regression checks
-- [ ] Review backgrounding, audio-focus interruptions/incoming calls, rotation/configuration changes, and process recreation; add automated or code-level checks where feasible.
-- [ ] Review recovery paths for permission denial, capture/playback failures, discard, and preservation of saved attachments.
-- [ ] Capture and resolve UI regressions found during implementation.
+- [x] Review backgrounding, audio-focus interruptions/incoming calls, rotation/configuration changes, and process recreation; add automated or code-level checks where feasible. (Static lifecycle review: ON_STOP invalidates pending permission/startup, stops capture/playback and abandons audio focus; disposal removes observer and stops sessions. Rotation/configuration disposal stops active sessions rather than silently continuing; encrypted attachment store/manifest support reload after recreation. Existing VoiceRecordingLifecycleTest covers terminal stop/failure/discard states, invalid transitions, races, and late completion.)
+- [x] Review recovery paths for permission denial, capture/playback failures, discard, and preservation of saved attachments. (Permission policy tests cover deny/retry/stale callback; capture tests cover read failure and overflow cleanup; playback callbacks clear session/state and report errors; discard removes staged identities before waiting; editor discard preserves pre-existing saved attachments. Audio-focus interruption now explicitly abandons the listener and prompts retry.)
+- [x] Capture and resolve UI regressions found during implementation. (Code review found the audio-focus interruption callback cleared the focus-listener reference without explicitly abandoning focus; corrected the callback to abandon the requested focus and provide a clear retry message. No further code-level regressions identified in this static review.)
 - [ ] ~~Manual emulator and physical-device usability pass~~ Archived by project decision; not a release gate.
 
 ## Implementation progress (validation pending)
@@ -74,3 +74,10 @@ Mark an item complete only with code review, automated test, or recorded evidenc
 - Added explicit Compose accessibility content descriptions and dynamic state descriptions for Record, Pause/Resume, Stop recording, and each attachment's Play/Stop playback action. Visual text labels remain present, so actions are not conveyed by icon or color alone.
 - Static review confirmed themed Material 3 controls, theme typography/color roles, standard Material button interaction sizing, a deterministic reading order, and weighted/wrapping attachment text for narrow layouts and larger text. Keyboard/navigation support is provided through standard Compose Material button semantics.
 - Validation is static/code-level only; no emulator or physical-device accessibility, contrast, scaling, or visual test is claimed. Exact-head CI remains deferred until all Phase 7 work through §7.4 is complete.
+
+
+### 7.4 completion evidence (PR #37 code review)
+- Lifecycle: backgrounding stops active recording/playback, clears pending permission/startup state, and abandons audio focus. Disposable cleanup unregisters the observer and stops sessions. Configuration changes dispose the active UI session instead of allowing capture to continue invisibly. Persisted encrypted attachment data and its manifest are reloaded when the note editor is recreated.
+- Existing JVM regression coverage in `VoiceRecordingLifecycleTest` exercises pause/resume/stop ordering, terminal failure/discard, repeated operations, overflow/read-failure cleanup, discard-vs-completion races, and pause/resume-vs-stop races. `VoicePermissionPolicyTest` covers denied permission, retry, stale results, action gating, and duration edge cases.
+- Reviewed recovery for capture/startup errors, playback errors/natural completion, permission denial, draft discard, and saved-attachment preservation. Fixed the audio-focus interruption callback to abandon the requested focus and present an explicit retry instruction.
+- Static/code review only. No emulator/physical-device behavior is claimed; those checks remain archived by project decision. Android CI is now permitted and will be run after this checklist/document update.
