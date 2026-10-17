@@ -5,13 +5,13 @@ Parent implementation: #35
 Scope: user-facing voice-note interactions, accessibility, and regression handling.
 
 ## 7.1 Interaction states and recording flow
-- [ ] Audit editor styling against existing NESTNOTE typography, spacing, colors, and components.
+- [x] Audit editor styling against existing NESTNOTE typography, spacing, colors, and components. (Code review: voice UI uses the existing Material 3 Card/Button/OutlinedButton/Text components, theme typography and colorScheme, consistent 14 dp card padding/10 dp vertical spacing, and 8 dp control spacing; status/helper text uses onSurfaceVariant.)
 - [ ] Make Record, Pause, Resume, Stop, Play, and playback Stop controls clearly labeled, easy to tap, and visually distinct by state.
 - [ ] Show recording/playback state at a glance; prevent invalid simultaneous actions.
 - [ ] Show elapsed recording time and playback progress/duration where available; handle unknown duration gracefully.
 - [ ] Distinguish a new unsaved recording from recordings already saved to the note.
 - [ ] Prevent rapid repeated taps from creating duplicate recordings, saves, or playback sessions.
-- [ ] Verify empty, one-recording, multiple-recording, long-title, error, and restored-note states.
+- [x] Verify empty, one-recording, multiple-recording, long-title, error, and restored-note states. (Code-path review: empty state has “No recordings yet”; attachments render from the store in an indexed list; row titles are in a weighted Column with wrapping Text; status surfaces permission/start/save/playback errors; noteId effect reloads persisted attachments and refreshes the count. Static/code review only; no device verification claimed.)
 
 ## 7.2 Feedback, errors, and destructive actions
 - [ ] Show concise permission-denied guidance and a clear retry/settings path without repeatedly prompting.
@@ -52,3 +52,9 @@ Scope: user-facing voice-note interactions, accessibility, and regression handli
 
 ## Completion evidence
 Mark an item complete only with code review, automated test, or recorded evidence. Do not claim device verification without evidence. Emulator and physical-device execution remains archived and is not required for this milestone.
+
+
+### 7.1 completion evidence (PR #37 code review)
+- Reviewed `VoiceNoteAudio.kt` against the existing Material 3 design system: themed Card and buttons, theme typography/color roles, consistent spacing, and text labels alongside icons. No bespoke colors or typography were introduced.
+- Walked the empty, single/multiple attachment, long row-title, permission/startup/playback error, and restored-note code paths. The empty-state text is explicit; attachments are rendered from the durable store; each row uses a weighted text column so titles can wrap; status feedback covers asynchronous failures; and changing `noteId` reloads the stored attachment list and count.
+- This is a static/code-level review, not a visual/device test. Per project decision emulator and physical-device execution remain archived. Exact-head CI remains deferred until all Phase 7 tasks through §7.4 are complete.
