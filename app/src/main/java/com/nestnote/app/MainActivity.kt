@@ -773,7 +773,7 @@ private fun NestNoteApp(store: NoteStore) {
                     // Never silently change the identity of a draft at save time: staged
                     // attachments are encrypted and indexed against this ID. If an unexpected
                     // writer introduced a collision, keep the editor open and preserve its data.
-                    if (existing == null && notes.any { it.id == savedId }) {
+                    if (existing == null && NoteStore.hasDraftIdCollision(notes, savedId)) {
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar(
                                 "This draft ID is now in use. Your draft and recordings are preserved; close and reopen a new note to continue."
