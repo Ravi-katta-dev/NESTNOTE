@@ -69,6 +69,7 @@ private class EncryptedPcmRecording(
 ) {
     private val running = AtomicBoolean(false)
     private val audioBytes = AtomicLong(0)
+    private val limitExceeded = AtomicBoolean(false)
     private var audioRecord: AudioRecord? = null
     private var pipeOutput: PipedOutputStream? = null
     private var recorderThread: Thread? = null
@@ -94,9 +95,12 @@ private class EncryptedPcmRecording(
         storageThread = Thread({
             val result = runCatching {
                 store.save(noteId, attachmentId, input).also {
-                    if (audioBytes.get() == 0L) {
+                    if (audioBytes.get() == 0L || limitExceeded.get()) {
                         store.delete(noteId, attachmentId)
-                        throw IOException("No audio was captured. Try recording again.")
+                        throw IOException(
+                            if (limitExceeded.get()) "Recording reached the 25 MiB limit and was discarded."
+                            else "No audio was captured. Try recording again."
+                        )
                     }
                 }
             }
@@ -113,6 +117,7 @@ private class EncryptedPcmRecording(
                     if (count > 0) {
                         val total = audioBytes.addAndGet(count.toLong())
                         if (total > VoiceAttachmentStore.MAX_AUDIO_BYTES) {
+                            limitExceeded.set(true)
                             running.set(false)
                             break
                         }
@@ -288,7 +293,7 @@ internal fun VoiceNoteControls(
     }
 
     LaunchedEffect(status) {
-        if (status == "Recording saved securely.") {
+        if (status == "Recording saved securely." || status.startsWith("Recording encrypted, but its metadata")) {
             recording = false
             recordingSession = null
             requestedAudioFocus = false
