@@ -362,9 +362,9 @@ internal fun VoiceNoteControls(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    enabled = !recording && !startingRecording && !pendingPermission && playingId == null,
+                    enabled = canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null),
                     onClick = {
-                        if (recording || startingRecording || pendingPermission || playingId != null) return@Button
+                        if (!canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null)) return@Button
                         startingRecording = true
                         showPermissionSettings = false
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
