@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main, docs/voice-backup-exclusion]
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
