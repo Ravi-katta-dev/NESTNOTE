@@ -39,13 +39,16 @@ Scope: user-facing voice-note interactions, accessibility, and regression handli
 - Permission denial now provides concise guidance and an explicit app-settings action; permission-policy tests already cover denial, retry, and stale callbacks.
 - These changes are not marked complete until the Android CI checks pass on the exact PR head. No emulator/physical-device verification is claimed.
 
-## Follow-up implementation notes (CI pending)
-- Added a shared Record action gate covering active recording, startup, pending microphone permission, and active playback, with a JVM test for each blocked state.
+## Follow-up implementation notes (CI intentionally deferred until 7.4 work is complete)
+- Added a shared Record action gate covering active recording, startup, pending microphone permission, and active playback, with JVM regression coverage for each blocked state.
 - Added an elapsed recording timer and visible active/paused/starting feedback.
-- Added permission-denial guidance with an explicit app-settings action.
+- Added permission-denial guidance with an explicit app-settings action and invalidated pending permission/startup UI state when the app leaves the foreground.
 - Marked newly staged attachments as not yet saved to the note and added descriptive content descriptions to recording/playback controls.
-- Playback start/stop status feedback is now visible.
-- These are implementation updates only. Keep checklist boxes open until automated Android CI passes on the exact PR head; no device verification is claimed.
+- Playback start/stop status feedback is visible; saved rows display duration derived from the documented encrypted envelope and PCM16 mono 16 kHz format, with an explicit unknown-duration fallback and JVM tests.
+- Added point-of-use disclosure for the 25 MiB recording limit and that a limit/microphone failure discards partial audio. The Backup & privacy settings already explain that v1 backups contain notes/settings only and excluded voice audio will not return on restore.
+- Lifecycle review: backgrounding stops capture/playback and abandons audio focus; disposal removes the observer and stops active sessions. Configuration changes therefore stop active capture rather than silently continuing; process recreation relies on the durable encrypted store/manifest and must not be represented as device-tested.
+- Static UI review: recording controls use the app Material theme and text labels in addition to icons; saved attachment labels wrap in a column to avoid crowding narrow layouts. Emulator/physical-device testing remains archived.
+- Automated CI has intentionally not been run yet, per the work sequence: finish review and implementation through 7.4 first, then run CI on the exact PR head. Keep checklist boxes open until the code and test evidence are reviewed; no device verification is claimed.
 
 ## Completion evidence
 Mark an item complete only with code review, automated test, or recorded evidence. Do not claim device verification without evidence. Emulator and physical-device execution remains archived and is not required for this milestone.
