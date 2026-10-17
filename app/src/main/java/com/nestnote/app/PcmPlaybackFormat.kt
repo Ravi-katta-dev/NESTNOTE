@@ -10,14 +10,13 @@ internal object PcmPlaybackFormat {
     const val SAMPLE_RATE_HZ = 16_000
     const val CHANNEL_COUNT = 1
     const val BYTES_PER_SAMPLE = 2
-    const val CHANNEL_OUT_MASK = 4 // AudioFormat.CHANNEL_OUT_MONO
-    const val ENCODING_PCM_16BIT = 2 // AudioFormat.ENCODING_PCM_16BIT
     const val WRITE_CHUNK_BYTES = 8 * 1024
 
     init {
         check(WRITE_CHUNK_BYTES % BYTES_PER_SAMPLE == 0)
     }
 
+    /** Call only after the encrypted store has authenticated and decrypted the complete payload. */
     @Throws(IOException::class)
     fun validateAuthenticatedPcm(pcm: ByteArray) {
         if (pcm.isEmpty()) throw IOException("This recording is empty.")
