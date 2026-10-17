@@ -63,4 +63,51 @@ class VoiceAttachmentManifestTest {
         assertTrue(File(File(root, "42"), "keep_audio.nva").isFile)
         assertTrue(manifest.list(42L, store).isEmpty())
     }
+    @Test
+    fun missingManifestNeverDeletesValidEncryptedPayload() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val root = Files.createTempDirectory("nestnote-voice-missing-manifest").toFile()
+        val store = VoiceAttachmentStore(context, { newKey() }, root)
+        val manifest = VoiceAttachmentManifest(context, root)
+        store.save(43L, "keep_missing_index", ByteArrayInputStream(byteArrayOf(4, 5, 6)))
+
+        assertEquals(0, manifest.reconcile(store, setOf(43L)))
+        assertTrue(File(File(root, "43"), "keep_missing_index.nva").isFile)
+        assertTrue(manifest.list(43L, store).isEmpty())
+    }
+
+    @Test
+    fun corruptManifestFailsClosedAndPreservesEncryptedPayload() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val root = Files.createTempDirectory("nestnote-voice-corrupt-manifest").toFile()
+        val store = VoiceAttachmentStore(context, { newKey() }, root)
+        store.save(44L, "keep_corrupt_index", ByteArrayInputStream(byteArrayOf(7, 8, 9)))
+        File(root, "manifest_v1.json").writeText("{ definitely not valid JSON")
+
+        try {
+            VoiceAttachmentManifest(context, root).reconcile(store, setOf(44L))
+            throw AssertionError("Corrupt manifest must fail closed")
+        } catch (expected: java.io.IOException) {
+            assertTrue(expected.message!!.contains("metadata is unreadable"))
+        }
+        assertTrue(File(File(root, "44"), "keep_corrupt_index.nva").isFile)
+    }
+
+    @Test
+    fun oversizedManifestIsRejectedBeforeParsingAndPreservesPayload() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val root = Files.createTempDirectory("nestnote-voice-oversized-manifest").toFile()
+        val store = VoiceAttachmentStore(context, { newKey() }, root)
+        store.save(45L, "keep_large_index", ByteArrayInputStream(byteArrayOf(10, 11, 12)))
+        File(root, "manifest_v1.json").writeText(" ".repeat(4 * 1024 * 1024 + 1))
+
+        try {
+            VoiceAttachmentManifest(context, root).reconcile(store, setOf(45L))
+            throw AssertionError("Oversized manifest must fail closed")
+        } catch (expected: java.io.IOException) {
+            assertTrue(expected.message!!.contains("metadata is unreadable"))
+        }
+        assertTrue(File(File(root, "45"), "keep_large_index.nva").isFile)
+    }
+
 }
