@@ -128,7 +128,7 @@ private class EncryptedPcmRecording(
                 val captured = PcmCapturePump.capture(
                     capture = capture,
                     output = output,
-                    maxBytes = VoiceAttachmentStore.MAX_AUDIO_BYTES,
+                    maxBytes = VoiceAttachmentStore.MAX_AUDIO_BYTES.toLong(),
                     shouldContinue = { running.get() },
                     isPaused = { paused.get() },
                     onBytesCaptured = { audioBytes.set(it) },
