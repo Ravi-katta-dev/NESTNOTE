@@ -49,6 +49,7 @@ import java.io.PipedOutputStream
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import javax.crypto.Cipher
 
 private const val VOICE_SAMPLE_RATE = 16_000
@@ -70,6 +71,7 @@ private class EncryptedPcmRecording(
     private val paused = AtomicBoolean(false)
     private val audioBytes = AtomicLong(0)
     private val limitExceeded = AtomicBoolean(false)
+    private val recordingFailure = AtomicReference<IOException?>(null)
     private var audioRecord: AudioRecord? = null
     private var pipeOutput: PipedOutputStream? = null
     private var recorderThread: Thread? = null
@@ -94,15 +96,16 @@ private class EncryptedPcmRecording(
 
         storageThread = Thread({
             val result = runCatching {
-                store.save(noteId, attachmentId, input).also {
-                    if (audioBytes.get() == 0L || limitExceeded.get()) {
-                        store.delete(noteId, attachmentId)
-                        throw IOException(
-                            if (limitExceeded.get()) "Recording reached the 25 MiB limit and was discarded."
-                            else "No audio was captured. Try recording again."
-                        )
-                    }
+                val saved = store.save(noteId, attachmentId, input)
+                val failure = recordingFailure.get()
+                if (failure != null || audioBytes.get() == 0L || limitExceeded.get()) {
+                    store.delete(noteId, attachmentId)
+                    throw failure ?: IOException(
+                        if (limitExceeded.get()) "Recording reached the 25 MiB limit and was discarded."
+                        else "No audio was captured. Try recording again."
+                    )
                 }
+                saved
             }
             runCatching { input.close() }
             Handler(Looper.getMainLooper()).post { onFinished(result) }
@@ -110,15 +113,24 @@ private class EncryptedPcmRecording(
 
         recorderThread = Thread({
             val buffer = ByteArray(maxOf(minBuffer, 4096))
+            var audioRecordStarted = false
             try {
-                record.startRecording()
                 while (running.get()) {
                     if (paused.get()) {
+                        if (audioRecordStarted) {
+                            record.stop()
+                            audioRecordStarted = false
+                        }
                         Thread.sleep(30)
                         continue
                     }
+                    if (!audioRecordStarted) {
+                        record.startRecording()
+                        audioRecordStarted = true
+                    }
                     val count = record.read(buffer, 0, buffer.size)
                     if (count > 0) {
+                        if (paused.get()) continue
                         val total = audioBytes.addAndGet(count.toLong())
                         if (total > VoiceAttachmentStore.MAX_AUDIO_BYTES) {
                             limitExceeded.set(true)
@@ -126,14 +138,20 @@ private class EncryptedPcmRecording(
                             break
                         }
                         output.write(buffer, 0, count)
-                    } else if (count < 0 && !paused.get() && running.get()) {
+                    } else if (count < 0 && running.get() && !paused.get()) {
                         throw IOException("Microphone read failed ($count)")
                     }
                 }
-            } catch (_: IllegalStateException) {
-                // stop() can race a blocked read; normal shutdown closes the pipe below.
+            } catch (error: IllegalStateException) {
+                if (running.get() && !paused.get()) {
+                    recordingFailure.compareAndSet(null, IOException("Microphone stopped unexpectedly", error))
+                    running.set(false)
+                }
             } catch (error: Exception) {
-                running.set(false)
+                if (running.get() && !limitExceeded.get()) {
+                    recordingFailure.compareAndSet(null, IOException("Recording failed: ${error.message ?: "unknown error"}", error))
+                    running.set(false)
+                }
             } finally {
                 runCatching { record.stop() }
                 record.release()
@@ -144,21 +162,11 @@ private class EncryptedPcmRecording(
     }
 
     fun pause() {
-        if (running.get() && paused.compareAndSet(false, true)) {
-            runCatching { audioRecord?.stop() }
-        }
+        if (running.get()) paused.set(true)
     }
 
     fun resume() {
-        if (running.get() && paused.compareAndSet(true, false)) {
-            try {
-                audioRecord?.startRecording()
-            } catch (error: Exception) {
-                running.set(false)
-                runCatching { pipeOutput?.close() }
-                throw IOException("Couldn't resume microphone recording", error)
-            }
-        }
+        if (running.get()) paused.set(false)
     }
 
     fun stop() {
@@ -169,8 +177,17 @@ private class EncryptedPcmRecording(
 
     fun stopAndWait() {
         stop()
-        runCatching { recorderThread?.join(2_000) }
-        runCatching { storageThread?.join(5_000) }
+        var interrupted = false
+        listOfNotNull(recorderThread, storageThread).forEach { thread ->
+            while (thread.isAlive) {
+                try {
+                    thread.join()
+                } catch (_: InterruptedException) {
+                    interrupted = true
+                }
+            }
+        }
+        if (interrupted) Thread.currentThread().interrupt()
     }
 }
 
