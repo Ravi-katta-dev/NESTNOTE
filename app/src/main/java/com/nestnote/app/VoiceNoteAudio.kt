@@ -468,12 +468,14 @@ private fun startVoiceRecording(
         return
     }
     val id = UUID.randomUUID().toString()
+    // Register the reserved attachment identity before background IO starts, so a discard can
+    // wait for finalization and remove a file even if its UI callback has not run yet.
+    addedIds.add(id)
     val session = EncryptedPcmRecording(context, store, noteId, id) { result ->
         audioManager.abandonAudioFocus(focusListener)
         when {
             result.isSuccess -> {
                 val attachment = result.getOrThrow()
-                addedIds.add(id)
                 runCatching {
                     val plaintextBytes = (attachment.encryptedSizeBytes - 32L).coerceAtLeast(0L)
                     val durationMillis = plaintextBytes * 1000L / (VOICE_SAMPLE_RATE * 2L)
