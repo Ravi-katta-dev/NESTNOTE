@@ -17,6 +17,7 @@ internal class PcmVoicePlayback(
     context: Context,
     private val store: VoiceAttachmentStore,
     private val attachment: VoiceAttachment,
+    private val onProgress: (Long, Long) -> Unit = { _, _ -> },
     private val onFinished: (String?) -> Unit
 ) {
     private val appContext = context.applicationContext
@@ -62,10 +63,21 @@ internal class PcmVoicePlayback(
                 audioTrack = track
                 track.play()
                 var offset = 0
+                var lastProgressBytes = 0
                 while (running.get() && offset < pcm.size) {
                     val count = track.write(pcm, offset, minOf(8192, pcm.size - offset))
                     if (count < 0) throw IOException("Audio playback failed ($count).")
-                    if (count == 0) Thread.yield() else offset += count
+                    if (count == 0) {
+                        Thread.yield()
+                    } else {
+                        offset += count
+                        if (offset == pcm.size || offset - lastProgressBytes >= 32_000) {
+                            lastProgressBytes = offset
+                            val positionMs = offset * 1000L / (SAMPLE_RATE * 2L)
+                            val durationMs = pcm.size * 1000L / (SAMPLE_RATE * 2L)
+                            Handler(Looper.getMainLooper()).post { onProgress(positionMs, durationMs) }
+                        }
+                    }
                 }
             } catch (error: Exception) {
                 if (running.get()) errorMessage = error.message ?: "Couldn't play this recording."
