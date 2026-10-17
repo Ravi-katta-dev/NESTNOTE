@@ -225,6 +225,8 @@ internal fun VoiceNoteControls(
     var elapsedRecordingSeconds by remember { mutableIntStateOf(0) }
     var showPermissionSettings by remember { mutableStateOf(false) }
     var playingId by remember { mutableStateOf<String?>(null) }
+    var playbackPositionMs by remember { mutableIntStateOf(0) }
+    var playbackDurationMs by remember { mutableIntStateOf(0) }
     var status by remember { mutableStateOf("") }
     var pendingPermission by remember { mutableStateOf(false) }
     var recordingSession by remember { mutableStateOf<EncryptedPcmRecording?>(null) }
@@ -269,6 +271,8 @@ internal fun VoiceNoteControls(
         playbackSession?.stop()
         playbackSession = null
         playingId = null
+        playbackPositionMs = 0
+        playbackDurationMs = 0
         if (requestedAudioFocus) {
             audioManager.abandonAudioFocus(audioFocusListener)
             requestedAudioFocus = false
@@ -441,6 +445,18 @@ internal fun VoiceNoteControls(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            if (playingId == attachment.attachmentId && playbackDurationMs > 0) {
+                                val positionSeconds = playbackPositionMs / 1000
+                                val durationSeconds = playbackDurationMs / 1000
+                                Text(
+                                    "Playback %d:%02d / %d:%02d".format(
+                                        positionSeconds / 60, positionSeconds % 60,
+                                        durationSeconds / 60, durationSeconds % 60
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                         OutlinedButton(
                             enabled = !recording && (playingId == null || playingId == attachment.attachmentId),
@@ -459,8 +475,18 @@ internal fun VoiceNoteControls(
                                         requestedAudioFocus = true
                                         audioFocusListener = focus
                                         playingId = attachment.attachmentId
+                                        playbackPositionMs = 0
+                                        playbackDurationMs = 0
                                         status = "Playing recording ${index + 1}."
-                                        val player = PcmVoicePlayback(context, attachmentStore, attachment) { error ->
+                                        val player = PcmVoicePlayback(
+                                            context,
+                                            attachmentStore,
+                                            attachment,
+                                            onProgress = { positionMs, durationMs ->
+                                                playbackPositionMs = positionMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                                                playbackDurationMs = durationMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                                            }
+                                        ) { error ->
                                             playingId = null
                                             playbackSession = null
                                             audioManager.abandonAudioFocus(focus)
