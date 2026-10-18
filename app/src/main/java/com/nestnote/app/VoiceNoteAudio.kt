@@ -465,9 +465,7 @@ internal fun VoiceNoteControls(
                     Icon(Icons.Default.Stop, contentDescription = "Stop recording")
                     Text("Stop")
                 }
-                    }
                 }
-            }
             if (recording) {
                 val minutes = elapsedRecordingSeconds / 60
                 val seconds = elapsedRecordingSeconds % 60
@@ -588,6 +586,7 @@ internal fun VoiceNoteControls(
                 }
             }
         }
+    }
 }
 
 private fun startVoiceRecording(
