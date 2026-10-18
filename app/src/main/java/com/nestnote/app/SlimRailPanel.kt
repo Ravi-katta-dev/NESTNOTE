@@ -141,7 +141,8 @@ fun SlimRailPanel(
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val panelWidthPx = with(density) { panelWidth.toPx() }
-    val railWidthPx = with(density) { railWidth.toPx() }
+    // Keep the visible rail inside the measured panel even if callers customize widths.
+    val effectiveRailWidthPx = with(density) { railWidth.toPx() }.coerceIn(0f, panelWidthPx)
 
     PredictiveBackHandler(enabled = state.currentValue == RailValue.Open) { events ->
         var previousProgress = 0f
@@ -172,7 +173,7 @@ fun SlimRailPanel(
                     orientation = Orientation.Horizontal,
                     flingBehavior = AnchoredDraggableDefaults.flingBehavior(state = state.draggableState)
                 )
-                .slimRailLayout(state, railWidthPx)
+                .slimRailLayout(state, effectiveRailWidthPx)
                 .windowInsetsPadding(WindowInsets.safeDrawing),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = if (state.isOpen) 3.dp else 0.dp,
