@@ -48,6 +48,16 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.Title
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.FormatSize
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.FormatStrikethrough
+import androidx.compose.material.icons.filled.FormatItalic
+import androidx.compose.material.icons.filled.FormatBold
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.FormatQuote
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -1485,97 +1495,27 @@ private fun NoteEditorContent(
             bottomBar = {
                 Column(Modifier.imePadding()) {
                             Surface(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactDialog) 8.dp else 14.dp, vertical = 6.dp),
-                                shape = RoundedCornerShape(18.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactDialog) 8.dp else 14.dp, vertical = 4.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
                             ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp, vertical = 2.dp),
+                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 4.dp, vertical = 2.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    IconButton(
-                                        onClick = { applyLineEdit { text, cursor -> NoteText.cycleChecklist(text, cursor) } },
-                                        modifier = Modifier.semantics { contentDescription = "Insert checklist item" }
-                                    ) {
-                                        Icon(Icons.Default.CheckBox, contentDescription = "Insert checklist item", tint = accent)
-                                    }
-                                    IconButton(
-                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleBullet(text, cursor) } },
-                                        modifier = Modifier.semantics { contentDescription = "Insert bullet point" }
-                                    ) {
-                                        Icon(Icons.Default.FormatListBulleted, contentDescription = "Insert bullet point", tint = accent)
-                                    }
-                                    TextButton(
-                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleNumberedList(text, cursor) } },
-                                        modifier = Modifier.semantics { contentDescription = "Toggle numbered list" },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("1.", style = MaterialTheme.typography.labelLarge, color = accent)
-                                    }
-                                    TextButton(
-                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleBlockquote(text, cursor) } },
-                                        modifier = Modifier.semantics { contentDescription = "Toggle blockquote" },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("Quote", style = MaterialTheme.typography.labelLarge, color = accent)
-                                    }
-                                    TextButton(
-                                        onClick = { applyMarkdownLink() },
-                                        modifier = Modifier.semantics { contentDescription = "Insert Markdown link" },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("Link", style = MaterialTheme.typography.labelLarge, color = accent)
-                                    }
-                                    TextButton(
-                                        onClick = { applyInlineEdit("**") },
-                                        modifier = Modifier.semantics { contentDescription = "Bold selected text" },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("B", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = accent)
-                                    }
-                                    TextButton(
-                                        onClick = { applyInlineEdit("_") },
-                                        modifier = Modifier.semantics { contentDescription = "Italic selected text" },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("I", style = MaterialTheme.typography.labelLarge.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic), color = accent)
-                                    }
-                                    TextButton(
-                                        onClick = { applyInlineEdit("~~") },
-                                        modifier = Modifier.semantics { contentDescription = "Strikethrough selected text" },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("S", style = MaterialTheme.typography.labelLarge.copy(textDecoration = TextDecoration.LineThrough), color = accent)
-                                    }
-                                    TextButton(
-                                        onClick = { applyInlineEdit("`") },
-                                        modifier = Modifier.semantics { contentDescription = "Inline code selected text" },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("``", style = MaterialTheme.typography.labelLarge, color = accent)
-                                    }
-                                    TextButton(
-                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 1) } },
-                                        modifier = Modifier.semantics { contentDescription = "Toggle level one heading on current line" },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("H1", style = MaterialTheme.typography.labelLarge, color = accent)
-                                    }
-                                    TextButton(
-                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 2) } },
-                                        modifier = Modifier.semantics { contentDescription = "Toggle level two heading on current line" },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("H2", style = MaterialTheme.typography.labelLarge, color = accent)
-                                    }
-                                    TextButton(
-                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 3) } },
-                                        modifier = Modifier.semantics { contentDescription = "Toggle level three heading on current line" },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text("H3", style = MaterialTheme.typography.labelLarge, color = accent)
-                                    }
+                                    IconButton(onClick = { applyLineEdit { text, cursor -> NoteText.cycleChecklist(text, cursor) } }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Insert checklist item" }) { Icon(Icons.Default.CheckBox, contentDescription = null, tint = accent) }
+                                    IconButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleBullet(text, cursor) } }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Insert bullet point" }) { Icon(Icons.Default.FormatListBulleted, contentDescription = null, tint = accent) }
+                                    IconButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleNumberedList(text, cursor) } }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Toggle numbered list" }) { Icon(Icons.Default.FormatListNumbered, contentDescription = null, tint = accent) }
+                                    IconButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleBlockquote(text, cursor) } }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Toggle blockquote" }) { Icon(Icons.Default.FormatQuote, contentDescription = null, tint = accent) }
+                                    IconButton(onClick = { applyMarkdownLink() }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Insert Markdown link" }) { Icon(Icons.Default.Link, contentDescription = null, tint = accent) }
+                                    IconButton(onClick = { applyInlineEdit("**") }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Bold selected text" }) { Icon(Icons.Default.FormatBold, contentDescription = null, tint = accent) }
+                                    IconButton(onClick = { applyInlineEdit("_") }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Italic selected text" }) { Icon(Icons.Default.FormatItalic, contentDescription = null, tint = accent) }
+                                    IconButton(onClick = { applyInlineEdit("~~") }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Strikethrough selected text" }) { Icon(Icons.Default.FormatStrikethrough, contentDescription = null, tint = accent) }
+                                    IconButton(onClick = { applyInlineEdit("`") }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Inline code selected text" }) { Icon(Icons.Default.Code, contentDescription = null, tint = accent) }
+                                    IconButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 1) } }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Toggle level one heading on current line" }) { Icon(Icons.Default.FormatSize, contentDescription = "H1", tint = accent) }
+                                    IconButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 2) } }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Toggle level two heading on current line" }) { Icon(Icons.Default.TextFields, contentDescription = "H2", tint = accent) }
+                                    IconButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 3) } }, modifier = Modifier.size(40.dp).semantics { contentDescription = "Toggle level three heading on current line" }) { Icon(Icons.Default.Title, contentDescription = "H3", tint = accent) }
                                 }
                             }
                             VoiceNoteControls(
