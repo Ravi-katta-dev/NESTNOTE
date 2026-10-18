@@ -180,9 +180,9 @@ fun SlimRailPanel(
             shadowElevation = if (state.isOpen) 6.dp else 0.dp
         ) {
             Box(Modifier.fillMaxSize()) {
+                val ink = MaterialTheme.colorScheme.primary
                 Canvas(Modifier.fillMaxSize()) {
                     // Quiet generative geometry stays behind content at very low alpha.
-                    val ink = MaterialTheme.colorScheme.primary
                     val unit = size.minDimension
                     drawCircle(color = ink.copy(alpha = 0.035f), radius = unit * 0.34f, center = Offset(size.width * 0.78f, size.height * 0.18f))
                     drawCircle(color = ink.copy(alpha = 0.045f), radius = unit * 0.22f, center = Offset(size.width * 0.18f, size.height * 0.82f), style = Stroke(width = 1.dp.toPx()))
