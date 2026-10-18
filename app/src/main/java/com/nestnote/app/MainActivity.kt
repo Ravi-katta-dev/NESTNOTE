@@ -1288,6 +1288,9 @@ private fun NoteEditorContent(
     var moreMenu by remember { mutableStateOf(false) }
     val titleFocus = remember { FocusRequester() }
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val editorModeViewModel: EditorModeViewModel = viewModel(key = "editor-mode-${original?.id ?: draftNoteId}")
+    val editorMode = editorModeViewModel.mode
     var voiceAttachmentCount by rememberSaveable(original?.id, draftNoteId) { mutableIntStateOf(0) }
     var voiceChangesPending by rememberSaveable(original?.id, draftNoteId) { mutableStateOf(false) }
     val voiceNoteId = original?.id ?: draftNoteId
@@ -1423,6 +1426,7 @@ private fun NoteEditorContent(
                         }
                     },
                     actions = {
+                        if (editorMode == EditorMode.Editing) {
                                 IconButton(onClick = { pinned = !pinned }) {
                                     Icon(
                                         Icons.Default.PushPin,
@@ -1492,14 +1496,48 @@ private fun NoteEditorContent(
                                         )
                                     }
                                 }
-                        TextButton(
-                            onClick = { if (title.isNotBlank()) onSave(buildNote()) },
-                            enabled = title.isNotBlank()
-                        ) { Text("Save") }
+                        }
+                        IconButton(
+                            onClick = {
+                                if (editorMode == EditorMode.Editing) {
+                                    keyboardController?.hide()
+                                    editorModeViewModel.lock()
+                                } else {
+                                    editorModeViewModel.edit()
+                                }
+                            },
+                            modifier = Modifier.semantics {
+                                contentDescription = if (editorMode == EditorMode.Editing) "Lock note editing" else "Edit note"
+                            }
+                        ) {
+                            AnimatedContent(targetState = editorMode, label = "editor-lock-icon") { mode ->
+                                Icon(
+                                    imageVector = if (mode == EditorMode.Editing) Icons.Default.Lock else Icons.Default.Edit,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                        AnimatedContent(targetState = editorMode, label = "editor-save-done") { mode ->
+                            TextButton(
+                                onClick = {
+                                    if (mode == EditorMode.Editing) {
+                                        if (title.isNotBlank()) onSave(buildNote())
+                                    } else {
+                                        requestDismiss()
+                                    }
+                                },
+                                enabled = mode == EditorMode.Locked || title.isNotBlank()
+                            ) { Text(if (mode == EditorMode.Editing) "Save" else "Done") }
+                        }
                     }
                 )
             },
             bottomBar = {
+                AnimatedVisibility(
+                    visible = editorMode == EditorMode.Editing,
+                    enter = fadeIn() + slideInVertically { it },
+                    exit = fadeOut() + slideOutVertically { it }
+                ) {
                 Column(Modifier.imePadding()) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactDialog) 8.dp else 14.dp, vertical = 4.dp),
@@ -1552,6 +1590,7 @@ private fun NoteEditorContent(
                                 }
                             }
                 }
+                }
             }
         ) { editorPadding ->
             Column(
@@ -1564,7 +1603,8 @@ private fun NoteEditorContent(
                     Spacer(Modifier.height(if (compactDialog) 8.dp else 18.dp))
                     BasicTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = { if (editorMode == EditorMode.Editing) title = it },
+                    readOnly = editorMode == EditorMode.Locked,
                     modifier = Modifier.fillMaxWidth().focusRequester(titleFocus).padding(vertical = 8.dp),
                     textStyle = MaterialTheme.typography.headlineSmall.copy(
                         fontSize = textSize.titleSp.sp, lineHeight = (textSize.titleSp * 1.26f).sp,
@@ -1598,6 +1638,7 @@ private fun NoteEditorContent(
                                             modifier = Modifier.semantics {
                                                 contentDescription = "${item.text.ifBlank { "Empty checklist item" }}, ${if (item.checked) "completed" else "not completed"}"
                                             },
+                                            enabled = editorMode == EditorMode.Editing,
                                             onCheckedChange = { checked ->
                                                 bodyValue = bodyValue.copy(text = NoteText.setChecklistItemChecked(bodyValue.text, item.lineIndex, checked))
                                             }
@@ -1659,7 +1700,8 @@ private fun NoteEditorContent(
                     } else {
                         BasicTextField(
                         value = bodyValue,
-                        onValueChange = { onBodyChange(it) },
+                        onValueChange = { if (editorMode == EditorMode.Editing) onBodyChange(it) },
+                        readOnly = editorMode == EditorMode.Locked,
                         modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 3.dp),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(
                             fontSize = textSize.bodySp.sp, lineHeight = (textSize.bodySp * 1.45f).sp,
@@ -1685,6 +1727,7 @@ private fun NoteEditorContent(
                         categories.forEach { item ->
                             FilterChip(
                                 selected = category == item,
+                                enabled = editorMode == EditorMode.Editing,
                                 onClick = { category = item },
                                 label = { Text(item) },
                                 colors = FilterChipDefaults.filterChipColors(
