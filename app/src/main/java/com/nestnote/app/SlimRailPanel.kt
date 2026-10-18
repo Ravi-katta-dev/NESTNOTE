@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -25,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -34,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
@@ -42,6 +39,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.mergeDescendants
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -93,6 +91,30 @@ fun rememberSlimRailState(): SlimRailState {
 }
 
 /**
+ * Measures the panel and refreshes drag anchors from the measured width, so
+ * density, window-size, and panel-width changes cannot leave stale anchors.
+ */
+private fun Modifier.slimRailLayout(
+    state: SlimRailState,
+    railWidthPx: Float
+): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val closedOffset = (placeable.width.toFloat() - railWidthPx).coerceAtLeast(0f)
+    state.draggableState.updateAnchors(
+        DraggableAnchors {
+            RailValue.Closed at closedOffset
+            RailValue.Open at 0f
+        }
+    )
+    val currentOffset = state.draggableState.offset
+        .takeIf { it.isFinite() }
+        ?.roundToInt() ?: closedOffset.roundToInt()
+    layout(placeable.width, placeable.height) {
+        placeable.placeRelative(x = currentOffset, y = 0)
+    }
+}
+
+/**
  * Right-edge, custom M3-style rail/panel. The visible edge affordance is 24 dp
  * wide; its hit target is at least 48 dp. Place this inside a full-screen Box.
  *
@@ -112,17 +134,6 @@ fun SlimRailPanel(
     val scope = rememberCoroutineScope()
     val panelWidthPx = with(density) { panelWidth.toPx() }
     val railWidthPx = with(density) { railWidth.toPx() }
-    val closedOffset = (panelWidthPx - railWidthPx).coerceAtLeast(0f)
-    val anchors = remember(closedOffset) {
-        DraggableAnchors {
-            RailValue.Closed at closedOffset
-            RailValue.Open at 0f
-        }
-    }
-
-    LaunchedEffect(anchors) {
-        state.draggableState.updateAnchors(anchors)
-    }
 
     PredictiveBackHandler(enabled = state.currentValue == RailValue.Open) { events ->
         try {
@@ -144,7 +155,6 @@ fun SlimRailPanel(
                 .align(Alignment.CenterEnd)
                 .fillMaxHeight()
                 .width(panelWidth)
-                .offset { IntOffset(state.draggableState.offset.takeIf { it.isFinite() }?.roundToInt() ?: closedOffset.roundToInt(), 0) }
                 .anchoredDraggable(
                     state = state.draggableState,
                     orientation = Orientation.Horizontal,
@@ -157,6 +167,7 @@ fun SlimRailPanel(
                         )
                     )
                 )
+                .slimRailLayout(state, railWidthPx)
                 .windowInsetsPadding(WindowInsets.safeDrawing),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = if (state.isOpen) 3.dp else 0.dp,
@@ -171,8 +182,6 @@ fun SlimRailPanel(
                         .align(Alignment.CenterStart)
                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                         .width(48.dp)
-                        .clip(RoundedCornerShape(topEnd = 14.dp, bottomEnd = 14.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.94f))
                         .clickable {
                             scope.launch {
                                 if (state.targetValue == RailValue.Open) state.close() else state.open()
@@ -181,12 +190,19 @@ fun SlimRailPanel(
                         .semantics(mergeDescendants = true) {
                             this.contentDescription = if (state.isOpen) "Close $contentDescription" else "Open $contentDescription"
                         },
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.CenterStart
                 ) {
-                    Canvas(Modifier.width(24.dp).fillMaxHeight(0.12f)) {
+                    Box(
+                        Modifier
+                            .width(24.dp)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(topEnd = 14.dp, bottomEnd = 14.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.94f))
+                    )
+                    val ink = MaterialTheme.colorScheme.onSurfaceVariant
+                    Canvas(Modifier.width(24.dp).fillMaxHeight(0.12f).align(Alignment.CenterStart)) {
                         val centerX = size.width / 2f
                         val centerY = size.height / 2f
-                        val ink = MaterialTheme.colorScheme.onSurfaceVariant
                         drawLine(
                             color = ink.copy(alpha = 0.88f),
                             start = Offset(centerX - size.width * 0.12f, centerY - size.height * 0.30f),
