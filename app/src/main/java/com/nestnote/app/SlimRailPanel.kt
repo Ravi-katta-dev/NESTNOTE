@@ -67,9 +67,9 @@ class SlimRailState internal constructor(
     val targetValue: RailValue get() = draggableState.targetValue
     val isOpen: Boolean get() = currentValue == RailValue.Open
 
-    suspend fun open() = draggableState.snapTo(RailValue.Open)
-    suspend fun close() = draggableState.snapTo(RailValue.Closed)
-    suspend fun toggle() = draggableState.snapTo(
+    suspend fun open() = draggableState.animateTo(RailValue.Open)
+    suspend fun close() = draggableState.animateTo(RailValue.Closed)
+    suspend fun toggle() = draggableState.animateTo(
         if (targetValue == RailValue.Open) RailValue.Closed else RailValue.Open
     )
 }
