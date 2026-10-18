@@ -42,6 +42,8 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 /** The stable, public destinations for the slim edge rail. */
@@ -135,15 +137,19 @@ fun SlimRailPanel(
     val railWidthPx = with(density) { railWidth.toPx() }
 
     PredictiveBackHandler(enabled = state.currentValue == RailValue.Open) { events ->
+        var previousProgress = 0f
         try {
             events.collect { event ->
-                // Drive the same anchored offset with the system back progress.
-                state.draggableState.dispatchRawDelta(panelWidthPx * event.progress)
+                // Apply only the progress delta; dispatchRawDelta is incremental.
+                val progressDelta = event.progress - previousProgress
+                state.draggableState.dispatchRawDelta((panelWidthPx - railWidthPx) * progressDelta)
+                previousProgress = event.progress
             }
             state.close()
         } catch (cancelled: CancellationException) {
-            // A cancelled predictive gesture should restore the open panel.
-            state.open()
+            // Cancellation also cancels this handler's coroutine; restore the
+            // open state outside that cancelled context.
+            withContext(NonCancellable) { state.open() }
             throw cancelled
         }
     }
