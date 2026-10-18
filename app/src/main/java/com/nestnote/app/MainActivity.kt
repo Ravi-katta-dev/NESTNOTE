@@ -79,10 +79,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.*
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
-import androidx.compose.material3.MotionScheme
-import androidx.compose.material3.expressiveLightColorScheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -180,7 +176,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun NestNoteApp(store: NoteStore) {
     val context = LocalContext.current
@@ -321,7 +317,7 @@ private fun NestNoteApp(store: NoteStore) {
     val scheme = if (dynamicColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else if (dark) darkColorScheme(primary = Color(0xFFD0BCFF), secondary = Color(0xFFCCC2DC))
-    else expressiveLightColorScheme().copy(primary = fallbackAccent, secondary = Color(0xFF625B71))
+    else lightColorScheme(primary = fallbackAccent, secondary = Color(0xFF625B71))
 
     val filteredNotes = notes.filter { note ->
         ((selectedView == "Archived" && note.archived) ||
@@ -346,7 +342,7 @@ private fun NestNoteApp(store: NoteStore) {
         searchVisible = false
     }
 
-    MaterialExpressiveTheme(colorScheme = scheme, motionScheme = MotionScheme.expressive()) {
+    MaterialTheme(colorScheme = scheme) {
         val colors = MaterialTheme.colorScheme
         Scaffold(
             contentWindowInsets = WindowInsets.safeDrawing,
