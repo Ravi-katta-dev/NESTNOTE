@@ -742,7 +742,7 @@ private fun NestNoteApp(store: NoteStore) {
                 editorDraftId = null
                 discardVoiceChanges = {}
             }
-            val discardEditor = {
+            val discardEditor: () -> Unit = {
                 discardVoiceChanges()
                 // New-note attachments are staged under the reserved draft ID. Discard
                 // removes both payloads and index entries; saved-note attachments are untouched.
@@ -763,7 +763,7 @@ private fun NestNoteApp(store: NoteStore) {
                     )
                 }
             }
-            val dismissEditor = { if (editorHasUnsavedChanges) confirmSystemDiscard = true else discardEditor() }
+            val dismissEditor: () -> Unit = { if (editorHasUnsavedChanges) confirmSystemDiscard = true else discardEditor() }
             val saveNote: (NestNote) -> Unit = saveNote@{ draft ->
                 val existing = editorNote
                 // Compare the editor's baseline against the latest collection, not the
