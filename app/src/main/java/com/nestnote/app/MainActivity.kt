@@ -401,9 +401,8 @@ private fun NestNoteApp(store: NoteStore) {
                 contentAlignment = Alignment.TopCenter
             ) {
                 Column(
-                    Modifier.fillMaxSize().then(
-                        if (isExpandedWidth) Modifier.widthIn(max = 840.dp) else Modifier
-                    )
+                    (if (isExpandedWidth) Modifier.widthIn(max = 840.dp) else Modifier)
+                        .fillMaxSize()
                 ) {
                 if (selectedView == "Home" || selectedView == "All notes" || searchVisible) {
                     OutlinedTextField(
