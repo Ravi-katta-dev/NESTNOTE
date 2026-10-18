@@ -150,7 +150,7 @@ fun SlimRailPanel(
             events.collect { event ->
                 // Apply only the progress delta; dispatchRawDelta is incremental.
                 val progressDelta = event.progress - previousProgress
-                state.draggableState.dispatchRawDelta((panelWidthPx - railWidthPx) * progressDelta)
+                state.draggableState.dispatchRawDelta((panelWidthPx - effectiveRailWidthPx) * progressDelta)
                 previousProgress = event.progress
             }
             state.close()
@@ -180,6 +180,14 @@ fun SlimRailPanel(
             shadowElevation = if (state.isOpen) 6.dp else 0.dp
         ) {
             Box(Modifier.fillMaxSize()) {
+                Canvas(Modifier.fillMaxSize()) {
+                    // Quiet generative geometry stays behind content at very low alpha.
+                    val ink = MaterialTheme.colorScheme.primary
+                    val unit = size.minDimension
+                    drawCircle(color = ink.copy(alpha = 0.035f), radius = unit * 0.34f, center = Offset(size.width * 0.78f, size.height * 0.18f))
+                    drawCircle(color = ink.copy(alpha = 0.045f), radius = unit * 0.22f, center = Offset(size.width * 0.18f, size.height * 0.82f), style = Stroke(width = 1.dp.toPx()))
+                    drawLine(color = ink.copy(alpha = 0.035f), start = Offset(size.width * 0.52f, 0f), end = Offset(size.width, size.height * 0.24f), strokeWidth = 1.dp.toPx())
+                }
                 panelContent()
                 // The visual affordance is slim; the semantics and clickable
                 // target remain large enough for touch and assistive technology.
