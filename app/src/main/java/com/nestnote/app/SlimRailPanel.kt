@@ -3,6 +3,7 @@ package com.nestnote.app
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.anchoredDraggable
@@ -77,7 +78,8 @@ class SlimRailState internal constructor(
 @Composable
 fun rememberSlimRailState(): SlimRailState {
     val density = LocalDensity.current
-    val state = remember(density) {
+    val decayAnimationSpec = rememberSplineBasedDecay<Float>()
+    val state = remember(density, decayAnimationSpec) {
         SlimRailState(
             AnchoredDraggableState(
                 initialValue = RailValue.Closed,
@@ -87,7 +89,7 @@ fun rememberSlimRailState(): SlimRailState {
                     dampingRatio = Spring.DampingRatioMediumBouncy,
                     stiffness = Spring.StiffnessMediumLow
                 ),
-                decayAnimationSpec = androidx.compose.animation.rememberSplineBasedDecay()
+                decayAnimationSpec = decayAnimationSpec
             )
         )
     }
@@ -98,6 +100,7 @@ fun rememberSlimRailState(): SlimRailState {
  * Measures the panel and refreshes drag anchors from the measured width, so
  * density, window-size, and panel-width changes cannot leave stale anchors.
  */
+@OptIn(ExperimentalFoundationApi::class)
 private fun Modifier.slimRailLayout(
     state: SlimRailState,
     railWidthPx: Float
