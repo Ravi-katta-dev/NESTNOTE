@@ -61,6 +61,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
@@ -155,7 +156,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun NestNoteApp(store: NoteStore) {
     val context = LocalContext.current
@@ -1794,7 +1795,10 @@ private fun NoteEditorContent(
         }
         appearanceVisible = false
     }
-    BackHandler(enabled = appearanceVisible) { dismissAppearance(discardDraft = true) }
+    PredictiveBackHandler(enabled = appearanceVisible) { progress ->
+        progress.collect { /* Keep the appearance panel until the system back gesture commits. */ }
+        dismissAppearance(discardDraft = true)
+    }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // Keep the writing canvas dominant on phones, while giving the appearance
         // controls a little more room on tablets and other wide editor windows.
