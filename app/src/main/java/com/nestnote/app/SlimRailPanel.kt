@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.WindowInsets.Companion.safeDrawing
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -37,13 +37,13 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.mergeDescendants
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
@@ -67,9 +67,9 @@ class SlimRailState internal constructor(
     val targetValue: RailValue get() = draggableState.targetValue
     val isOpen: Boolean get() = currentValue == RailValue.Open
 
-    suspend fun open() = draggableState.animateTo(RailValue.Open)
-    suspend fun close() = draggableState.animateTo(RailValue.Closed)
-    suspend fun toggle() = draggableState.animateTo(
+    suspend fun open() = draggableState.snapTo(RailValue.Open)
+    suspend fun close() = draggableState.snapTo(RailValue.Closed)
+    suspend fun toggle() = draggableState.snapTo(
         if (targetValue == RailValue.Open) RailValue.Closed else RailValue.Open
     )
 }
