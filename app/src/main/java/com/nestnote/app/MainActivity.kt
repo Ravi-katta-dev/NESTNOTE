@@ -1541,14 +1541,14 @@ private fun NoteEditorContent(
                                 contentDescription = if (editorMode == EditorMode.Editing) "Lock note editing" else "Edit note"
                             }
                         ) {
-                            AnimatedContent(targetState = editorMode, transitionSpec = { (fadeIn(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + slideInHorizontally(animationSpec = spring()) { it / 3 }) togetherWith (fadeOut(animationSpec = spring()) + slideOutHorizontally(animationSpec = spring()) { -it / 3 }) }, label = "editor-lock-icon") { mode ->
+                            AnimatedContent(targetState = editorMode, transitionSpec = { (fadeIn(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + slideInHorizontally(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) { it / 3 }) togetherWith (fadeOut(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + slideOutHorizontally(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) { -it / 3 }) }, label = "editor-lock-icon") { mode ->
                                 Icon(
                                     imageVector = if (mode == EditorMode.Editing) Icons.Default.Lock else Icons.Default.Edit,
                                     contentDescription = null
                                 )
                             }
                         }
-                        AnimatedContent(targetState = editorMode, transitionSpec = { (fadeIn(animationSpec = spring()) + slideInVertically(animationSpec = spring()) { it / 4 }) togetherWith (fadeOut(animationSpec = spring()) + slideOutVertically(animationSpec = spring()) { -it / 4 }) }, label = "editor-save-done") { mode ->
+                        AnimatedContent(targetState = editorMode, transitionSpec = { (fadeIn(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + slideInVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) { it / 4 }) togetherWith (fadeOut(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + slideOutVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) { -it / 4 }) }, label = "editor-save-done") { mode ->
                             TextButton(
                                 onClick = {
                                     if (mode == EditorMode.Editing) {
