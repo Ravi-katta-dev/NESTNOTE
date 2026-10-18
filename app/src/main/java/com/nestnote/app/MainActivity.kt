@@ -15,9 +15,12 @@ import androidx.activity.compose.PredictiveBackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
@@ -62,6 +65,8 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
@@ -88,6 +93,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -110,6 +116,7 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 private val fallbackAccent = Color(0xFF625B71)
 // Distinct, slightly richer swatches remain soft while being easy to tell apart.
@@ -153,7 +160,7 @@ private enum class NoteColorStyle(val label: String, val description: String) {
     PASTEL("Soft pastel cards", "Gentle note colors like the design reference"),
     ADAPTIVE("Match wallpaper", "Use your current Material You theme colors")
 }
-private enum class EditorMode(val label: String, val description: String) {
+private enum class EditorPresentationMode(val label: String, val description: String) {
     SHEET("Expandable bottom sheet", "A compact editor that expands as you write"),
     FULL_SCREEN("Full-screen editor", "A distraction-free writing space"),
     QUICK_DIALOG("Quick dialog", "A small dialog for short notes")
@@ -183,7 +190,7 @@ private fun NestNoteApp(store: NoteStore) {
     var themeMode by remember { mutableStateOf(ThemeMode.values().firstOrNull { it.name == preferences.getString(PREF_THEME, "SYSTEM") } ?: ThemeMode.SYSTEM) }
     var dynamicColors by remember { mutableStateOf(preferences.getBoolean(PREF_DYNAMIC, true)) }
     var dashboardLayout by remember { mutableStateOf(DashboardLayout.values().firstOrNull { it.name == preferences.getString(PREF_LAYOUT, "GRID") } ?: DashboardLayout.GRID) }
-    var editorMode by remember { mutableStateOf(EditorMode.values().firstOrNull { it.name == preferences.getString(PREF_EDITOR, "FULL_SCREEN") } ?: EditorMode.FULL_SCREEN) }
+    var editorMode by remember { mutableStateOf(EditorPresentationMode.values().firstOrNull { it.name == preferences.getString(PREF_EDITOR, "FULL_SCREEN") } ?: EditorPresentationMode.FULL_SCREEN) }
     var dashboardDensity by remember { mutableStateOf(DashboardDensity.values().firstOrNull { it.name == preferences.getString(PREF_DENSITY, "COMPACT") } ?: DashboardDensity.COMPACT) }
     var sortByTitle by remember { mutableStateOf(preferences.getString(PREF_DEFAULT_SORT, "RECENT") == "TITLE") }
     var sortByCreated by remember { mutableStateOf(preferences.getString(PREF_DEFAULT_SORT, "RECENT") == "CREATED") }
@@ -833,7 +840,7 @@ private fun NestNoteApp(store: NoteStore) {
                 editorNote?.let { deleteNote(it, closeEditor = true) }
             }) else null
             when (editorMode) {
-                EditorMode.SHEET -> ModalBottomSheet(onDismissRequest = dismissEditor, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)) {
+                EditorPresentationMode.SHEET -> ModalBottomSheet(onDismissRequest = dismissEditor, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)) {
                     NoteEditorContent(editorNote, draftNoteId = editorDraftId ?: NoteStore.allocateNoteId(notes), defaultNoteCategory = defaultNoteCategory, textSize = editorTextSize, showCounts = showEditorCounts, onSave = saveNote, onDismiss = discardEditor, onDelete = editorDeleteAction, onUnsavedChangesChange = { editorHasUnsavedChanges = it }, onRegisterVoiceDiscard = { discardVoiceChanges = it }, modifier = Modifier.fillMaxWidth().imePadding())
                 }
                 EditorMode.FULL_SCREEN -> Dialog(onDismissRequest = dismissEditor, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
@@ -841,7 +848,7 @@ private fun NestNoteApp(store: NoteStore) {
                         NoteEditorContent(editorNote, draftNoteId = editorDraftId ?: NoteStore.allocateNoteId(notes), defaultNoteCategory = defaultNoteCategory, textSize = editorTextSize, showCounts = showEditorCounts, onSave = saveNote, onDismiss = discardEditor, onDelete = editorDeleteAction, onUnsavedChangesChange = { editorHasUnsavedChanges = it }, onRegisterVoiceDiscard = { discardVoiceChanges = it }, fullScreen = true, modifier = Modifier.fillMaxSize())
                     }
                 }
-                EditorMode.QUICK_DIALOG -> Dialog(
+                EditorPresentationMode.QUICK_DIALOG -> Dialog(
                     onDismissRequest = dismissEditor,
                     properties = DialogProperties(usePlatformDefaultWidth = false)
                 ) {
@@ -903,8 +910,8 @@ private fun SettingsScreen(
     onDynamicColorsChange: (Boolean) -> Unit,
     dashboardLayout: DashboardLayout,
     onLayoutChange: (DashboardLayout) -> Unit,
-    editorMode: EditorMode,
-    onEditorModeChange: (EditorMode) -> Unit,
+    editorMode: EditorPresentationMode,
+    onEditorModeChange: (EditorPresentationMode) -> Unit,
     dashboardDensity: DashboardDensity,
     onDensityChange: (DashboardDensity) -> Unit,
     noteColorStyle: NoteColorStyle,
