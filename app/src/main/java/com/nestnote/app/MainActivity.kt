@@ -11,7 +11,7 @@ import android.app.TimePickerDialog
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,6 +61,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -156,6 +158,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun NestNoteApp(store: NoteStore) {
     val context = LocalContext.current
+    val windowSizeClass = (context as? ComponentActivity)?.let { calculateWindowSizeClass(it) }
+    val isExpandedWidth = windowSizeClass?.widthSizeClass != null &&
+        windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
     val preferences = remember { context.getSharedPreferences(PREFS, 0) }
     val initialNoteLoad = remember { store.loadSafely() }
     var notes by remember { mutableStateOf(initialNoteLoad.notes) }
@@ -306,8 +311,10 @@ private fun NestNoteApp(store: NoteStore) {
         }
     }
 
-    // System Back should unwind secondary destinations before leaving the app.
-    BackHandler(enabled = !editorVisible && selectedView != "Home") {
+    // Complete navigation only after the predictive-back gesture is committed.
+    // If the gesture is cancelled, the flow is cancelled and the current destination remains.
+    PredictiveBackHandler(enabled = !editorVisible && selectedView != "Home") { progress ->
+        progress.collect { /* Reserve the progress stream for future destination previews. */ }
         selectedView = "Home"
         search = ""
         searchVisible = false
@@ -316,6 +323,7 @@ private fun NestNoteApp(store: NoteStore) {
     MaterialTheme(colorScheme = scheme) {
         val colors = MaterialTheme.colorScheme
         Scaffold(
+            contentWindowInsets = WindowInsets.safeDrawing,
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             containerColor = colors.background,
             topBar = {
@@ -388,7 +396,15 @@ private fun NestNoteApp(store: NoteStore) {
                 }
             }
         ) { padding ->
-            Column(Modifier.fillMaxSize().padding(padding)) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                Column(
+                    Modifier.fillMaxSize().then(
+                        if (isExpandedWidth) Modifier.widthIn(max = 840.dp) else Modifier
+                    )
+                ) {
                 if (selectedView == "Home" || selectedView == "All notes" || searchVisible) {
                     OutlinedTextField(
                         value = search, onValueChange = { search = it },
@@ -679,6 +695,7 @@ private fun NestNoteApp(store: NoteStore) {
                             }
                         }
                     }
+                }
                 }
             }
         }
