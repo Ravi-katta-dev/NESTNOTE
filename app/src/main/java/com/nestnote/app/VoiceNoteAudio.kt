@@ -588,7 +588,6 @@ internal fun VoiceNoteControls(
                 }
             }
         }
-    }
 }
 
 private fun startVoiceRecording(
