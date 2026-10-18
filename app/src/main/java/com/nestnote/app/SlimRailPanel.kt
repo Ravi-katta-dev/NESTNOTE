@@ -4,6 +4,7 @@ import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,6 +57,7 @@ enum class RailValue {
  * Hoisted state for [SlimRailPanel]. Keep one instance per rail and pass it back
  * to the panel so callers can open/close the panel from other UI.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Stable
 class SlimRailState internal constructor(
     internal val draggableState: AnchoredDraggableState<RailValue>
@@ -71,6 +73,7 @@ class SlimRailState internal constructor(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun rememberSlimRailState(): SlimRailState {
     val density = LocalDensity.current
@@ -79,7 +82,7 @@ fun rememberSlimRailState(): SlimRailState {
             AnchoredDraggableState(
                 initialValue = RailValue.Closed,
                 positionalThreshold = { distance -> distance * 0.5f },
-                velocityThreshold = with(density) { 125.dp.toPx() },
+                velocityThreshold = { with(density) { 125.dp.toPx() } },
                 snapAnimationSpec = spring(
                     dampingRatio = Spring.DampingRatioMediumBouncy,
                     stiffness = Spring.StiffnessMediumLow
@@ -122,6 +125,7 @@ private fun Modifier.slimRailLayout(
  * Content and state are hoisted: this component does not own application data.
  * The panel applies safe-drawing insets so content remains clear of system bars.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SlimRailPanel(
     state: SlimRailState,
