@@ -44,7 +44,8 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.material3:material3:1.5.0-beta01")
+    // Keep Material 3 Expressive APIs compatible with this project's AGP 8.10.1 / API 36 toolchain.
+    implementation("androidx.compose.material3:material3:1.4.0")
     implementation("androidx.compose.material3:material3-window-size-class")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
