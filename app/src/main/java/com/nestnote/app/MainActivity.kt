@@ -1611,7 +1611,7 @@ private fun NoteEditorContent(
                 Modifier.fillMaxSize().padding(editorPadding).padding(horizontal = 22.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Top
                 ) {
                     Spacer(Modifier.height(if (compactDialog) 8.dp else 18.dp))
