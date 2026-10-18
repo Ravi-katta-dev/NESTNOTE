@@ -269,7 +269,7 @@ private fun NestNoteApp(store: NoteStore) {
         themeMode = ThemeMode.SYSTEM
         dynamicColors = true
         dashboardLayout = DashboardLayout.GRID
-        editorMode = EditorMode.FULL_SCREEN
+        editorMode = EditorPresentationMode.FULL_SCREEN
         dashboardDensity = DashboardDensity.COMPACT
         sortByTitle = false
         sortByCreated = false
@@ -843,7 +843,7 @@ private fun NestNoteApp(store: NoteStore) {
                 EditorPresentationMode.SHEET -> ModalBottomSheet(onDismissRequest = dismissEditor, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)) {
                     NoteEditorContent(editorNote, draftNoteId = editorDraftId ?: NoteStore.allocateNoteId(notes), defaultNoteCategory = defaultNoteCategory, textSize = editorTextSize, showCounts = showEditorCounts, onSave = saveNote, onDismiss = discardEditor, onDelete = editorDeleteAction, onUnsavedChangesChange = { editorHasUnsavedChanges = it }, onRegisterVoiceDiscard = { discardVoiceChanges = it }, modifier = Modifier.fillMaxWidth().imePadding())
                 }
-                EditorMode.FULL_SCREEN -> Dialog(onDismissRequest = dismissEditor, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+                EditorPresentationMode.FULL_SCREEN -> Dialog(onDismissRequest = dismissEditor, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
                     Surface(Modifier.fillMaxSize().imePadding(), color = colors.surface) {
                         NoteEditorContent(editorNote, draftNoteId = editorDraftId ?: NoteStore.allocateNoteId(notes), defaultNoteCategory = defaultNoteCategory, textSize = editorTextSize, showCounts = showEditorCounts, onSave = saveNote, onDismiss = discardEditor, onDelete = editorDeleteAction, onUnsavedChangesChange = { editorHasUnsavedChanges = it }, onRegisterVoiceDiscard = { discardVoiceChanges = it }, fullScreen = true, modifier = Modifier.fillMaxSize())
                     }
@@ -1008,7 +1008,7 @@ private fun SettingsScreen(
         item {
             SettingsSection(title = "Note editor", subtitle = "Choose how writing feels") {
                 SettingLabel("Open editor as")
-                EditorMode.values().forEach { mode ->
+                EditorPresentationMode.values().forEach { mode ->
                     ChoiceCard(mode.label, mode.description, editorMode == mode) { onEditorModeChange(mode) }
                 }
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
@@ -1645,7 +1645,7 @@ private fun NoteEditorContent(
                                         )
                                         Text(
                                             item.text.ifBlank { "(empty item)" },
-                                            modifier = Modifier.weight(1f).clickable {
+                                            modifier = Modifier.weight(1f).clickable(enabled = editorMode == EditorMode.Editing) {
                                                 bodyValue = bodyValue.copy(text = NoteText.setChecklistItemChecked(bodyValue.text, item.lineIndex, !item.checked))
                                             },
                                             style = MaterialTheme.typography.bodyMedium.copy(
