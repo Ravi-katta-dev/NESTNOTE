@@ -23,6 +23,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
@@ -1512,14 +1514,14 @@ private fun NoteEditorContent(
                                 contentDescription = if (editorMode == EditorMode.Editing) "Lock note editing" else "Edit note"
                             }
                         ) {
-                            AnimatedContent(targetState = editorMode, label = "editor-lock-icon") { mode ->
+                            AnimatedContent(targetState = editorMode, transitionSpec = { (fadeIn(animationSpec = spring()) + slideInHorizontally(animationSpec = spring()) { it / 3 }) togetherWith (fadeOut(animationSpec = spring()) + slideOutHorizontally(animationSpec = spring()) { -it / 3 }) }, label = "editor-lock-icon") { mode ->
                                 Icon(
                                     imageVector = if (mode == EditorMode.Editing) Icons.Default.Lock else Icons.Default.Edit,
                                     contentDescription = null
                                 )
                             }
                         }
-                        AnimatedContent(targetState = editorMode, label = "editor-save-done") { mode ->
+                        AnimatedContent(targetState = editorMode, transitionSpec = { (fadeIn(animationSpec = spring()) + slideInVertically(animationSpec = spring()) { it / 4 }) togetherWith (fadeOut(animationSpec = spring()) + slideOutVertically(animationSpec = spring()) { -it / 4 }) }, label = "editor-save-done") { mode ->
                             TextButton(
                                 onClick = {
                                     if (mode == EditorMode.Editing) {
