@@ -79,8 +79,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.*
-import androidx.compose.material3.MaterialExpressiveTheme
-import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -178,7 +176,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun NestNoteApp(store: NoteStore) {
     val context = LocalContext.current
@@ -344,7 +342,7 @@ private fun NestNoteApp(store: NoteStore) {
         searchVisible = false
     }
 
-    MaterialExpressiveTheme(colorScheme = scheme, motionScheme = MotionScheme.expressive()) {
+    MaterialTheme(colorScheme = scheme) {
         val colors = MaterialTheme.colorScheme
         Scaffold(
             contentWindowInsets = WindowInsets.safeDrawing,
