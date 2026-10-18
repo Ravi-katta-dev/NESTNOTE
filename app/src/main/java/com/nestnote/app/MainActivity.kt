@@ -37,6 +37,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -1392,400 +1393,402 @@ private fun NoteEditorContent(
             NoteWallpaperArtwork(backgroundIndex, Modifier.fillMaxSize())
             Box(Modifier.fillMaxSize().background(noteTints[colorIndex].copy(alpha = 0.58f)))
         }
-        Column(Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { requestDismiss() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Close editor", tint = if (darkEditor) colors.onSurface else Color(0xFF45434A))
-                }
-                Spacer(Modifier.weight(1f))
-                IconButton(onClick = { pinned = !pinned }) {
-                    Icon(
-                        Icons.Default.PushPin,
-                        contentDescription = if (pinned) "Unpin note" else "Pin note",
-                        tint = if (pinned) accent else if (darkEditor) colors.onSurfaceVariant else Color(0xFF55515C)
-                    )
-                }
-                Box {
-                    IconButton(onClick = { reminderMenu = true }) {
-                        Icon(
-                            Icons.Default.NotificationsNone,
-                            contentDescription = "Choose reminder time",
-                            tint = if (reminder.isNotBlank()) accent else colors.onSurfaceVariant
-                        )
-                    }
-                    DropdownMenu(expanded = reminderMenu, onDismissRequest = { reminderMenu = false }) {
-                        // Hide this preset when three hours from now would cross into tomorrow.
-                        val laterToday = NoteText.laterTodayOrNull(Calendar.getInstance())
-                        if (laterToday != null) {
-                            DropdownMenuItem(text = { Text("Later today") }, onClick = {
-                                reminderMenu = false
-                                NoteText.laterTodayOrNull(Calendar.getInstance())?.let {
-                                    reminder = NoteText.formatReminder(it)
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            topBar = {
+                TopAppBar(
+                    title = { Text(if (title.isBlank()) "New note" else title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    navigationIcon = {
+                        IconButton(onClick = { requestDismiss() }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Close editor")
+                        }
+                    },
+                    actions = {
+                                IconButton(onClick = { pinned = !pinned }) {
+                                    Icon(
+                                        Icons.Default.PushPin,
+                                        contentDescription = if (pinned) "Unpin note" else "Pin note",
+                                        tint = if (pinned) accent else if (darkEditor) colors.onSurfaceVariant else Color(0xFF55515C)
+                                    )
                                 }
-                            })
-                        }
-                        DropdownMenuItem(text = { Text("Tomorrow morning") }, onClick = {
-                            reminderMenu = false; reminder = NoteText.formatReminder(NoteText.tomorrowMorning(Calendar.getInstance()))
-                        })
-                        DropdownMenuItem(text = { Text("Next Monday") }, onClick = {
-                            reminderMenu = false; reminder = NoteText.formatReminder(NoteText.nextMonday(Calendar.getInstance()))
-                        })
-                        DropdownMenuItem(text = { Text("Pick date and time…") }, onClick = { reminderMenu = false; pickReminder() })
-                        if (reminder.isNotBlank()) {
-                            DropdownMenuItem(text = { Text("Remove reminder") }, onClick = { reminderMenu = false; reminder = "" })
-                        }
+                                Box {
+                                    IconButton(onClick = { reminderMenu = true }) {
+                                        Icon(
+                                            Icons.Default.NotificationsNone,
+                                            contentDescription = "Choose reminder time",
+                                            tint = if (reminder.isNotBlank()) accent else colors.onSurfaceVariant
+                                        )
+                                    }
+                                    DropdownMenu(expanded = reminderMenu, onDismissRequest = { reminderMenu = false }) {
+                                        // Hide this preset when three hours from now would cross into tomorrow.
+                                        val laterToday = NoteText.laterTodayOrNull(Calendar.getInstance())
+                                        if (laterToday != null) {
+                                            DropdownMenuItem(text = { Text("Later today") }, onClick = {
+                                                reminderMenu = false
+                                                NoteText.laterTodayOrNull(Calendar.getInstance())?.let {
+                                                    reminder = NoteText.formatReminder(it)
+                                                }
+                                            })
+                                        }
+                                        DropdownMenuItem(text = { Text("Tomorrow morning") }, onClick = {
+                                            reminderMenu = false; reminder = NoteText.formatReminder(NoteText.tomorrowMorning(Calendar.getInstance()))
+                                        })
+                                        DropdownMenuItem(text = { Text("Next Monday") }, onClick = {
+                                            reminderMenu = false; reminder = NoteText.formatReminder(NoteText.nextMonday(Calendar.getInstance()))
+                                        })
+                                        DropdownMenuItem(text = { Text("Pick date and time…") }, onClick = { reminderMenu = false; pickReminder() })
+                                        if (reminder.isNotBlank()) {
+                                            DropdownMenuItem(text = { Text("Remove reminder") }, onClick = { reminderMenu = false; reminder = "" })
+                                        }
+                                    }
+                                }
+                                if (original != null) {
+                                    IconButton(onClick = { onSave(buildNote(archived = true)) }) {
+                                        Icon(Icons.Default.Archive, contentDescription = "Archive note", tint = colors.onSurfaceVariant)
+                                    }
+                                }
+                                IconButton(onClick = {
+                                    appearanceStartColor = colorIndex
+                                    appearanceStartBackground = backgroundIndex
+                                    appearanceVisible = true
+                                }) {
+                                    Icon(Icons.Default.Palette, contentDescription = "Choose note appearance", tint = accent)
+                                }
+                                Box {
+                                    IconButton(onClick = { moreMenu = true }) {
+                                        Icon(Icons.Default.MoreVert, contentDescription = "More editor actions", tint = colors.onSurfaceVariant)
+                                    }
+                                    DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
+                                        DropdownMenuItem(
+                                            text = { Text("Share note") },
+                                            enabled = title.isNotBlank() || body.isNotBlank(),
+                                            onClick = { moreMenu = false; shareNote() },
+                                            leadingIcon = { Icon(Icons.Default.Share, null) }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Copy text") },
+                                            enabled = title.isNotBlank() || body.isNotBlank(),
+                                            onClick = { moreMenu = false; copyNote() },
+                                            leadingIcon = { Icon(Icons.Default.ContentCopy, null) }
+                                        )
+                                    }
+                                }
+                        TextButton(
+                            onClick = { if (title.isNotBlank()) onSave(buildNote()) },
+                            enabled = title.isNotBlank()
+                        ) { Text("Save") }
                     }
-                }
-                if (original != null) {
-                    IconButton(onClick = { onSave(buildNote(archived = true)) }) {
-                        Icon(Icons.Default.Archive, contentDescription = "Archive note", tint = colors.onSurfaceVariant)
-                    }
-                }
-                IconButton(onClick = {
-                    appearanceStartColor = colorIndex
-                    appearanceStartBackground = backgroundIndex
-                    appearanceVisible = true
-                }) {
-                    Icon(Icons.Default.Palette, contentDescription = "Choose note appearance", tint = accent)
-                }
-                Box {
-                    IconButton(onClick = { moreMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More editor actions", tint = colors.onSurfaceVariant)
-                    }
-                    DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Share note") },
-                            enabled = title.isNotBlank() || body.isNotBlank(),
-                            onClick = { moreMenu = false; shareNote() },
-                            leadingIcon = { Icon(Icons.Default.Share, null) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Copy text") },
-                            enabled = title.isNotBlank() || body.isNotBlank(),
-                            onClick = { moreMenu = false; copyNote() },
-                            leadingIcon = { Icon(Icons.Default.ContentCopy, null) }
-                        )
-                    }
-                }
-            }
-
-            Column(
-                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
-                    .padding(horizontal = 22.dp),
-                verticalArrangement = Arrangement.Top
-            ) {
-                Spacer(Modifier.height(if (compactDialog) 8.dp else 18.dp))
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    modifier = Modifier.fillMaxWidth().focusRequester(titleFocus),
-                    placeholder = { Text("Title") },
-                    textStyle = MaterialTheme.typography.headlineSmall.copy(
-                        fontSize = textSize.titleSp.sp, lineHeight = (textSize.titleSp * 1.26f).sp, fontWeight = FontWeight.Normal
-                    ),
-                    singleLine = false,
-                    shape = RoundedCornerShape(0.dp),
-                    colors = fieldColors,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                 )
-                val checklistItems = NoteText.checklistItems(bodyValue.text)
-                if (checklistItems.isNotEmpty()) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        color = accent.copy(alpha = 0.07f),
-                        border = BorderStroke(1.dp, accent.copy(alpha = 0.18f))
-                    ) {
-                        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                            Text("Checklist", style = MaterialTheme.typography.titleSmall, color = ink)
-                            checklistItems.forEach { item ->
+            },
+            bottomBar = {
+                Column(Modifier.imePadding()) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactDialog) 8.dp else 14.dp, vertical = 6.dp),
+                                shape = RoundedCornerShape(18.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+                            ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp),
+                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp, vertical = 2.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Checkbox(
-                                        checked = item.checked,
-                                        modifier = Modifier.semantics {
-                                            contentDescription = "${item.text.ifBlank { "Empty checklist item" }}, ${if (item.checked) "completed" else "not completed"}"
-                                        },
-                                        onCheckedChange = { checked ->
-                                            bodyValue = bodyValue.copy(text = NoteText.setChecklistItemChecked(bodyValue.text, item.lineIndex, checked))
-                                        }
-                                    )
+                                    IconButton(
+                                        onClick = { applyLineEdit { text, cursor -> NoteText.cycleChecklist(text, cursor) } },
+                                        modifier = Modifier.semantics { contentDescription = "Insert checklist item" }
+                                    ) {
+                                        Icon(Icons.Default.CheckBox, contentDescription = "Insert checklist item", tint = accent)
+                                    }
+                                    IconButton(
+                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleBullet(text, cursor) } },
+                                        modifier = Modifier.semantics { contentDescription = "Insert bullet point" }
+                                    ) {
+                                        Icon(Icons.Default.FormatListBulleted, contentDescription = "Insert bullet point", tint = accent)
+                                    }
+                                    TextButton(
+                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleNumberedList(text, cursor) } },
+                                        modifier = Modifier.semantics { contentDescription = "Toggle numbered list" },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("1.", style = MaterialTheme.typography.labelLarge, color = accent)
+                                    }
+                                    TextButton(
+                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleBlockquote(text, cursor) } },
+                                        modifier = Modifier.semantics { contentDescription = "Toggle blockquote" },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("Quote", style = MaterialTheme.typography.labelLarge, color = accent)
+                                    }
+                                    TextButton(
+                                        onClick = { applyMarkdownLink() },
+                                        modifier = Modifier.semantics { contentDescription = "Insert Markdown link" },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("Link", style = MaterialTheme.typography.labelLarge, color = accent)
+                                    }
+                                    TextButton(
+                                        onClick = { applyInlineEdit("**") },
+                                        modifier = Modifier.semantics { contentDescription = "Bold selected text" },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("B", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = accent)
+                                    }
+                                    TextButton(
+                                        onClick = { applyInlineEdit("_") },
+                                        modifier = Modifier.semantics { contentDescription = "Italic selected text" },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("I", style = MaterialTheme.typography.labelLarge.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic), color = accent)
+                                    }
+                                    TextButton(
+                                        onClick = { applyInlineEdit("~~") },
+                                        modifier = Modifier.semantics { contentDescription = "Strikethrough selected text" },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("S", style = MaterialTheme.typography.labelLarge.copy(textDecoration = TextDecoration.LineThrough), color = accent)
+                                    }
+                                    TextButton(
+                                        onClick = { applyInlineEdit("`") },
+                                        modifier = Modifier.semantics { contentDescription = "Inline code selected text" },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("``", style = MaterialTheme.typography.labelLarge, color = accent)
+                                    }
+                                    TextButton(
+                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 1) } },
+                                        modifier = Modifier.semantics { contentDescription = "Toggle level one heading on current line" },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("H1", style = MaterialTheme.typography.labelLarge, color = accent)
+                                    }
+                                    TextButton(
+                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 2) } },
+                                        modifier = Modifier.semantics { contentDescription = "Toggle level two heading on current line" },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("H2", style = MaterialTheme.typography.labelLarge, color = accent)
+                                    }
+                                    TextButton(
+                                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 3) } },
+                                        modifier = Modifier.semantics { contentDescription = "Toggle level three heading on current line" },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("H3", style = MaterialTheme.typography.labelLarge, color = accent)
+                                    }
+                                }
+                            }
+                            VoiceNoteControls(
+                                noteId = voiceNoteId,
+                                onAttachmentCountChanged = { voiceAttachmentCount = it },
+                                onVoiceAttachmentAdded = { voiceChangesPending = true },
+                                onDiscardHandlerReady = onRegisterVoiceDiscard
+                            )
+                            if (showCounts) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val words = NoteText.wordCount(body)
+                                    val minutes = NoteText.readingMinutes(words)
                                     Text(
-                                        item.text.ifBlank { "(empty item)" },
-                                        modifier = Modifier.weight(1f).clickable {
-                                            bodyValue = bodyValue.copy(text = NoteText.setChecklistItemChecked(bodyValue.text, item.lineIndex, !item.checked))
+                                        buildString {
+                                            append(if (words == 1) "1 word" else "$words words")
+                                            append(" · ${body.length} characters")
+                                            if (minutes > 0) append(" · $minutes min read")
                                         },
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None
-                                        ),
-                                        color = if (item.checked) muted else ink
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = muted,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
+                                }
+                            }
+                }
+            }
+        ) { editorPadding ->
+            Column(
+                Modifier.fillMaxSize().padding(editorPadding).padding(horizontal = 22.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Spacer(Modifier.height(if (compactDialog) 8.dp else 18.dp))
+                    BasicTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    modifier = Modifier.fillMaxWidth().focusRequester(titleFocus).padding(vertical = 8.dp),
+                    textStyle = MaterialTheme.typography.headlineSmall.copy(
+                        fontSize = textSize.titleSp.sp, lineHeight = (textSize.titleSp * 1.26f).sp,
+                        fontWeight = FontWeight.Normal, color = ink
+                    ),
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (title.isEmpty()) Text("Title", style = MaterialTheme.typography.headlineSmall, color = muted)
+                            innerTextField()
+                        }
+                    }
+                )
+                    val checklistItems = NoteText.checklistItems(bodyValue.text)
+                    if (checklistItems.isNotEmpty()) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = accent.copy(alpha = 0.07f),
+                            border = BorderStroke(1.dp, accent.copy(alpha = 0.18f))
+                        ) {
+                            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Text("Checklist", style = MaterialTheme.typography.titleSmall, color = ink)
+                                checklistItems.forEach { item ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Checkbox(
+                                            checked = item.checked,
+                                            modifier = Modifier.semantics {
+                                                contentDescription = "${item.text.ifBlank { "Empty checklist item" }}, ${if (item.checked) "completed" else "not completed"}"
+                                            },
+                                            onCheckedChange = { checked ->
+                                                bodyValue = bodyValue.copy(text = NoteText.setChecklistItemChecked(bodyValue.text, item.lineIndex, checked))
+                                            }
+                                        )
+                                        Text(
+                                            item.text.ifBlank { "(empty item)" },
+                                            modifier = Modifier.weight(1f).clickable {
+                                                bodyValue = bodyValue.copy(text = NoteText.setChecklistItemChecked(bodyValue.text, item.lineIndex, !item.checked))
+                                            },
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                textDecoration = if (item.checked) TextDecoration.LineThrough else TextDecoration.None
+                                            ),
+                                            color = if (item.checked) muted else ink
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = { previewVisible = !previewVisible }) {
-                        Text(if (previewVisible) "Edit Markdown" else "Preview Markdown")
-                    }
-                }
-                if (previewVisible) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        color = colors.surface.copy(alpha = 0.82f),
-                        border = BorderStroke(1.dp, colors.outlineVariant)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
                     ) {
-                        AndroidView(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
-                            factory = { viewContext ->
-                                TextView(viewContext).apply {
-                                    setTextColor(ink.toArgb())
-                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, markdownBodySize)
-                                    setTextIsSelectable(true)
-                                    movementMethod = LinkMovementMethod.getInstance()
-                                }
-                            },
-                            update = { textView ->
-                                textView.setTextColor(ink.toArgb())
-                                textView.textSize = markdownBodySize
-                                textView.text = MarkdownPreview.toSpanned(body)
-                            }
-                        )
+                        TextButton(onClick = { previewVisible = !previewVisible }) {
+                            Text(if (previewVisible) "Edit Markdown" else "Preview Markdown")
+                        }
                     }
-                    Text(
-                        "Preview supports basic headings, emphasis, inline code, links and simple lists.",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = muted
-                    )
-                } else {
-                    OutlinedTextField(
+                    if (previewVisible) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = colors.surface.copy(alpha = 0.82f),
+                            border = BorderStroke(1.dp, colors.outlineVariant)
+                        ) {
+                            AndroidView(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                                factory = { viewContext ->
+                                    TextView(viewContext).apply {
+                                        setTextColor(ink.toArgb())
+                                        setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, markdownBodySize)
+                                        setTextIsSelectable(true)
+                                        movementMethod = LinkMovementMethod.getInstance()
+                                    }
+                                },
+                                update = { textView ->
+                                    textView.setTextColor(ink.toArgb())
+                                    textView.textSize = markdownBodySize
+                                    textView.text = MarkdownPreview.toSpanned(body)
+                                }
+                            )
+                        }
+                        Text(
+                            "Preview supports basic headings, emphasis, inline code, links and simple lists.",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = muted
+                        )
+                    } else {
+                        BasicTextField(
                         value = bodyValue,
                         onValueChange = { onBodyChange(it) },
-                        modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
-                        placeholder = { Text("Note") },
+                        modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 3.dp),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            fontSize = textSize.bodySp.sp, lineHeight = (textSize.bodySp * 1.45f).sp
+                            fontSize = textSize.bodySp.sp, lineHeight = (textSize.bodySp * 1.45f).sp,
+                            color = ink
                         ),
-                        minLines = if (fullScreen) 4 else if (compactDialog) 3 else 4,
-                        shape = RoundedCornerShape(0.dp),
-                        colors = fieldColors,
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
-                    )
-                }
-
-                Spacer(Modifier.height(if (compactDialog) 6.dp else 12.dp))
-                Text("Category", style = MaterialTheme.typography.labelMedium, color = muted, modifier = Modifier.padding(horizontal = 12.dp))
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    categories.forEach { item ->
-                        FilterChip(
-                            selected = category == item,
-                            onClick = { category = item },
-                            label = { Text(item) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                containerColor = colors.surfaceVariant.copy(alpha = if (darkEditor) 0.72f else 0.55f),
-                                labelColor = ink,
-                                selectedContainerColor = accent,
-                                selectedLabelColor = colors.onPrimary
-                            ),
-                            border = BorderStroke(1.dp, colors.outlineVariant)
-                        )
-                    }
-                }
-                if (reminder.isNotBlank()) {
-                    Surface(
-                        onClick = { pickReminder() },
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp).fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        color = colors.surfaceVariant.copy(alpha = if (darkEditor) 0.72f else 0.6f)
-                    ) {
-                        Row(
-                            Modifier.padding(start = 14.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.NotificationsNone, contentDescription = null, tint = accent)
-                            Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                                Text("Reminder · $reminder", style = MaterialTheme.typography.bodyMedium, color = ink)
-                                Text(
-                                    "Saved as a reminder time only — notifications aren’t enabled yet.",
-                                    style = MaterialTheme.typography.bodySmall, color = muted
-                                )
+                        minLines = 1,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                        decorationBox = { innerTextField ->
+                            Box(Modifier.fillMaxWidth()) {
+                                if (bodyValue.text.isEmpty()) Text("Note", style = MaterialTheme.typography.bodyLarge, color = muted)
+                                innerTextField()
                             }
-                            IconButton(onClick = { reminder = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear reminder", tint = colors.onSurfaceVariant)
+                        }
+                    )
+                    }
+    
+                    Spacer(Modifier.height(if (compactDialog) 6.dp else 12.dp))
+                    Text("Category", style = MaterialTheme.typography.labelMedium, color = muted, modifier = Modifier.padding(horizontal = 12.dp))
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        categories.forEach { item ->
+                            FilterChip(
+                                selected = category == item,
+                                onClick = { category = item },
+                                label = { Text(item) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    containerColor = colors.surfaceVariant.copy(alpha = if (darkEditor) 0.72f else 0.55f),
+                                    labelColor = ink,
+                                    selectedContainerColor = accent,
+                                    selectedLabelColor = colors.onPrimary
+                                ),
+                                border = BorderStroke(1.dp, colors.outlineVariant)
+                            )
+                        }
+                    }
+                    if (reminder.isNotBlank()) {
+                        Surface(
+                            onClick = { pickReminder() },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp).fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            color = colors.surfaceVariant.copy(alpha = if (darkEditor) 0.72f else 0.6f)
+                        ) {
+                            Row(
+                                Modifier.padding(start = 14.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.NotificationsNone, contentDescription = null, tint = accent)
+                                Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                                    Text("Reminder · $reminder", style = MaterialTheme.typography.bodyMedium, color = ink)
+                                    Text(
+                                        "Saved as a reminder time only — notifications aren’t enabled yet.",
+                                        style = MaterialTheme.typography.bodySmall, color = muted
+                                    )
+                                }
+                                IconButton(onClick = { reminder = "" }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Clear reminder", tint = colors.onSurfaceVariant)
+                                }
                             }
                         }
                     }
+                    if (original != null) {
+                        val format = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
+                        Text(
+                            "Edited ${format.format(Date(original.updated))} · Created ${SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(original.created))}",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = muted
+                        )
+                    }
+                    Spacer(Modifier.height(if (compactDialog) 4.dp else 8.dp))
                 }
-                if (original != null) {
-                    val format = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
-                    Text(
-                        "Edited ${format.format(Date(original.updated))} · Created ${SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(original.created))}",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = muted
-                    )
-                }
-                Spacer(Modifier.height(if (compactDialog) 4.dp else 8.dp))
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactDialog) 8.dp else 14.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { applyLineEdit { text, cursor -> NoteText.cycleChecklist(text, cursor) } },
-                        modifier = Modifier.semantics { contentDescription = "Insert checklist item" }
-                    ) {
-                        Icon(Icons.Default.CheckBox, contentDescription = "Insert checklist item", tint = accent)
-                    }
-                    IconButton(
-                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleBullet(text, cursor) } },
-                        modifier = Modifier.semantics { contentDescription = "Insert bullet point" }
-                    ) {
-                        Icon(Icons.Default.FormatListBulleted, contentDescription = "Insert bullet point", tint = accent)
-                    }
-                    TextButton(
-                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleNumberedList(text, cursor) } },
-                        modifier = Modifier.semantics { contentDescription = "Toggle numbered list" },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("1.", style = MaterialTheme.typography.labelLarge, color = accent)
-                    }
-                    TextButton(
-                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleBlockquote(text, cursor) } },
-                        modifier = Modifier.semantics { contentDescription = "Toggle blockquote" },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("Quote", style = MaterialTheme.typography.labelLarge, color = accent)
-                    }
-                    TextButton(
-                        onClick = { applyMarkdownLink() },
-                        modifier = Modifier.semantics { contentDescription = "Insert Markdown link" },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("Link", style = MaterialTheme.typography.labelLarge, color = accent)
-                    }
-                    TextButton(
-                        onClick = { applyInlineEdit("**") },
-                        modifier = Modifier.semantics { contentDescription = "Bold selected text" },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("B", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = accent)
-                    }
-                    TextButton(
-                        onClick = { applyInlineEdit("_") },
-                        modifier = Modifier.semantics { contentDescription = "Italic selected text" },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("I", style = MaterialTheme.typography.labelLarge.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic), color = accent)
-                    }
-                    TextButton(
-                        onClick = { applyInlineEdit("~~") },
-                        modifier = Modifier.semantics { contentDescription = "Strikethrough selected text" },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("S", style = MaterialTheme.typography.labelLarge.copy(textDecoration = TextDecoration.LineThrough), color = accent)
-                    }
-                    TextButton(
-                        onClick = { applyInlineEdit("`") },
-                        modifier = Modifier.semantics { contentDescription = "Inline code selected text" },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("``", style = MaterialTheme.typography.labelLarge, color = accent)
-                    }
-                    TextButton(
-                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 1) } },
-                        modifier = Modifier.semantics { contentDescription = "Toggle level one heading on current line" },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("H1", style = MaterialTheme.typography.labelLarge, color = accent)
-                    }
-                    TextButton(
-                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 2) } },
-                        modifier = Modifier.semantics { contentDescription = "Toggle level two heading on current line" },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("H2", style = MaterialTheme.typography.labelLarge, color = accent)
-                    }
-                    TextButton(
-                        onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 3) } },
-                        modifier = Modifier.semantics { contentDescription = "Toggle level three heading on current line" },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("H3", style = MaterialTheme.typography.labelLarge, color = accent)
-                    }
-                }
-            }
-            VoiceNoteControls(
-                noteId = voiceNoteId,
-                onAttachmentCountChanged = { voiceAttachmentCount = it },
-                onVoiceAttachmentAdded = { voiceChangesPending = true },
-                onDiscardHandlerReady = onRegisterVoiceDiscard
-            )
-            if (showCounts) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val words = NoteText.wordCount(body)
-                    val minutes = NoteText.readingMinutes(words)
-                    Text(
-                        buildString {
-                            append(if (words == 1) "1 word" else "$words words")
-                            append(" · ${body.length} characters")
-                            if (minutes > 0) append(" · $minutes min read")
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = muted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-            HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.6f))
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactDialog) 8.dp else 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (onDelete != null) TextButton(onClick = { deleteConfirmation = true }) { Text("Delete") }
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = { requestDismiss() }, colors = ButtonDefaults.textButtonColors(contentColor = accent)) { Text("Cancel") }
-                Button(
-                    onClick = { if (title.isNotBlank()) onSave(buildNote()) },
-                    enabled = title.isNotBlank(),
-                    shape = RoundedCornerShape(18.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = accent,
-                        contentColor = colors.onPrimary,
-                        disabledContainerColor = colors.surfaceVariant,
-                        disabledContentColor = colors.onSurfaceVariant
-                    )
-                ) { Text("Save note") }
             }
         }
+
     }
 
     fun dismissAppearance(discardDraft: Boolean) {
