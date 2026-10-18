@@ -24,6 +24,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -103,6 +104,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
@@ -121,6 +123,25 @@ import kotlinx.coroutines.flow.collect
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 private val fallbackAccent = Color(0xFF625B71)
+
+// Stable Material 3 expressive styling: generous, varied corner geometry and a
+// typography hierarchy, without opting into the experimental M3 Expressive APIs.
+private val nestNoteShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomEnd = 18.dp, bottomStart = 6.dp),
+    medium = RoundedCornerShape(22.dp),
+    large = RoundedCornerShape(28.dp),
+    extraLarge = RoundedCornerShape(36.dp)
+)
+
+private val nestNoteTypography = Typography(
+    displaySmall = TextStyle(fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp),
+    headlineSmall = TextStyle(fontWeight = FontWeight.SemiBold, letterSpacing = (-0.25).sp),
+    titleLarge = TextStyle(fontWeight = FontWeight.Bold, letterSpacing = (-0.15).sp),
+    titleMedium = TextStyle(fontWeight = FontWeight.SemiBold, letterSpacing = 0.1.sp),
+    bodyLarge = TextStyle(letterSpacing = 0.15.sp, lineHeight = 26.sp),
+    labelLarge = TextStyle(fontWeight = FontWeight.SemiBold, letterSpacing = 0.2.sp)
+)
 // Distinct, slightly richer swatches remain soft while being easy to tell apart.
 private val noteAccents = listOf(
     Color(0xFFF4EEE3), Color(0xFFE88C98), Color(0xFFE98555),
@@ -342,7 +363,15 @@ private fun NestNoteApp(store: NoteStore) {
         searchVisible = false
     }
 
-    MaterialTheme(colorScheme = scheme) {
+    val expressiveScheme = scheme.copy(
+        tertiary = if (dark) Color(0xFF9CCBC1) else Color(0xFF426F67)
+    )
+
+    MaterialTheme(
+        colorScheme = expressiveScheme,
+        typography = nestNoteTypography,
+        shapes = nestNoteShapes
+    ) {
         val colors = MaterialTheme.colorScheme
         Scaffold(
             contentWindowInsets = WindowInsets.safeDrawing,
@@ -1512,7 +1541,7 @@ private fun NoteEditorContent(
                                 contentDescription = if (editorMode == EditorMode.Editing) "Lock note editing" else "Edit note"
                             }
                         ) {
-                            AnimatedContent(targetState = editorMode, transitionSpec = { (fadeIn(animationSpec = spring()) + slideInHorizontally(animationSpec = spring()) { it / 3 }) togetherWith (fadeOut(animationSpec = spring()) + slideOutHorizontally(animationSpec = spring()) { -it / 3 }) }, label = "editor-lock-icon") { mode ->
+                            AnimatedContent(targetState = editorMode, transitionSpec = { (fadeIn(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + slideInHorizontally(animationSpec = spring()) { it / 3 }) togetherWith (fadeOut(animationSpec = spring()) + slideOutHorizontally(animationSpec = spring()) { -it / 3 }) }, label = "editor-lock-icon") { mode ->
                                 Icon(
                                     imageVector = if (mode == EditorMode.Editing) Icons.Default.Lock else Icons.Default.Edit,
                                     contentDescription = null
