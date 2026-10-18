@@ -466,6 +466,7 @@ internal fun VoiceNoteControls(
                     Text("Stop")
                 }
                 }
+                }
             if (recording) {
                 val minutes = elapsedRecordingSeconds / 60
                 val seconds = elapsedRecordingSeconds % 60
