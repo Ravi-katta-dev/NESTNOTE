@@ -67,8 +67,8 @@ class SlimRailState internal constructor(
     val targetValue: RailValue get() = draggableState.targetValue
     val isOpen: Boolean get() = currentValue == RailValue.Open
 
-    suspend fun open() { draggableState.settle(Float.MAX_VALUE) }
-    suspend fun close() { draggableState.settle(-Float.MAX_VALUE) }
+    suspend fun open() { draggableState.settle(-Float.MAX_VALUE) }
+    suspend fun close() { draggableState.settle(Float.MAX_VALUE) }
     suspend fun toggle() {
         if (targetValue == RailValue.Open) close() else open()
     }
