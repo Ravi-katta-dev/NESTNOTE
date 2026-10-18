@@ -589,6 +589,7 @@ internal fun VoiceNoteControls(
         }
     }
 }
+}
 
 private fun startVoiceRecording(
     context: Context,
