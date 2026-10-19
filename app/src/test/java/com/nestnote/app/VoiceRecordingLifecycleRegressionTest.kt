@@ -140,4 +140,40 @@ class VoiceRecordingLifecycleRegressionTest {
         )
         assertEquals("Retry clip", manifest.list(noteId, store).single().displayName)
     }
+
+    @Test
+    fun multipleAttachedClipsPersistIndependentlyWithTheirOwnMetadata() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val root = Files.createTempDirectory("nestnote-multiple-attached-clips").toFile()
+        val key = newKey()
+        val store = VoiceAttachmentStore(context, { key }, root)
+        val manifest = VoiceAttachmentManifest(context, root)
+        val noteId = 813L
+        val firstBytes = byteArrayOf(1, 2, 3, 4)
+        val secondBytes = byteArrayOf(9, 8, 7, 6, 5)
+
+        val first = store.save(noteId, "first_clip", ByteArrayInputStream(firstBytes))
+        manifest.put(
+            VoiceAttachmentMetadata(noteId, first.attachmentId, 10L, 100L, first.encryptedSizeBytes, "First clip"),
+            store
+        )
+        val second = store.save(noteId, "second_clip", ByteArrayInputStream(secondBytes))
+        manifest.put(
+            VoiceAttachmentMetadata(noteId, second.attachmentId, 20L, 200L, second.encryptedSizeBytes, "Second clip"),
+            store
+        )
+
+        val attached = manifest.list(noteId, store)
+        assertEquals(listOf("First clip", "Second clip"), attached.map { it.displayName })
+        assertEquals(2, attached.map { it.attachmentId }.distinct().size)
+        assertArrayEquals(firstBytes, store.read(noteId, first.attachmentId))
+        assertArrayEquals(secondBytes, store.read(noteId, second.attachmentId))
+
+        // Re-open the store and manifest from the same backing directory to verify persistence.
+        val reopenedStore = VoiceAttachmentStore(context, { key }, root)
+        val reopenedManifest = VoiceAttachmentManifest(context, root)
+        assertEquals(listOf("First clip", "Second clip"), reopenedManifest.list(noteId, reopenedStore).map { it.displayName })
+        assertArrayEquals(firstBytes, reopenedStore.read(noteId, first.attachmentId))
+        assertArrayEquals(secondBytes, reopenedStore.read(noteId, second.attachmentId))
+    }
 }
