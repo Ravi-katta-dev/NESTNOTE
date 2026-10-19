@@ -1802,10 +1802,6 @@ private fun NoteEditorContent(
         }
         appearanceVisible = false
     }
-    PredictiveBackHandler(enabled = appearanceVisible) { progress ->
-        progress.collect { /* Keep the appearance panel until the system back gesture commits. */ }
-        dismissAppearance(discardDraft = true)
-    }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // Keep the writing canvas dominant on phones, while giving the appearance
         // controls a little more room on tablets and other wide editor windows.
