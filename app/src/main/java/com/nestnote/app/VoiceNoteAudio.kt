@@ -779,7 +779,7 @@ private fun decodePcmWav(bytes: ByteArray): ByteArray {
         offset += 8 + length + (length and 1)
     }
     if (format != 1 || channels !in 1..2 || bits != 16 || sampleRate <= 0 || dataOffset < 0 || dataLength < channels * 2) throw IOException("Unsupported WAV format. Use uncompressed 16-bit mono or stereo WAV.")
-    val frames = dataLength / (channels * 2); val outFrames = (frames.toLong() * VOICE_SAMPLE_RATE / sampleRate).coerceAtLeast(1).coerceAtMost(Int.MAX_VALUE / 2).toInt()
+    val frames = dataLength / (channels * 2); val outFrames = (frames.toLong() * VOICE_SAMPLE_RATE / sampleRate).coerceAtLeast(1L).coerceAtMost((Int.MAX_VALUE / 2).toLong()).toInt()
     val input = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN); val output = java.nio.ByteBuffer.allocate(outFrames * 2).order(java.nio.ByteOrder.LITTLE_ENDIAN)
     repeat(outFrames) { i -> val frame = ((i.toLong() * sampleRate) / VOICE_SAMPLE_RATE).toInt().coerceAtMost(frames - 1); val left = input.getShort(dataOffset + frame * channels * 2).toInt(); val sample = if (channels == 2) (left + input.getShort(dataOffset + frame * 4 + 2).toInt()) / 2 else left; output.putShort(i * 2, sample.toShort()) }
     return output.array()
