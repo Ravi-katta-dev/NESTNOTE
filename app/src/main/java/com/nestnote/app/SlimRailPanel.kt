@@ -80,18 +80,27 @@ fun rememberSlimRailState(): SlimRailState {
     val density = LocalDensity.current
     val decayAnimationSpec = rememberSplineBasedDecay<Float>()
     val state = remember(density, decayAnimationSpec) {
-        SlimRailState(
-            AnchoredDraggableState(
-                initialValue = RailValue.Closed,
-                positionalThreshold = { distance -> distance * 0.5f },
-                velocityThreshold = { with(density) { 125.dp.toPx() } },
-                snapAnimationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                ),
-                decayAnimationSpec = decayAnimationSpec
-            )
+        val draggableState = AnchoredDraggableState(
+            initialValue = RailValue.Closed,
+            positionalThreshold = { distance -> distance * 0.5f },
+            velocityThreshold = { with(density) { 125.dp.toPx() } },
+            snapAnimationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            ),
+            decayAnimationSpec = decayAnimationSpec
         )
+        // AnchoredDraggable may read its offset before the first measure pass.
+        // Seed valid default anchors up front; slimRailLayout replaces these
+        // with the actual measured anchors as soon as layout runs.
+        val initialClosedOffset = with(density) { (304.dp - 24.dp).toPx() }
+        draggableState.updateAnchors(
+            DraggableAnchors {
+                RailValue.Closed at initialClosedOffset
+                RailValue.Open at 0f
+            }
+        )
+        SlimRailState(draggableState)
     }
     return state
 }
@@ -113,7 +122,14 @@ private fun Modifier.slimRailLayout(
             RailValue.Open at 0f
         }
     )
-    val currentOffset = state.draggableState.offset
+    // Anchors are seeded before composition, but retain a defensive fallback
+    // for unusual state restoration or future changes to anchor initialization.
+    val measuredOffset = try {
+        state.draggableState.offset
+    } catch (_: IllegalStateException) {
+        Float.NaN
+    }
+    val currentOffset = measuredOffset
         .takeIf { it.isFinite() }
         ?.roundToInt() ?: closedOffset.roundToInt()
     layout(placeable.width, placeable.height) {
