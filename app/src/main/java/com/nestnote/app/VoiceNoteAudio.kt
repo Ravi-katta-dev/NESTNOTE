@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioManager
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.net.Uri
@@ -311,12 +313,12 @@ internal fun VoiceNoteControls(
                         recordingSession = null
                         recording = false
                         recordingPaused = false
-                        if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
+                        if (requestedAudioFocus) abandonVoiceAudioFocus(audioManager, audioFocusListener)
                         requestedAudioFocus = false
                         audioFocusListener = null
                         status = message
                     },
-                    { startingRecording = false; recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener); requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted. Tap Record to try again." })
+                    { startingRecording = false; recordingSession?.stop(); recordingSession = null; recording = false; recordingPaused = false; if (requestedAudioFocus) abandonVoiceAudioFocus(audioManager, audioFocusListener); requestedAudioFocus = false; audioFocusListener = null; status = "Recording stopped because audio focus was interrupted. Tap Record to try again." })
             }
             VoicePermissionDecision.SHOW_PERMISSION_GUIDANCE -> {
                 pendingPermission = false
@@ -334,7 +336,7 @@ internal fun VoiceNoteControls(
         recording = false
         recordingPaused = false
         if (requestedAudioFocus) {
-            audioManager.abandonAudioFocus(audioFocusListener)
+            abandonVoiceAudioFocus(audioManager, audioFocusListener)
             requestedAudioFocus = false
         }
         status = "Finishing encrypted recording…"
@@ -349,7 +351,7 @@ internal fun VoiceNoteControls(
         seekingPlayback = false
         playbackPaused = false
         if (requestedAudioFocus) {
-            audioManager.abandonAudioFocus(audioFocusListener)
+            abandonVoiceAudioFocus(audioManager, audioFocusListener)
             requestedAudioFocus = false
         }
     }
@@ -377,7 +379,7 @@ internal fun VoiceNoteControls(
                 recordingSession?.stop()
                 recording = false
                 recordingPaused = false
-                if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
+                if (requestedAudioFocus) abandonVoiceAudioFocus(audioManager, audioFocusListener)
                 requestedAudioFocus = false
                 audioFocusListener = null
                 playbackSession?.stop()
@@ -392,7 +394,7 @@ internal fun VoiceNoteControls(
             lifecycleOwner.lifecycle.removeObserver(observer)
             recordingSession?.stop()
             playbackSession?.stop()
-            if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
+            if (requestedAudioFocus) abandonVoiceAudioFocus(audioManager, audioFocusListener)
         }
     }
 
@@ -485,7 +487,7 @@ internal fun VoiceNoteControls(
                                     recordingSession = null
                                     recording = false
                                     recordingPaused = false
-                                    if (requestedAudioFocus) audioManager.abandonAudioFocus(audioFocusListener)
+                                    if (requestedAudioFocus) abandonVoiceAudioFocus(audioManager, audioFocusListener)
                                     requestedAudioFocus = false
                                     audioFocusListener = null
                                     status = message
@@ -587,7 +589,7 @@ internal fun VoiceNoteControls(
                                                 playbackDurationMs = durationMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
                                             }) { error ->
                                                 playingId = null; playbackSession = null; playbackPaused = false
-                                                audioManager.abandonAudioFocus(focus); audioFocusListener = null; requestedAudioFocus = false
+                                                abandonVoiceAudioFocus(audioManager, focus); audioFocusListener = null; requestedAudioFocus = false
                                                 status = error ?: "Preview finished."
                                             }
                                             playbackSession = player
@@ -683,7 +685,7 @@ internal fun VoiceNoteControls(
                                                     playingId = null
                                                     playbackSession = null
                                                     playbackPaused = false
-                                                    audioManager.abandonAudioFocus(focus)
+                                                    abandonVoiceAudioFocus(audioManager, focus)
                                                     audioFocusListener = null
                                                     requestedAudioFocus = false
                                                     status = error ?: "Playback finished."
@@ -693,7 +695,7 @@ internal fun VoiceNoteControls(
                                                     playbackSession = null
                                                     playingId = null
                                                     playbackPaused = false
-                                                    audioManager.abandonAudioFocus(focus)
+                                                    abandonVoiceAudioFocus(audioManager, focus)
                                                     audioFocusListener = null
                                                     requestedAudioFocus = false
                                                     status = error.message ?: "Couldn't start playback. Try again."
@@ -819,7 +821,7 @@ private fun startVoiceRecording(
     // wait for finalization and remove a file even if its UI callback has not run yet.
     addedIds.add(id)
     val session = EncryptedPcmRecording(context, store, noteId, id) { result ->
-        audioManager.abandonAudioFocus(focusListener)
+        abandonVoiceAudioFocus(audioManager, focusListener)
         // Discard can finish before this main-thread callback is dispatched. Never let a
         // late successful worker callback recreate the manifest entry for discarded audio.
         if (id !in addedIds) {
@@ -845,12 +847,19 @@ private fun startVoiceRecording(
         runCatching { session.discardAndWait() }
         runCatching { store.delete(noteId, id) }
         runCatching { manifest.remove(noteId, id) }
-        audioManager.abandonAudioFocus(focusListener)
+        abandonVoiceAudioFocus(audioManager, focusListener)
         onStatus(error.message ?: "Couldn't start recording")
     }
 }
 
-@Suppress("DEPRECATION")
+// Keep the exact request paired with its listener so every lifecycle path releases
+// the same focus request that was granted. minSdk is 26, so the request-based API is
+// available on every supported Android version.
+private val voiceAudioFocusRequests =
+    java.util.Collections.synchronizedMap(
+        java.util.WeakHashMap<AudioManager.OnAudioFocusChangeListener, AudioFocusRequest>()
+    )
+
 private fun requestVoiceAudioFocus(
     audioManager: AudioManager,
     onInterrupted: () -> Unit
@@ -858,7 +867,27 @@ private fun requestVoiceAudioFocus(
     val listener = AudioManager.OnAudioFocusChangeListener { change ->
         if (change <= AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) onInterrupted()
     }
-    return if (audioManager.requestAudioFocus(
-        listener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
-    ) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) listener else null
+    val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build()
+        )
+        .setOnAudioFocusChangeListener(listener)
+        .build()
+    if (audioManager.requestAudioFocus(request) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+        return null
+    }
+    voiceAudioFocusRequests[listener] = request
+    return listener
+}
+
+private fun abandonVoiceAudioFocus(
+    audioManager: AudioManager,
+    listener: AudioManager.OnAudioFocusChangeListener?
+) {
+    if (listener == null) return
+    val request = voiceAudioFocusRequests.remove(listener) ?: return
+    audioManager.abandonAudioFocusRequest(request)
 }
