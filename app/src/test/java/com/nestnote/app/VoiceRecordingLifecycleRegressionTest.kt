@@ -29,7 +29,8 @@ class VoiceRecordingLifecycleRegressionTest {
     fun stoppingIntoReviewDoesNotPublishAttachmentUntilExplicitAttach() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val root = Files.createTempDirectory("nestnote-review-explicit-attach").toFile()
-        val store = VoiceAttachmentStore(context, { newKey() }, root)
+        val key = newKey()
+        val store = VoiceAttachmentStore(context, { key }, root)
         val manifest = VoiceAttachmentManifest(context, root)
         val noteId = 810L
         val clipBytes = byteArrayOf(10, 20, 30, 40, 50)
@@ -100,7 +101,8 @@ class VoiceRecordingLifecycleRegressionTest {
     fun failedAttachMetadataCommitLeavesPendingPayloadRecoverableForRetry() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val root = Files.createTempDirectory("nestnote-review-attach-retry").toFile()
-        val store = VoiceAttachmentStore(context, { newKey() }, root)
+        val key = newKey()
+        val store = VoiceAttachmentStore(context, { key }, root)
         val manifest = VoiceAttachmentManifest(context, root)
         val noteId = 812L
         val pendingBytes = byteArrayOf(11, 22, 33)
