@@ -588,7 +588,9 @@ internal fun VoiceNoteControls(
                                     )
                                 }
                             }
-                            val sliderMax = maxOf(playbackDurationMs, 1)
+                            val estimatedDurationMs = (((attachment.encryptedSizeBytes - 32L).coerceAtLeast(0L) * 1000L) / (VOICE_SAMPLE_RATE * 2L))
+                                .coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                            val sliderMax = maxOf(if (active && playbackDurationMs > 0) playbackDurationMs else estimatedDurationMs, 1)
                             Slider(
                                 value = if (active) pendingSeekMs.coerceIn(0, sliderMax).toFloat() else 0f,
                                 onValueChange = { value ->
@@ -612,7 +614,12 @@ internal fun VoiceNoteControls(
                             )
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(formatPlaybackTime(if (active) shownPosition else 0), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(formatPlaybackTime(if (active) playbackDurationMs else 0), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    if (active && playbackDurationMs > 0) formatPlaybackTime(playbackDurationMs)
+                                    else formatPlaybackTime(estimatedDurationMs),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
