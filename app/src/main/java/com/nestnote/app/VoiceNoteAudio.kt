@@ -14,6 +14,9 @@ import android.os.Handler
 import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -57,6 +61,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.io.IOException
+import java.io.ByteArrayInputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.util.UUID
@@ -231,6 +236,8 @@ internal fun VoiceNoteControls(
     val attachmentStore = remember(context) { VoiceAttachmentStore(context) }
     val attachmentManifest = remember(context) { VoiceAttachmentManifest(context) }
     var attachments by remember(noteId) { mutableStateOf(runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var importingAudio by remember { mutableStateOf(false) }
     var recording by remember { mutableStateOf(false) }
     var startingRecording by remember { mutableStateOf(false) }
     var recordingPaused by remember { mutableStateOf(false) }
@@ -250,6 +257,34 @@ internal fun VoiceNoteControls(
     var audioFocusListener by remember { mutableStateOf<AudioManager.OnAudioFocusChangeListener?>(null) }
     val addedThisSession = remember(noteId) { mutableSetOf<String>() }
     val audioManager = remember(context) { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
+    val audioFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            importingAudio = true
+            status = "Importing audio securely…"
+            scope.launch {
+                val result = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val pcm = context.contentResolver.openInputStream(uri)?.use { decodePcmWav(it.readBytes()) }
+                            ?: throw IOException("Could not open the selected audio file.")
+                        if (pcm.isEmpty()) throw IOException("The selected audio file contains no audio.")
+                        if (pcm.size > VoiceAttachmentStore.MAX_AUDIO_BYTES) throw IOException("Audio exceeds the 25 MiB attachment limit.")
+                        val id = UUID.randomUUID().toString()
+                        val saved = attachmentStore.save(noteId, id, ByteArrayInputStream(pcm))
+                        val duration = pcm.size.toLong() * 1000L / (VOICE_SAMPLE_RATE * 2L)
+                        attachmentManifest.put(VoiceAttachmentMetadata(noteId, id, System.currentTimeMillis(), duration, saved.encryptedSizeBytes, "Imported audio"), attachmentStore)
+                        saved
+                    }
+                }
+                importingAudio = false
+                result.onSuccess {
+                    attachments = runCatching { attachmentStore.list(noteId) }.getOrDefault(emptyList())
+                    onAttachmentCountChanged(attachments.size)
+                    onVoiceAttachmentAdded()
+                    status = "Audio attached securely."
+                }.onFailure { status = it.message ?: "Could not attach this audio file." }
+            }
+        }
+    }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         when (resolveVoicePermissionResult(granted, pendingPermission)) {
             VoicePermissionDecision.START_RECORDING -> {
@@ -398,6 +433,13 @@ internal fun VoiceNoteControls(
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Voice", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                OutlinedButton(
+                    enabled = !recording && !startingRecording && !pendingPermission && !importingAudio,
+                    onClick = { audioFileLauncher.launch(arrayOf("audio/wav", "audio/x-wav", "audio/wave", "audio/vnd.wave")) }
+                ) {
+                    Icon(Icons.Default.AttachFile, contentDescription = "Attach audio file")
+                    Text(if (importingAudio) "Importing…" else "Attach audio file")
+                }
                 Button(
                     modifier = Modifier.semantics {
                         contentDescription = "Record voice note"
@@ -641,6 +683,24 @@ internal fun VoiceNoteControls(
 }
 }
 
+/** Converts uncompressed 16-bit mono/stereo WAV to the inline player’s 16 kHz mono PCM format. */
+private fun decodePcmWav(bytes: ByteArray): ByteArray {
+    if (bytes.size < 44 || String(bytes, 0, 4, Charsets.US_ASCII) != "RIFF" || String(bytes, 8, 4, Charsets.US_ASCII) != "WAVE") throw IOException("Choose an uncompressed PCM WAV file (16-bit audio).")
+    var offset = 12; var format = -1; var channels = 0; var sampleRate = 0; var bits = 0; var dataOffset = -1; var dataLength = 0
+    while (offset + 8 <= bytes.size) {
+        val id = String(bytes, offset, 4, Charsets.US_ASCII)
+        val length = java.nio.ByteBuffer.wrap(bytes, offset + 4, 4).order(java.nio.ByteOrder.LITTLE_ENDIAN).int
+        if (length < 0 || offset + 8L + length > bytes.size) throw IOException("The WAV file is malformed.")
+        if (id == "fmt " && length >= 16) { val b = java.nio.ByteBuffer.wrap(bytes, offset + 8, length).order(java.nio.ByteOrder.LITTLE_ENDIAN); format = b.short.toInt() and 0xffff; channels = b.short.toInt() and 0xffff; sampleRate = b.int; b.int; b.short; bits = b.short.toInt() and 0xffff }
+        if (id == "data") { dataOffset = offset + 8; dataLength = length }
+        offset += 8 + length + (length and 1)
+    }
+    if (format != 1 || channels !in 1..2 || bits != 16 || sampleRate <= 0 || dataOffset < 0 || dataLength < channels * 2) throw IOException("Unsupported WAV format. Use uncompressed 16-bit mono or stereo WAV.")
+    val frames = dataLength / (channels * 2); val outFrames = (frames.toLong() * VOICE_SAMPLE_RATE / sampleRate).coerceAtLeast(1).coerceAtMost(Int.MAX_VALUE / 2).toInt()
+    val input = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN); val output = java.nio.ByteBuffer.allocate(outFrames * 2).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+    repeat(outFrames) { i -> val frame = ((i.toLong() * sampleRate) / VOICE_SAMPLE_RATE).toInt().coerceAtMost(frames - 1); val left = input.getShort(dataOffset + frame * channels * 2).toInt(); val sample = if (channels == 2) (left + input.getShort(dataOffset + frame * 4 + 2).toInt()) / 2 else left; output.putShort(i * 2, sample.toShort()) }
+    return output.array()
+}
 private fun formatPlaybackTime(durationMs: Int): String {
     val totalSeconds = (durationMs / 1000).coerceAtLeast(0)
     return "%d:%02d".format(totalSeconds / 60, totalSeconds % 60)
