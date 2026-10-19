@@ -239,6 +239,7 @@ internal fun VoiceNoteControls(
     var playingId by remember { mutableStateOf<String?>(null) }
     var playbackPositionMs by remember { mutableIntStateOf(0) }
     var pendingSeekMs by remember { mutableIntStateOf(0) }
+    var seekingPlayback by remember { mutableStateOf(false) }
     var playbackPaused by remember { mutableStateOf(false) }
     var playbackDurationMs by remember { mutableIntStateOf(0) }
     var status by remember { mutableStateOf("") }
@@ -297,6 +298,7 @@ internal fun VoiceNoteControls(
         playbackPositionMs = 0
         playbackDurationMs = 0
         pendingSeekMs = 0
+        seekingPlayback = false
         playbackPaused = false
         if (requestedAudioFocus) {
             audioManager.abandonAudioFocus(audioFocusListener)
@@ -541,7 +543,7 @@ internal fun VoiceNoteControls(
                                                     onProgress = { positionMs, durationMs ->
                                                         playbackPositionMs = positionMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
                                                         playbackDurationMs = durationMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-                                                        if (pendingSeekMs == 0) pendingSeekMs = playbackPositionMs
+                                                        if (!seekingPlayback) pendingSeekMs = playbackPositionMs
                                                     }
                                                 ) { error ->
                                                     playingId = null
@@ -590,13 +592,17 @@ internal fun VoiceNoteControls(
                             Slider(
                                 value = if (active) pendingSeekMs.coerceIn(0, sliderMax).toFloat() else 0f,
                                 onValueChange = { value ->
-                                    if (active && playbackDurationMs > 0) pendingSeekMs = value.toInt()
+                                    if (active && playbackDurationMs > 0) {
+                                        seekingPlayback = true
+                                        pendingSeekMs = value.toInt()
+                                    }
                                 },
                                 onValueChangeFinished = {
                                     if (active && playbackDurationMs > 0) {
                                         playbackPositionMs = pendingSeekMs
                                         playbackSession?.seekTo(pendingSeekMs.toLong())
                                     }
+                                    seekingPlayback = false
                                 },
                                 valueRange = 0f..sliderMax.toFloat(),
                                 enabled = active && playbackDurationMs > 0 && !recording,
