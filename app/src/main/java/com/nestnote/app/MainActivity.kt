@@ -1842,7 +1842,8 @@ private fun NoteEditorContent(
                         .background(MaterialTheme.colorScheme.surface)
                 )
             }
-        }    }
+        }
+    }
 
     if (formattingVisible) {
         AlertDialog(
@@ -1953,8 +1954,7 @@ private fun AppearanceSidePanel(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Colour palette", style = MaterialTheme.typography.titleSmall, color = colors.onSurface)
             Text("Choose a soft tint", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-            // Keep each swatch comfortably tappable; allow horizontal scrolling on
-            // narrow phones rather than shrinking seven targets below 48 dp.
+            // Stack colour swatches into short rows to avoid horizontal scrolling.
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 noteAccents.chunked(4).forEach { swatchRow ->
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
