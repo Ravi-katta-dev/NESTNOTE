@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.assertExists
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
@@ -40,7 +40,7 @@ class SlimRailPanelRegressionTest {
         }
 
         composeRule.waitForIdle()
-        composeRule.onNodeWithContentDescription("Open Test panel").assertExists()
+        composeRule.onNodeWithContentDescription("Open Test panel").assertIsDisplayed()
     }
 
     @Test
@@ -61,20 +61,20 @@ class SlimRailPanelRegressionTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithContentDescription("Open Test panel").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithContentDescription("Close Test panel").assertExists()
+        composeRule.onNodeWithContentDescription("Close Test panel").assertIsDisplayed()
 
         composeRule.onNodeWithContentDescription("Close Test panel").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithContentDescription("Open Test panel").assertExists()
+        composeRule.onNodeWithContentDescription("Open Test panel").assertIsDisplayed()
 
         // Exercise repeated transitions to catch state/anchor regressions.
         repeat(3) {
             composeRule.onNodeWithContentDescription("Open Test panel").performClick()
             composeRule.waitForIdle()
-            composeRule.onNodeWithContentDescription("Close Test panel").assertExists()
+            composeRule.onNodeWithContentDescription("Close Test panel").assertIsDisplayed()
             composeRule.onNodeWithContentDescription("Close Test panel").performClick()
             composeRule.waitForIdle()
-            composeRule.onNodeWithContentDescription("Open Test panel").assertExists()
+            composeRule.onNodeWithContentDescription("Open Test panel").assertIsDisplayed()
         }
     }
 
@@ -96,9 +96,9 @@ class SlimRailPanelRegressionTest {
         }
 
         composeRule.waitForIdle()
-        composeRule.onNodeWithContentDescription("Open Resized panel").assertExists()
+        composeRule.onNodeWithContentDescription("Open Resized panel").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Open Resized panel").performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithContentDescription("Close Resized panel").assertExists()
+        composeRule.onNodeWithContentDescription("Close Resized panel").assertIsDisplayed()
     }
 }
