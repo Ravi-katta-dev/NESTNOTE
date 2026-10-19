@@ -1311,6 +1311,7 @@ private fun NoteEditorContent(
     var pinned by rememberSaveable(original?.id) { mutableStateOf(original?.pinned ?: false) }
     var appearanceVisible by remember { mutableStateOf(false) }
     val appearanceRailState = rememberSlimRailState()
+    val formattingRailState = rememberSlimRailState()
     var formattingVisible by remember { mutableStateOf(false) }
     var previewVisible by rememberSaveable(original?.id) { mutableStateOf(false) }
     var appearanceStartColor by remember { mutableIntStateOf(colorIndex) }
@@ -1841,33 +1842,63 @@ private fun NoteEditorContent(
         }
     }
 
+    LaunchedEffect(formattingVisible) {
+        if (formattingVisible) {
+            formattingRailState.open()
+            snapshotFlow { formattingRailState.targetValue }.collect { target ->
+                if (target == RailValue.Closed && formattingVisible) formattingVisible = false
+            }
+        } else {
+            formattingRailState.close()
+        }
+    }
+
     if (formattingVisible) {
-        AlertDialog(
-            onDismissRequest = { formattingVisible = false },
-            title = { Text("Formatting") },
-            text = {
-                Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Paragraph", style = MaterialTheme.typography.labelLarge, color = colors.primary)
-                    TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.cycleChecklist(text, cursor) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.CheckBox, null); Spacer(Modifier.width(12.dp)); Text("Checklist") }
-                    TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleBullet(text, cursor) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatListBulleted, null); Spacer(Modifier.width(12.dp)); Text("Bullet list") }
-                    TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleNumberedList(text, cursor) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatListNumbered, null); Spacer(Modifier.width(12.dp)); Text("Numbered list") }
-                    TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleBlockquote(text, cursor) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatQuote, null); Spacer(Modifier.width(12.dp)); Text("Blockquote") }
-                    HorizontalDivider()
-                    Text("Text style", style = MaterialTheme.typography.labelLarge, color = colors.primary)
-                    TextButton(onClick = { applyInlineEdit("**") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatBold, null); Spacer(Modifier.width(12.dp)); Text("Bold") }
-                    TextButton(onClick = { applyInlineEdit("_") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatItalic, null); Spacer(Modifier.width(12.dp)); Text("Italic") }
-                    TextButton(onClick = { applyInlineEdit("~~") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatStrikethrough, null); Spacer(Modifier.width(12.dp)); Text("Strikethrough") }
-                    TextButton(onClick = { applyInlineEdit("`") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Code, null); Spacer(Modifier.width(12.dp)); Text("Inline code") }
-                    TextButton(onClick = { applyMarkdownLink() }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Link, null); Spacer(Modifier.width(12.dp)); Text("Insert link") }
-                    HorizontalDivider()
-                    Text("Headings", style = MaterialTheme.typography.labelLarge, color = colors.primary)
-                    TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 1) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatSize, null); Spacer(Modifier.width(12.dp)); Text("Heading 1") }
-                    TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 2) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.TextFields, null); Spacer(Modifier.width(12.dp)); Text("Heading 2") }
-                    TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 3) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Title, null); Spacer(Modifier.width(12.dp)); Text("Heading 3") }
+        SlimRailPanel(
+            state = formattingRailState,
+            panelWidth = 304.dp,
+            contentDescription = "Text formatting",
+            modifier = Modifier.testTag("formatting_side_panel")
+        ) {
+            Column(
+                Modifier.fillMaxHeight().width(304.dp)
+                    .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .verticalScroll(rememberScrollState())
+                    .statusBarsPadding().navigationBarsPadding()
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Formatting", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text("Format the selected text or current line", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                    }
+                    IconButton(onClick = { formattingVisible = false }, modifier = Modifier.testTag("formatting_close")) {
+                        Icon(Icons.Default.Close, contentDescription = "Close formatting panel")
+                    }
                 }
-            },
-            confirmButton = { TextButton(onClick = { formattingVisible = false }) { Text("Done") } }
-        )
+                Text("Paragraph", style = MaterialTheme.typography.labelLarge, color = colors.primary)
+                TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.cycleChecklist(text, cursor) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.CheckBox, null); Spacer(Modifier.width(12.dp)); Text("Checklist") }
+                TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleBullet(text, cursor) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatListBulleted, null); Spacer(Modifier.width(12.dp)); Text("Bullet list") }
+                TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleNumberedList(text, cursor) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatListNumbered, null); Spacer(Modifier.width(12.dp)); Text("Numbered list") }
+                TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleBlockquote(text, cursor) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatQuote, null); Spacer(Modifier.width(12.dp)); Text("Blockquote") }
+                HorizontalDivider()
+                Text("Text style", style = MaterialTheme.typography.labelLarge, color = colors.primary)
+                TextButton(onClick = { applyInlineEdit("**") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatBold, null); Spacer(Modifier.width(12.dp)); Text("Bold") }
+                TextButton(onClick = { applyInlineEdit("_") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatItalic, null); Spacer(Modifier.width(12.dp)); Text("Italic") }
+                TextButton(onClick = { applyInlineEdit("~~") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatStrikethrough, null); Spacer(Modifier.width(12.dp)); Text("Strikethrough") }
+                TextButton(onClick = { applyInlineEdit("`") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Code, null); Spacer(Modifier.width(12.dp)); Text("Inline code") }
+                TextButton(onClick = { applyMarkdownLink() }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Link, null); Spacer(Modifier.width(12.dp)); Text("Insert link") }
+                HorizontalDivider()
+                Text("Headings", style = MaterialTheme.typography.labelLarge, color = colors.primary)
+                TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 1) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.FormatSize, null); Spacer(Modifier.width(12.dp)); Text("Heading 1") }
+                TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 2) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.TextFields, null); Spacer(Modifier.width(12.dp)); Text("Heading 2") }
+                TextButton(onClick = { applyLineEdit { text, cursor -> NoteText.toggleHeadingLevel(text, cursor, 3) } }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Title, null); Spacer(Modifier.width(12.dp)); Text("Heading 3") }
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(onClick = { formattingVisible = false }, modifier = Modifier.fillMaxWidth()) { Text("Done") }
+            }
+        }
     }
 
     if (deleteConfirmation && onDelete != null) {
