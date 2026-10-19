@@ -1310,6 +1310,7 @@ private fun NoteEditorContent(
     var reminder by rememberSaveable(original?.id) { mutableStateOf(original?.reminder.orEmpty()) }
     var pinned by rememberSaveable(original?.id) { mutableStateOf(original?.pinned ?: false) }
     var appearanceVisible by remember { mutableStateOf(false) }
+    val appearanceRailState = rememberSlimRailState()
     var formattingVisible by remember { mutableStateOf(false) }
     var previewVisible by rememberSaveable(original?.id) { mutableStateOf(false) }
     var appearanceStartColor by remember { mutableIntStateOf(colorIndex) }
@@ -1812,26 +1813,36 @@ private fun NoteEditorContent(
         AnimatedVisibility(visible = appearanceVisible, enter = fadeIn(), exit = fadeOut()) {
             Box(Modifier.fillMaxSize().background(colors.scrim.copy(alpha = 0.40f)).clickable { dismissAppearance(discardDraft = true) }.testTag("appearance_scrim"))
         }
-        AnimatedVisibility(
-            visible = appearanceVisible,
-            modifier = Modifier.align(Alignment.CenterEnd),
-            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
-        ) {
-            AppearanceSidePanel(
-                colorIndex = colorIndex,
-                backgroundIndex = backgroundIndex,
-                onColorSelected = { colorIndex = it },
-                onBackgroundSelected = { backgroundIndex = it },
-                onDismiss = { dismissAppearance(discardDraft = true) },
-                onApply = { dismissAppearance(discardDraft = false) },
-                modifier = Modifier.fillMaxHeight().fillMaxWidth(0.88f).widthIn(max = appearancePanelMaxWidth)
-                    .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .testTag("appearance_side_panel")
-            )
+        LaunchedEffect(appearanceVisible) {
+            if (appearanceVisible) {
+                appearanceRailState.open()
+                snapshotFlow { appearanceRailState.targetValue }.collect { target ->
+                    if (target == RailValue.Closed && appearanceVisible) dismissAppearance(discardDraft = true)
+                }
+            } else {
+                appearanceRailState.close()
+            }
         }
-    }
+        if (appearanceVisible) {
+            SlimRailPanel(
+                state = appearanceRailState,
+                panelWidth = appearancePanelMaxWidth,
+                contentDescription = "Note appearance",
+                modifier = Modifier.testTag("appearance_side_panel")
+            ) {
+                AppearanceSidePanel(
+                    colorIndex = colorIndex,
+                    backgroundIndex = backgroundIndex,
+                    onColorSelected = { colorIndex = it },
+                    onBackgroundSelected = { backgroundIndex = it },
+                    onDismiss = { dismissAppearance(discardDraft = true) },
+                    onApply = { dismissAppearance(discardDraft = false) },
+                    modifier = Modifier.fillMaxHeight().width(appearancePanelMaxWidth)
+                        .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                )
+            }
+        }    }
 
     if (formattingVisible) {
         AlertDialog(
