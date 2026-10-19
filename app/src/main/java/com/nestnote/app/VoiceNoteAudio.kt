@@ -101,12 +101,21 @@ private class EncryptedPcmRecording(
     private var storageThread: Thread? = null
 
     fun start() {
+        // Permission may be revoked after the UI's permission callback and before this
+        // worker starts. Check immediately before creating AudioRecord as well.
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            throw IOException("Microphone permission is required to record voice notes.")
+        }
         val minBuffer = AudioRecord.getMinBufferSize(VOICE_SAMPLE_RATE, VOICE_CHANNEL_IN, VOICE_ENCODING)
         if (minBuffer <= 0) throw IOException("Microphone recording is unavailable on this device")
-        val record = AudioRecord(
-            MediaRecorder.AudioSource.MIC, VOICE_SAMPLE_RATE, VOICE_CHANNEL_IN,
-            VOICE_ENCODING, maxOf(minBuffer * 2, 8192)
-        )
+        val record = try {
+            AudioRecord(
+                MediaRecorder.AudioSource.MIC, VOICE_SAMPLE_RATE, VOICE_CHANNEL_IN,
+                VOICE_ENCODING, maxOf(minBuffer * 2, 8192)
+            )
+        } catch (error: SecurityException) {
+            throw IOException("Microphone permission is required to record voice notes.", error)
+        }
         if (record.state != AudioRecord.STATE_INITIALIZED) {
             record.release()
             throw IOException("Could not initialize the microphone")
