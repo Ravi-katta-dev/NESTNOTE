@@ -461,10 +461,10 @@ internal fun VoiceNoteControls(
                             else -> "Ready"
                         }
                     },
-                    enabled = canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null),
+                    enabled = canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null || pendingReviewId != null),
                     onClick = {
                         keyboardController?.hide()
-                        if (!canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null)) return@Button
+                        if (!canStartVoiceRecording(recording, startingRecording, pendingPermission, playingId != null || pendingReviewId != null)) return@Button
                         startingRecording = true
                         showPermissionSettings = false
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -598,7 +598,7 @@ internal fun VoiceNoteControls(
                                 }.onFailure { status = it.message ?: "Couldn't attach reviewed recording." }
                             }) { Text("Attach") }
                             OutlinedButton(onClick = {
-                                stopPlayback()
+                                if (playingId == reviewId) stopPlayback()
                                 addedThisSession.remove(reviewId)
                                 runCatching { attachmentStore.delete(noteId, reviewId) }
                                 runCatching { attachmentManifest.remove(noteId, reviewId) }
