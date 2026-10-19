@@ -1312,6 +1312,8 @@ private fun NoteEditorContent(
     var appearanceVisible by remember { mutableStateOf(false) }
     val appearanceRailState = rememberSlimRailState()
     val formattingRailState = rememberSlimRailState()
+    val recordingRailState = rememberSlimRailState()
+    var recordingVisible by remember { mutableStateOf(false) }
     var formattingVisible by remember { mutableStateOf(false) }
     var previewVisible by rememberSaveable(original?.id) { mutableStateOf(false) }
     var appearanceStartColor by remember { mutableIntStateOf(colorIndex) }
@@ -1522,6 +1524,11 @@ private fun NoteEditorContent(
                                             leadingIcon = { Icon(Icons.Default.FormatSize, null) }
                                         )
                                         DropdownMenuItem(
+                                            text = { Text("Recording") },
+                                            onClick = { moreMenu = false; recordingVisible = true },
+                                            leadingIcon = { Icon(Icons.Default.Mic, null) }
+                                        )
+                                        DropdownMenuItem(
                                             text = { Text("Share note") },
                                             enabled = title.isNotBlank() || body.isNotBlank(),
                                             onClick = { moreMenu = false; shareNote() },
@@ -1578,12 +1585,6 @@ private fun NoteEditorContent(
                     exit = fadeOut() + slideOutVertically { it }
                 ) {
                 Column(Modifier.imePadding()) {
-                            VoiceNoteControls(
-                                noteId = voiceNoteId,
-                                onAttachmentCountChanged = { voiceAttachmentCount = it },
-                                onVoiceAttachmentAdded = { voiceChangesPending = true },
-                                onDiscardHandlerReady = onRegisterVoiceDiscard
-                            )
                             if (showCounts) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp),
@@ -1837,6 +1838,51 @@ private fun NoteEditorContent(
                     modifier = Modifier.fillMaxHeight().width(appearancePanelMaxWidth)
                         .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
                         .background(MaterialTheme.colorScheme.surface)
+                )
+            }
+        }
+    }
+
+    LaunchedEffect(recordingVisible) {
+        if (recordingVisible) {
+            recordingRailState.open()
+            snapshotFlow { recordingRailState.targetValue }.collect { target ->
+                if (target == RailValue.Closed && recordingVisible) recordingVisible = false
+            }
+        } else {
+            recordingRailState.close()
+        }
+    }
+
+    if (recordingVisible) {
+        SlimRailPanel(
+            state = recordingRailState,
+            panelWidth = 320.dp,
+            contentDescription = "Voice recording controls",
+            modifier = Modifier.testTag("recording_side_panel")
+        ) {
+            Column(
+                Modifier.fillMaxHeight().width(320.dp)
+                    .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .statusBarsPadding().navigationBarsPadding()
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Recording", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = colors.onSurface)
+                        Text("Add or manage voice recordings", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                    }
+                    IconButton(onClick = { recordingVisible = false }, modifier = Modifier.testTag("recording_close")) {
+                        Icon(Icons.Default.Close, contentDescription = "Close recording panel")
+                    }
+                }
+                VoiceNoteControls(
+                    noteId = voiceNoteId,
+                    onAttachmentCountChanged = { voiceAttachmentCount = it },
+                    onVoiceAttachmentAdded = { voiceChangesPending = true },
+                    onDiscardHandlerReady = onRegisterVoiceDiscard
                 )
             }
         }
