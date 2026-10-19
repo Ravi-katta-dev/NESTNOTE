@@ -65,8 +65,24 @@ class SlimRailState internal constructor(
     val targetValue: RailValue get() = draggableState.targetValue
     val isOpen: Boolean get() = currentValue == RailValue.Open
 
-    suspend fun open() { draggableState.animateTo(RailValue.Open) }
-    suspend fun close() { draggableState.animateTo(RailValue.Closed) }
+    suspend fun open() {
+        draggableState.animateTo(
+            RailValue.Open,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        )
+    }
+    suspend fun close() {
+        draggableState.animateTo(
+            RailValue.Closed,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        )
+    }
     suspend fun toggle() {
         if (targetValue == RailValue.Open) close() else open()
     }
