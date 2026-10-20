@@ -70,6 +70,8 @@ import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Lock
@@ -193,14 +195,18 @@ internal fun SettingsScreen(
     var settingsSearch by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
     val settingsScope = rememberCoroutineScope()
-    // These indexes match the LazyColumn order when no search filter is active.
+    // Keep the category rail aligned with the real section order in this LazyColumn.
+    // Icons, selected state, and the spring scroll make navigation easier to scan and use.
     val settingsDestinations = listOf(
-        "Appearance" to 1,
-        "Markdown" to 4,
-        "Notes & search" to 3,
-        "Privacy" to 5,
-        "Data" to 6
+        Triple("Appearance", 1, Icons.Default.Palette),
+        Triple("Markdown", 4, Icons.Default.Code),
+        Triple("Notes & search", 3, Icons.Default.Search),
+        Triple("Privacy", 5, Icons.Default.Lock),
+        Triple("Data", 6, Icons.Default.Archive)
     )
+    val activeSettingsCategory = settingsDestinations
+        .lastOrNull { listState.firstVisibleItemIndex >= it.second }
+        ?.first ?: "Appearance"
 
     // Resolve gracefully if a persisted sort key is no longer valid.
     val selectedSort = SortOptions.firstOrNull { it.first == sortKey } ?: SortOptions.first()
@@ -232,24 +238,41 @@ internal fun SettingsScreen(
                     }
                 }
             )
-            if (settingsSearch.isBlank()) {
-                Spacer(Modifier.height(4.dp))
+            AnimatedVisibility(
+                visible = settingsSearch.isBlank(),
+                enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 3 }),
+                exit = fadeOut() + slideOutVertically(targetOffsetY = { -it / 3 })
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
-                        .testTag("settings_category_rail"),
+                        .testTag("settings_category_rail")
+                        .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    settingsDestinations.forEach { (label, index) ->
-                        AssistChip(
+                    settingsDestinations.forEach { (label, index, icon) ->
+                        val selected = activeSettingsCategory == label
+                        FilterChip(
+                            selected = selected,
                             onClick = {
-                                settingsScope.launch { listState.animateScrollToItem(index) }
+                                settingsScope.launch {
+                                    listState.animateScrollToItem(
+                                        index,
+                                        scrollOffset = -with(androidx.compose.ui.platform.LocalDensity.current) { 8.dp.roundToPx() }
+                                    )
+                                }
                             },
                             label = { Text(label, maxLines = 1, softWrap = false) },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = colors.surface,
-                                labelColor = colors.onSurface
-                            ),
-                            border = BorderStroke(1.dp, colors.outline)
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            border = BorderStroke(
+                                1.dp,
+                                if (selected) colors.primary else colors.outline
+                            )
                         )
                     }
                 }
