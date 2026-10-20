@@ -1084,6 +1084,23 @@ internal fun NoteEditorContent(
                         }
                     )
 
+                    // Keep voice playback available while editing, without switching to Preview.
+                    // Players are siblings of BasicTextField so audio controls never interfere
+                    // with text selection, IME composition, or cursor offsets.
+                    if (editorMode == EditorMode.Editing &&
+                        NoteText.voiceSegments(body).any { it.attachmentId != null }
+                    ) {
+                        InlineVoicePlayersForBody(
+                            body = body,
+                            noteId = voiceNoteId,
+                            activePlayerId = activeVoicePlayerId,
+                            onPlayRequested = { id -> activeVoicePlayerId = id },
+                            onStopRequested = { activeVoicePlayerId = null },
+                            onDeleteRequested = { id -> pendingVoiceDeletion = id },
+                            modifier = Modifier.fillMaxWidth().weight(0.32f)
+                        )
+                    }
+
                     if (pinned) {
                         AssistChip(
                             onClick = { if (editorMode == EditorMode.Editing) pinned = false },
@@ -1234,7 +1251,13 @@ internal fun NoteEditorContent(
                                 colors.onPrimaryContainer,
                                 voiceNames
                             ) else VisualTransformation.None,
-                            modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 3.dp),
+                            modifier = Modifier.fillMaxWidth()
+                                .weight(
+                                    if (editorMode == EditorMode.Editing &&
+                                        NoteText.voiceSegments(body).any { it.attachmentId != null }
+                                    ) 0.68f else 1f
+                                )
+                                .padding(top = 3.dp),
                             textStyle = MaterialTheme.typography.bodyLarge.copy(
                                 fontSize = textSize.bodySp.sp,
                                 lineHeight = (textSize.bodySp * 1.45f).sp,
@@ -1539,6 +1562,35 @@ internal fun NoteEditorContent(
                 TextButton(onClick = { pendingVoiceDeletion = null }) { Text("Keep") }
             }
         )
+    }
+}
+
+@Composable
+private fun InlineVoicePlayersForBody(
+    body: String,
+    noteId: Long,
+    activePlayerId: String?,
+    onPlayRequested: (String) -> Unit,
+    onStopRequested: () -> Unit,
+    onDeleteRequested: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val attachmentIds = remember(body) {
+        NoteText.voiceSegments(body).mapNotNull { it.attachmentId }.distinct()
+    }
+
+    Column(modifier.verticalScroll(rememberScrollState())) {
+        attachmentIds.forEach { attachmentId ->
+            InlineVoicePlayer(
+                noteId = noteId,
+                attachmentId = attachmentId,
+                activePlayerId = activePlayerId,
+                onPlayRequested = onPlayRequested,
+                onStopRequested = onStopRequested,
+                onDeleteRequested = onDeleteRequested,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            )
+        }
     }
 }
 
