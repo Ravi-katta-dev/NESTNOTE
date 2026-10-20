@@ -18,4 +18,9 @@
 6. Run compilation, unit tests, lint, and supported Android regression tests; record actual outcomes below.
 
 ## Validation results
-- Not run yet.
+- [x] Android lint — passed in CI run #598.
+- [x] Unit tests — passed in CI run #598.
+- [x] Debug APK build — passed in CI run #598.
+- [x] Minified release APK compilation — passed in CI run #598.
+- [x] Android instrumentation tests compiled — passed in CI run #598; device execution was not performed by this workflow.
+- [ ] Manual on-device playback, background behavior, and cursor/save/delete acceptance checks — still required.
