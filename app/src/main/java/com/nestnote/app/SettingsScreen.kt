@@ -199,8 +199,9 @@ internal fun SettingsScreen(
     // Icons, selected state, and the spring scroll make navigation easier to scan and use.
     val settingsDestinations = listOf(
         Triple("Appearance", 1, Icons.Default.Palette),
-        Triple("Markdown", 4, Icons.Default.Code),
+        Triple("Layout", 2, Icons.Default.GridView),
         Triple("Notes & search", 3, Icons.Default.Search),
+        Triple("Markdown", 4, Icons.Default.Code),
         Triple("Privacy", 5, Icons.Default.Lock),
         Triple("Data", 6, Icons.Default.Archive)
     )
@@ -255,10 +256,7 @@ internal fun SettingsScreen(
                             selected = selected,
                             onClick = {
                                 settingsScope.launch {
-                                    listState.animateScrollToItem(
-                                        index,
-                                        scrollOffset = -with(androidx.compose.ui.platform.LocalDensity.current) { 8.dp.roundToPx() }
-                                    )
+                                    listState.animateScrollToItem(index)
                                 }
                             },
                             label = { Text(label, maxLines = 1, softWrap = false) },
