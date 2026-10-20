@@ -583,10 +583,13 @@ internal fun SwitchRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            // Keep the entire row comfortably tappable, including when the summary is absent.
+            .defaultMinSize(minHeight = 56.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(rowColor)
+            // One row-level Switch semantic avoids duplicate announcements/toggles.
             .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
