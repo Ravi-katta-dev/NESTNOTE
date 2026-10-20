@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -1097,7 +1098,7 @@ internal fun NoteEditorContent(
                             onPlayRequested = { id -> activeVoicePlayerId = id },
                             onStopRequested = { activeVoicePlayerId = null },
                             onDeleteRequested = { id -> pendingVoiceDeletion = id },
-                            modifier = Modifier.fillMaxWidth().weight(0.32f)
+                            modifier = Modifier.fillMaxWidth().heightIn(max = 176.dp)
                         )
                     }
 
@@ -1252,11 +1253,7 @@ internal fun NoteEditorContent(
                                 voiceNames
                             ) else VisualTransformation.None,
                             modifier = Modifier.fillMaxWidth()
-                                .weight(
-                                    if (editorMode == EditorMode.Editing &&
-                                        NoteText.voiceSegments(body).any { it.attachmentId != null }
-                                    ) 0.68f else 1f
-                                )
+                                .weight(1f)
                                 .padding(top = 3.dp),
                             textStyle = MaterialTheme.typography.bodyLarge.copy(
                                 fontSize = textSize.bodySp.sp,
