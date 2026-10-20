@@ -34,4 +34,4 @@ Description: |
 RepoType: git
 Repo: https://github.com/Ravi-katta-dev/NESTNOTE
 Binaries: https://github.com/Ravi-katta-dev/NESTNOTE/releases/download/v%v/NESTNOTE-v%v.apk
-Changelog: https://raw.githubusercontent.com/Ravi-katta-dev/NESTNOTE/main/CHANGELOG.md
+Changelog: https://raw.githubusercontent.com/Ravi-katta-dev/NESTNOTE/main/docs/CHANGELOG.md
