@@ -303,6 +303,7 @@ internal fun NoteEditorContent(
     val titleFocus = remember { FocusRequester() }
     val context = LocalContext.current
     var customWallpaperUri by rememberSaveable(original?.id, draftNoteId) { mutableStateOf(original?.wallpaperUri.orEmpty()) }
+    var appearanceStartWallpaperUri by remember { mutableStateOf(customWallpaperUri) }
     val wallpaperImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
@@ -727,6 +728,7 @@ internal fun NoteEditorContent(
                                 onClick = {
                                     appearanceStartColor = colorIndex
                                     appearanceStartBackground = backgroundIndex
+                                    appearanceStartWallpaperUri = customWallpaperUri
                                     toolRailTab = ToolRailTab.Colour
                                     toolRailVisible = true
                                 },
@@ -742,6 +744,7 @@ internal fun NoteEditorContent(
                                 onClick = {
                                     appearanceStartColor = colorIndex
                                     appearanceStartBackground = backgroundIndex
+                                    appearanceStartWallpaperUri = customWallpaperUri
                                     toolRailTab = ToolRailTab.Format
                                     toolRailVisible = true
                                 },
@@ -1348,6 +1351,7 @@ internal fun NoteEditorContent(
         if (discardDraft) {
             colorIndex = appearanceStartColor
             backgroundIndex = appearanceStartBackground
+            customWallpaperUri = appearanceStartWallpaperUri
         }
         toolRailVisible = false
     }
@@ -1360,7 +1364,11 @@ internal fun NoteEditorContent(
         backgroundIndex = backgroundIndex,
         onColorSelected = { colorIndex = it },
         onImportWallpaper = { wallpaperImportLauncher.launch(arrayOf("image/*")) },
-        onBackgroundSelected = { backgroundIndex = it },
+        onBackgroundSelected = {
+            backgroundIndex = it
+            // Selecting an illustrated/plain background replaces an imported image.
+            customWallpaperUri = ""
+        },
         onApply = { dismissToolRail(discardDraft = false) },
         onCancel = { dismissToolRail(discardDraft = true) },
         onFormat = { action ->
