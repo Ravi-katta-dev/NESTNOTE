@@ -72,11 +72,8 @@ import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileOpen
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.automirrored.filled.List
@@ -280,7 +277,7 @@ internal fun SettingsScreen(
         }
         if (settingsSearch.isBlank() || listOf("appearance", "theme", "wallpaper", "color", "colour", "dark", "oled", "dynamic").any { settingsSearch.contains(it, ignoreCase = true) }) {
         item(key = SettingsItemKeys[1]) {
-            SettingsSection(title = "Appearance", subtitle = "Colors that fit your device") {
+            SettingsSection(title = "Appearance", subtitle = "Colors that fit your device", icon = Icons.Default.Palette) {
                 SettingLabel("Theme")
                 SegmentedChoice(ThemeMode.entries, themeMode, { it.label }, onThemeChange)
                 if (themeMode == ThemeMode.SYSTEM) {
@@ -348,7 +345,7 @@ internal fun SettingsScreen(
         }
         if (settingsSearch.isBlank() || listOf("layout", "dashboard", "density", "grid", "list", "compact").any { settingsSearch.contains(it, ignoreCase = true) }) {
         item(key = SettingsItemKeys[2]) {
-            SettingsSection(title = "Layout", subtitle = "Choose how your notes appear") {
+            SettingsSection(title = "Layout", subtitle = "Choose how your notes appear", icon = Icons.Default.GridView) {
                 SettingLabel("Dashboard view")
                 SegmentedChoice(DashboardLayout.entries, dashboardLayout, { it.label }, onLayoutChange)
                 Text(
@@ -369,7 +366,7 @@ internal fun SettingsScreen(
         }
         if (settingsSearch.isBlank() || listOf("behavior", "category", "sort", "pin", "preview", "date", "reminder", "notes").any { settingsSearch.contains(it, ignoreCase = true) }) {
         item(key = SettingsItemKeys[3]) {
-            SettingsSection(title = "Notes & search", subtitle = "Defaults for finding and organizing notes") {
+            SettingsSection(title = "Notes & search", subtitle = "Defaults for finding and organizing notes", icon = Icons.Default.Search) {
                 SettingLabel("Default category for new notes")
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -405,7 +402,7 @@ internal fun SettingsScreen(
         }
         if (settingsSearch.isBlank() || listOf("editor", "writing", "text", "size", "word", "reading", "count", "markdown").any { settingsSearch.contains(it, ignoreCase = true) }) {
         item(key = SettingsItemKeys[4]) {
-            SettingsSection(title = "Markdown & editor", subtitle = "Choose how writing and reading feel") {
+            SettingsSection(title = "Markdown & editor", subtitle = "Choose how writing and reading feel", icon = Icons.Default.Code) {
                 SettingLabel("Open editor as")
                 Column(Modifier.selectableGroup()) {
                     EditorPresentationMode.entries.forEach { mode ->
@@ -444,7 +441,7 @@ internal fun SettingsScreen(
         }
         if (settingsSearch.isBlank() || listOf("privacy", "permissions", "device", "local", "internet", "security").any { settingsSearch.contains(it, ignoreCase = true) }) {
         item(key = SettingsItemKeys[5]) {
-            SettingsSection(title = "Privacy", subtitle = "Your notes stay under your control") {
+            SettingsSection(title = "Privacy", subtitle = "Your notes stay under your control", icon = Icons.Default.Lock) {
                 Text("NESTNOTE is designed for local-first note taking. Notes are stored on this device and leave it only when you explicitly export or share them.", style = MaterialTheme.typography.bodyMedium)
                 Text("No account is required. Exporting a file does not automatically upload it to cloud storage; the destination is chosen by you in Android's file picker.", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
@@ -454,7 +451,7 @@ internal fun SettingsScreen(
         }
         if (settingsSearch.isBlank() || listOf("data", "backup", "restore", "export", "import", "archive").any { settingsSearch.contains(it, ignoreCase = true) }) {
         item(key = SettingsItemKeys[6]) {
-            SettingsSection(title = "Data", subtitle = "Backup and manage your notes") {
+            SettingsSection(title = "Data", subtitle = "Backup and manage your notes", icon = Icons.Default.Archive) {
                 Text(
                     "$totalNotes notes stored on this device ($archivedNotes archived).",
                     style = MaterialTheme.typography.bodyMedium
@@ -656,23 +653,47 @@ internal fun SettingsSection(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+        colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerLow),
+        border = BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.55f))
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (icon != null) {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = colors.secondaryContainer,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = colors.onSecondaryContainer,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                }
+            }
+            HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.65f))
             content()
         }
     }
