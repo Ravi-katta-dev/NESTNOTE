@@ -17,6 +17,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -587,6 +589,18 @@ internal fun ChoiceCard(
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
+    val containerColor by animateColorAsState(
+        targetValue = if (selected) colors.secondaryContainer else colors.surface,
+        label = "choice-card-container"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (selected) colors.primary else colors.outlineVariant,
+        label = "choice-card-border"
+    )
+    val borderWidth by animateDpAsState(
+        targetValue = if (selected) 2.dp else 1.dp,
+        label = "choice-card-border-width"
+    )
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -594,11 +608,8 @@ internal fun ChoiceCard(
             // and the card joins the surrounding selectableGroup().
             .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        color = if (selected) colors.secondaryContainer else colors.surface,
-        border = BorderStroke(
-            width = if (selected) 2.dp else 1.dp,
-            color = if (selected) colors.primary else colors.outlineVariant
-        )
+        color = containerColor,
+        border = BorderStroke(width = borderWidth, color = borderColor)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -608,7 +619,11 @@ internal fun ChoiceCard(
                 Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 Text(description, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
             }
-            if (selected) {
+            AnimatedVisibility(
+                visible = selected,
+                enter = fadeIn() + slideInHorizontally(initialOffsetX = { it / 3 }),
+                exit = fadeOut() + slideOutHorizontally(targetOffsetX = { it / 3 })
+            ) {
                 // Decorative: the selectable modifier already exposes selection state.
                 Icon(Icons.Default.Check, contentDescription = null, tint = colors.primary)
             }
