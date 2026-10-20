@@ -295,6 +295,7 @@ internal fun NoteEditorContent(
     var noteFormat by rememberSaveable(original?.id) { mutableStateOf(original?.format ?: "plain") }
     var appearanceStartColor by remember { mutableIntStateOf(colorIndex) }
     var appearanceStartBackground by remember { mutableIntStateOf(backgroundIndex) }
+    var appearanceStartWallpaperUri by remember { mutableStateOf(original?.wallpaperUri.orEmpty()) }
     var discardConfirmation by remember { mutableStateOf(false) }
     var deleteConfirmation by remember { mutableStateOf(false) }
     var reminderMenu by remember { mutableStateOf(false) }
@@ -303,7 +304,6 @@ internal fun NoteEditorContent(
     val titleFocus = remember { FocusRequester() }
     val context = LocalContext.current
     var customWallpaperUri by rememberSaveable(original?.id, draftNoteId) { mutableStateOf(original?.wallpaperUri.orEmpty()) }
-    var appearanceStartWallpaperUri by remember { mutableStateOf(customWallpaperUri) }
     val wallpaperImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
@@ -1364,9 +1364,9 @@ internal fun NoteEditorContent(
         backgroundIndex = backgroundIndex,
         onColorSelected = { colorIndex = it },
         onImportWallpaper = { wallpaperImportLauncher.launch(arrayOf("image/*")) },
+        // A selected preset must replace the imported image, which otherwise takes precedence.
         onBackgroundSelected = {
             backgroundIndex = it
-            // Selecting an illustrated/plain background replaces an imported image.
             customWallpaperUri = ""
         },
         onApply = { dismissToolRail(discardDraft = false) },
