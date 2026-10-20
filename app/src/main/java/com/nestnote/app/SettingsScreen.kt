@@ -141,6 +141,7 @@ private val SettingsItemKeys = listOf(
     "settings_layout",
     "settings_behavior",
     "settings_editor",
+    "settings_privacy",
     "settings_backup",
     "settings_reset"
 )
@@ -192,12 +193,13 @@ internal fun SettingsScreen(
     var settingsSearch by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
     val settingsScope = rememberCoroutineScope()
+    // These indexes match the LazyColumn order when no search filter is active.
     val settingsDestinations = listOf(
         "Appearance" to 1,
-        "Layout" to 2,
-        "Note behavior" to 3,
-        "Note editor" to 4,
-        "Data" to 5
+        "Markdown" to 4,
+        "Notes & search" to 3,
+        "Privacy" to 5,
+        "Data" to 6
     )
 
     // Resolve gracefully if a persisted sort key is no longer valid.
@@ -220,7 +222,7 @@ internal fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().testTag("settings_search"),
                 singleLine = true,
                 label = { Text("Search settings") },
-                placeholder = { Text("Try theme, sort, text size…") },
+                placeholder = { Text("Try theme, Markdown, privacy…") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (settingsSearch.isNotBlank()) {
@@ -232,32 +234,24 @@ internal fun SettingsScreen(
             )
             if (settingsSearch.isBlank()) {
                 Spacer(Modifier.height(4.dp))
-                Text("Jump to", style = MaterialTheme.typography.labelLarge, color = colors.onSurfaceVariant)
                 Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                settingsDestinations.forEach { (label, index) ->
-                    AssistChip(
-                        onClick = {
-                            settingsScope.launch { listState.animateScrollToItem(index) }
-                        },
-                        label = { Text(label) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = when (label) {
-                                    "Appearance" -> Icons.Default.Palette
-                                    "Layout" -> Icons.Default.GridView
-                                    "Note behavior" -> Icons.Default.Settings
-                                    "Note editor" -> Icons.Default.Edit
-                                    else -> Icons.Default.Archive
-                                },
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    )
-                }
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
+                        .testTag("settings_category_rail"),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    settingsDestinations.forEach { (label, index) ->
+                        AssistChip(
+                            onClick = {
+                                settingsScope.launch { listState.animateScrollToItem(index) }
+                            },
+                            label = { Text(label, maxLines = 1, softWrap = false) },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = colors.surface,
+                                labelColor = colors.onSurface
+                            ),
+                            border = BorderStroke(1.dp, colors.outline)
+                        )
+                    }
                 }
             }
         }
@@ -352,7 +346,7 @@ internal fun SettingsScreen(
         }
         if (settingsSearch.isBlank() || listOf("behavior", "category", "sort", "pin", "preview", "date", "reminder", "notes").any { settingsSearch.contains(it, ignoreCase = true) }) {
         item(key = SettingsItemKeys[3]) {
-            SettingsSection(title = "Note behavior", subtitle = "Defaults for new and existing notes") {
+            SettingsSection(title = "Notes & search", subtitle = "Defaults for finding and organizing notes") {
                 SettingLabel("Default category for new notes")
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -386,9 +380,9 @@ internal fun SettingsScreen(
             }
         }
         }
-        if (settingsSearch.isBlank() || listOf("editor", "writing", "text", "size", "word", "reading", "count").any { settingsSearch.contains(it, ignoreCase = true) }) {
+        if (settingsSearch.isBlank() || listOf("editor", "writing", "text", "size", "word", "reading", "count", "markdown").any { settingsSearch.contains(it, ignoreCase = true) }) {
         item(key = SettingsItemKeys[4]) {
-            SettingsSection(title = "Note editor", subtitle = "Choose how writing feels") {
+            SettingsSection(title = "Markdown & editor", subtitle = "Choose how writing and reading feel") {
                 SettingLabel("Open editor as")
                 Column(Modifier.selectableGroup()) {
                     EditorPresentationMode.entries.forEach { mode ->
@@ -425,8 +419,18 @@ internal fun SettingsScreen(
             }
         }
         }
-        if (settingsSearch.isBlank() || listOf("data", "backup", "restore", "export", "import", "archive").any { settingsSearch.contains(it, ignoreCase = true) }) {
+        if (settingsSearch.isBlank() || listOf("privacy", "permissions", "device", "local", "internet", "security").any { settingsSearch.contains(it, ignoreCase = true) }) {
         item(key = SettingsItemKeys[5]) {
+            SettingsSection(title = "Privacy", subtitle = "Your notes stay under your control") {
+                Text("NESTNOTE is designed for local-first note taking. Notes are stored on this device and leave it only when you explicitly export or share them.", style = MaterialTheme.typography.bodyMedium)
+                Text("No account is required. Exporting a file does not automatically upload it to cloud storage; the destination is chosen by you in Android's file picker.", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                Text("Use Android app permissions and your chosen export destination to control access to your data.", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+            }
+        }
+        }
+        if (settingsSearch.isBlank() || listOf("data", "backup", "restore", "export", "import", "archive").any { settingsSearch.contains(it, ignoreCase = true) }) {
+        item(key = SettingsItemKeys[6]) {
             SettingsSection(title = "Data", subtitle = "Backup and manage your notes") {
                 Text(
                     "$totalNotes notes stored on this device ($archivedNotes archived).",
@@ -450,7 +454,7 @@ internal fun SettingsScreen(
             }
         }
         }
-        item(key = SettingsItemKeys[6]) {
+        item(key = SettingsItemKeys[7]) {
             OutlinedButton(
                 onClick = { confirmReset = true },
                 modifier = Modifier.fillMaxWidth().testTag("settings_reset"),
@@ -459,7 +463,7 @@ internal fun SettingsScreen(
                 Text("Reset settings to defaults")
             }
         }
-        if (settingsSearch.isNotBlank() && listOf("appearance", "theme", "wallpaper", "color", "colour", "dark", "oled", "dynamic", "layout", "dashboard", "density", "grid", "list", "compact", "behavior", "category", "sort", "pin", "preview", "date", "reminder", "notes", "editor", "writing", "text", "size", "word", "reading", "count", "data", "backup", "restore", "export", "import", "archive").none { settingsSearch.contains(it, ignoreCase = true) }) {
+        if (settingsSearch.isNotBlank() && listOf("appearance", "theme", "wallpaper", "color", "colour", "dark", "oled", "dynamic", "layout", "dashboard", "density", "grid", "list", "compact", "behavior", "category", "sort", "pin", "preview", "date", "reminder", "notes", "editor", "writing", "text", "size", "word", "reading", "count", "data", "backup", "restore", "export", "import", "archive", "privacy", "permissions", "device", "local", "internet", "security", "markdown").none { settingsSearch.contains(it, ignoreCase = true) }) {
             item(key = "settings_no_search_results") {
                 Text("No matching settings", style = MaterialTheme.typography.titleMedium)
                 Text("Try searching for theme, layout, category, text size, or backup.", color = colors.onSurfaceVariant)
