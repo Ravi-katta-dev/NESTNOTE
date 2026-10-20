@@ -575,20 +575,27 @@ internal fun SwitchRow(
     onChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
+    val rowColor by animateColorAsState(
+        targetValue = if (checked) colors.secondaryContainer.copy(alpha = 0.42f) else Color.Transparent,
+        label = "settings-switch-row-background"
+    )
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(rowColor)
             .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
-            .padding(vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(title)
+            Text(title, style = MaterialTheme.typography.bodyLarge)
             if (summary != null) {
                 Text(
                     summary,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = colors.onSurfaceVariant
                 )
             }
         }
