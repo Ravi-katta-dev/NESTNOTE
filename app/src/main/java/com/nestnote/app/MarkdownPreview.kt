@@ -53,13 +53,29 @@ internal object MarkdownPreview {
         val horizontalRule = Regex("""^\s*(?:-{3,}|_{3,})\s*$""")
         val quoteLines = mutableListOf<String>()
         val markdownWithoutBlockMarkers = buildString {
-            var inFence = false
+            var fenceCharacter: Char? = null
+            var fenceLength = 0
             markdown.lineSequence().forEachIndexed { index, line ->
                 val trimmed = line.trimStart()
-                if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) inFence = !inFence
-                val quoteMatch = if (!inFence) quotePrefix.matchEntire(line) else null
+                val fenceRun = trimmed.takeWhile { it == '`' || it == '~' }
+                val opensOrClosesFence = fenceRun.length >= 3 &&
+                    (trimmed.firstOrNull() == '`' || trimmed.firstOrNull() == '~')
+                val wasInsideFence = fenceCharacter != null
+                if (opensOrClosesFence) {
+                    val character = fenceRun.first()
+                    if (!wasInsideFence) {
+                        fenceCharacter = character
+                        fenceLength = fenceRun.length
+                    } else if (character == fenceCharacter && fenceRun.length >= fenceLength) {
+                        fenceCharacter = null
+                        fenceLength = 0
+                    }
+                }
+                val inFence = wasInsideFence || fenceCharacter != null
+                val fenceDelimiterLine = opensOrClosesFence
+                val quoteMatch = if (!inFence && !fenceDelimiterLine) quotePrefix.matchEntire(line) else null
                 val normalizedLine = when {
-                    !inFence && horizontalRule.matches(line) -> HORIZONTAL_RULE_MARKER
+                    !inFence && !fenceDelimiterLine && horizontalRule.matches(line) -> HORIZONTAL_RULE_MARKER
                     quoteMatch != null -> quoteMatch.groupValues[1].also(quoteLines::add)
                     else -> line
                 }
