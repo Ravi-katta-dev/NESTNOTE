@@ -1450,7 +1450,7 @@ internal fun NoteEditorContent(
                             modifier = Modifier.size(240.dp)
                         )
                     } else {
-                        Text("This note is too long to fit in a QR code. Use Share note instead.")
+                        Text("This note is too long to fit in a single QR code. Shorten the note and try again.")
                     }
                     Text(
                         "Anyone who scans this code can read the note. The QR code contains the text directly; it is not an encrypted link.",
@@ -1463,9 +1463,6 @@ internal fun NoteEditorContent(
             confirmButton = {
                 TextButton(onClick = { qrCodeDialog = false }) { Text("Close") }
             },
-            dismissButton = {
-                TextButton(onClick = { qrCodeDialog = false; shareNote() }) { Text("Share text instead") }
-            }
         )
     }
 
