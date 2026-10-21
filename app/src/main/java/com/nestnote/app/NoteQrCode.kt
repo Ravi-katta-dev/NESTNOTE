@@ -14,7 +14,7 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 internal object NoteQrCode {
     /** Builds a readable share payload without exposing internal voice attachment IDs. */
     fun sharePayload(title: String, body: String): String =
-        NoteText.shareText(title, body).replace(Regex("""\\[\\[voice:[^\\]\\n]+\\]\\]"""), "[Voice note]")
+        NoteText.shareText(title, body).replace(Regex("""\[\[voice:[^\]\n]+\]\]"""), "[Voice note]")
 
     fun createBitmap(payload: String, size: Int = 768): Bitmap {
         require(payload.isNotBlank()) { "QR payload must not be blank" }
