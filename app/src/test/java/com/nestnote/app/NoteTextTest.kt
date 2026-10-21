@@ -253,6 +253,17 @@ class NoteTextTest {
     fun shareTextJoinsNonBlankParts() {
         assertEquals("Title\n\nBody", NoteText.shareText(" Title ", " Body "))
         assertEquals("Body", NoteText.shareText("", "Body"))
+        assertEquals("Title", NoteText.shareText(" Title ", "  "))
+    }
+
+    @Test
+    fun shareTextHidesInternalVoiceAttachmentIds() {
+        val id = "3e967866-b886-4db1-abde-4724b7f2bf6c"
+        assertEquals(
+            "Meeting\n\nDiscuss agenda\n[Voice note]\nFollow up",
+            NoteText.shareText("Meeting", "Discuss agenda\n[[voice:$id]]\nFollow up")
+        )
+        assertEquals("[Voice note]", NoteText.shareText("", "[[voice:not-a-uuid]]"))
     }
 
     @Test
