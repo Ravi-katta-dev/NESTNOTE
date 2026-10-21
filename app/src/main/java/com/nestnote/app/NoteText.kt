@@ -296,8 +296,20 @@ object NoteText {
         return items.size to items.count { it.startsWith(CHECKED) }
     }
 
-    fun shareText(title: String, body: String): String =
-        listOf(title.trim(), body.trim()).filter { it.isNotEmpty() }.joinToString("\n\n")
+    /**
+     * Builds a human-readable plain-text share payload. Voice attachment markers are
+     * implementation details (and contain private attachment IDs), so expose only a
+     * friendly label when sharing rather than leaking the internal marker.
+     */
+    fun shareText(title: String, body: String): String {
+        val readableBody = body.replace(
+            Regex("""\[\[voice:[^\]\n]+\]\]"""),
+            "[Voice note]"
+        ).trim()
+        return listOf(title.trim(), readableBody)
+            .filter { it.isNotEmpty() }
+            .joinToString("\n\n")
+    }
 
     // --- Reminder helpers (metadata only; no alarms are scheduled) ---
 
