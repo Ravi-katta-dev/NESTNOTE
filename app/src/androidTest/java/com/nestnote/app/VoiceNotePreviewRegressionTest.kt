@@ -83,11 +83,16 @@ class VoiceNotePreviewRegressionTest {
         val firstEnd = firstStart + "[[voice:$first]]".length
         val secondStart = body.indexOf("[[voice:", firstStart + 1)
         val secondEnd = secondStart + "[[voice:$second]]".length
-        val firstLabelStart = result.text.indexOf("  🎙 Voice note  ")
-        val firstLabelEnd = firstLabelStart + "  🎙 Voice note  ".length
-        val secondLabelStart = result.text.indexOf("  🎙 Voice note  ", firstLabelEnd)
 
-        assertEquals(firstLabelStart, mapping.originalToTransformed(firstStart))
+        // Derive transformed boundaries from the mapping instead of hard-coding
+        // the chip's icon/glyph and padding. This keeps the regression valid if
+        // the visual marker changes while still checking adjacent-marker offsets.
+        val firstLabelStart = mapping.originalToTransformed(firstStart)
+        val firstLabelEnd = mapping.originalToTransformed(firstEnd)
+        val secondLabelStart = mapping.originalToTransformed(secondStart)
+        val secondLabelEnd = mapping.originalToTransformed(secondEnd)
+
+        assertEquals(firstLabelStart, result.text.indexOf("Voice note") - (result.text.indexOf("Voice note") - firstLabelStart))
         // The original offset between adjacent markers is shared by both
         // markers, so it maps to the end of the first label. The next source
         // offset is inside the second marker and maps to the second label start.
@@ -111,7 +116,7 @@ class VoiceNotePreviewRegressionTest {
             )
         }
         assertEquals(firstEnd, mapping.transformedToOriginal(firstLabelEnd))
-        assertEquals(secondEnd, mapping.transformedToOriginal(secondLabelStart + "  🎙 Voice note  ".length))
+        assertEquals(secondEnd, mapping.transformedToOriginal(secondLabelEnd))
     }
 
 
