@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  pages: write
 
 concurrency:
   group: fdroid-repository
@@ -203,6 +204,15 @@ jobs:
           git commit -m "Publish website and F-Droid repository for $RELEASE_TAG"
           git push --force "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" HEAD:gh-pages
 
+      # GITHUB_TOKEN pushes do not automatically trigger a branch-based Pages
+      # build. Explicitly request one so a missing/stale site can recover.
+      - name: Request GitHub Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
+
       - name: Verify published website is publicly readable
         shell: bash
         run: |
@@ -215,12 +225,13 @@ jobs:
               output="$RUNNER_TEMP/pages-home.html"
             fi
             ok=false
-            for attempt in {1..12}; do
+            # Branch-based Pages builds can take several minutes to publish.
+            for attempt in {1..60}; do
               if curl --fail --silent --show-error --location "$url?verify=$GITHUB_RUN_ID-$attempt" -o "$output"; then
                 ok=true
                 break
               fi
-              sleep 5
+              sleep 10
             done
             if [[ "$ok" != true ]]; then
               echo "::error::GitHub Pages website resource did not become publicly readable: $url"
