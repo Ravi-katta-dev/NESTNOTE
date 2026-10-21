@@ -1,6 +1,7 @@
 package com.nestnote.app
 
 import android.Manifest
+import android.graphics.Bitmap
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.ClipData
@@ -306,6 +307,7 @@ internal fun NoteEditorContent(
     var voiceNoteDialog by rememberSaveable(original?.id, draftNoteId) { mutableStateOf(false) }
     var moreMenu by remember { mutableStateOf(false) }
     var qrCodeDialog by remember { mutableStateOf(false) }
+    var qrPayloadToSave by remember { mutableStateOf<String?>(null) }
     val titleFocus = remember { FocusRequester() }
     val context = LocalContext.current
     var customWallpaperUri by rememberSaveable(original?.id, draftNoteId) { mutableStateOf(original?.wallpaperUri.orEmpty()) }
@@ -328,6 +330,23 @@ internal fun NoteEditorContent(
                 android.widget.Toast.makeText(context, "Could not save Markdown file", android.widget.Toast.LENGTH_LONG).show()
             }
         }
+    }
+    val qrImageExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri ->
+        val payload = qrPayloadToSave
+        if (uri != null && !payload.isNullOrBlank()) {
+            runCatching {
+                val bitmap = NoteQrCode.createBitmap(payload)
+                context.contentResolver.openOutputStream(uri)?.use { output ->
+                    check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
+                        "Could not encode QR image"
+                    }
+                } ?: error("Unable to open destination")
+                android.widget.Toast.makeText(context, "QR image saved", android.widget.Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                android.widget.Toast.makeText(context, "Could not save QR image", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+        qrPayloadToSave = null
     }
     // Permission request is a no-op on Android < 13 (permission doesn't exist).
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -1442,12 +1461,15 @@ internal fun NoteEditorContent(
             onDismissRequest = { qrCodeDialog = false },
             title = { Text("Share with QR code") },
             text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                ) {
                     if (qrBitmap != null) {
                         Image(
                             bitmap = qrBitmap.asImageBitmap(),
-                            contentDescription = "QR code containing this note text",
-                            modifier = Modifier.size(240.dp)
+                            contentDescription = "QR code containing this note text. Scanning it reveals the note text.",
+                            modifier = Modifier.size(220.dp)
                         )
                     } else {
                         Text("This note is too long to fit in a single QR code. Shorten the note and try again.")
@@ -1462,6 +1484,15 @@ internal fun NoteEditorContent(
             },
             confirmButton = {
                 TextButton(onClick = { qrCodeDialog = false }) { Text("Close") }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = qrBitmap != null,
+                    onClick = {
+                        qrPayloadToSave = qrPayload
+                        qrImageExportLauncher.launch("nestnote-qr.png")
+                    }
+                ) { Text("Save QR image") }
             },
         )
     }
