@@ -34,7 +34,7 @@ class NoteQrCodeTest {
     fun sharePayloadReplacesVoiceAttachmentIdsWithReadableLabel() {
         val id = "12345678-1234-4234-8234-123456789abc"
 
-        assertEquals("Title\\n\\nBefore [Voice note] after", NoteQrCode.sharePayload("Title", "Before [[voice:$id]] after"))
+        assertEquals("Title\n\nBefore [Voice note] after", NoteQrCode.sharePayload("Title", "Before [[voice:$id]] after"))
     }
 
     @Test(expected = IllegalArgumentException::class)
