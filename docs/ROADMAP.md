@@ -76,7 +76,8 @@ Still not implemented: reminder delivery (alarms/notifications), rich-text forma
 
 ## Sharing follow-up — local QR and encrypted links
 
-- [ ] Add encrypted share links with a unique, revocable URL and browser-based decryption. Do not upload note plaintext or the decryption key. This needs a minimal hosted recipient page and encrypted-payload storage; keep setup and maintenance close to zero and do not require the app owner to manage a paid domain. Do not present the feature as available until the end-to-end hosted flow is deployed and tested.
+- [ ] **Browser link sharing** — tracked in [issue #57](https://github.com/Ravi-katta-dev/NESTNOTE/issues/57). Generate a unique URL that opens in Chrome/Brave and decrypts note content on the recipient device. Never upload plaintext or the decryption key. Prefer free, low-maintenance hosting; document link revocation/expiry and URL-size limitations honestly. Do not present the feature as available until the recipient page is deployed and the end-to-end flow is tested.
+- [x] **Local QR sharing** — an offline alternative only; it contains readable note text, not an encrypted link. The dialog warns recipients that the payload is plaintext.
 - [x] Add a local QR-code option to the editor's sharing menu. It encodes the same share-safe note text used by Android sharing and displays a clear warning that scanned content is plaintext. QR generation does not require network access or a hosting account.
 
 ## Release and validation policy
