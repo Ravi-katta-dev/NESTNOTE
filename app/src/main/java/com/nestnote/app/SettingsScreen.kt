@@ -527,6 +527,119 @@ internal fun SettingsScreen(
         }
     }
 
+    if (showVoicePlayerSettings) {
+        val context = LocalContext.current
+        var compactVoicePlayer by rememberSaveable {
+            mutableStateOf(
+                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    .getBoolean(PREF_VOICE_PLAYER_COMPACT, true)
+            )
+        }
+        Dialog(
+            onDismissRequest = { showVoicePlayerSettings = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize().padding(12.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = colors.surface
+            ) {
+                Column(
+                    Modifier.fillMaxSize().padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { showVoicePlayerSettings = false },
+                            modifier = Modifier.testTag("voice_player_settings_back")
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to Settings")
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text("Voice player", style = MaterialTheme.typography.headlineSmall)
+                            Text("Choose how recordings appear in your notes",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colors.onSurfaceVariant)
+                        }
+                    }
+                    HorizontalDivider()
+                    Text("Player style", style = MaterialTheme.typography.titleMedium)
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            compactVoicePlayer = true
+                            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                                .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
+                        }.testTag("voice_player_style_compact"),
+                        shape = RoundedCornerShape(18.dp),
+                        color = if (compactVoicePlayer) colors.secondaryContainer else colors.surfaceContainerLow,
+                        border = BorderStroke(1.dp, if (compactVoicePlayer) colors.primary else colors.outlineVariant)
+                    ) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            FilledIconButton(onClick = {
+                                compactVoicePlayer = true
+                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
+                            }, modifier = Modifier.size(42.dp)) {
+                                Icon(Icons.Default.Mic, contentDescription = null)
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Compact", style = MaterialTheme.typography.titleMedium)
+                                Text("Round play/pause button, short waveform, minimal height.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.onSurfaceVariant)
+                            }
+                            RadioButton(selected = compactVoicePlayer, onClick = {
+                                compactVoicePlayer = true
+                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
+                            })
+                        }
+                    }
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            compactVoicePlayer = false
+                            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                                .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
+                        }.testTag("voice_player_style_full"),
+                        shape = RoundedCornerShape(18.dp),
+                        color = if (!compactVoicePlayer) colors.secondaryContainer else colors.surfaceContainerLow,
+                        border = BorderStroke(1.dp, if (!compactVoicePlayer) colors.primary else colors.outlineVariant)
+                    ) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            FilledIconButton(onClick = {
+                                compactVoicePlayer = false
+                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
+                            }, modifier = Modifier.size(42.dp)) {
+                                Icon(Icons.Default.Mic, contentDescription = null)
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Full", style = MaterialTheme.typography.titleMedium)
+                                Text("Larger player with recording details and a seek control.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.onSurfaceVariant)
+                            }
+                            RadioButton(selected = !compactVoicePlayer, onClick = {
+                                compactVoicePlayer = false
+                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
+                            })
+                        }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Text("Your choice is saved automatically.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant)
+                    Button(onClick = { showVoicePlayerSettings = false }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Done")
+                    }
+                }
+            }
+        }
+    }
+
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },
@@ -974,118 +1087,6 @@ internal fun BackupRestoreScreen(
         }
     }
 
-    if (showVoicePlayerSettings) {
-        val context = LocalContext.current
-        var compactVoicePlayer by rememberSaveable {
-            mutableStateOf(
-                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                    .getBoolean(PREF_VOICE_PLAYER_COMPACT, true)
-            )
-        }
-        Dialog(
-            onDismissRequest = { showVoicePlayerSettings = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Surface(
-                modifier = Modifier.fillMaxSize().padding(12.dp),
-                shape = RoundedCornerShape(24.dp),
-                color = colors.surface
-            ) {
-                Column(
-                    Modifier.fillMaxSize().padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = { showVoicePlayerSettings = false },
-                            modifier = Modifier.testTag("voice_player_settings_back")
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to Settings")
-                        }
-                        Column(Modifier.weight(1f)) {
-                            Text("Voice player", style = MaterialTheme.typography.headlineSmall)
-                            Text("Choose how recordings appear in your notes",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = colors.onSurfaceVariant)
-                        }
-                    }
-                    HorizontalDivider()
-                    Text("Player style", style = MaterialTheme.typography.titleMedium)
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().clickable {
-                            compactVoicePlayer = true
-                            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
-                        }.testTag("voice_player_style_compact"),
-                        shape = RoundedCornerShape(18.dp),
-                        color = if (compactVoicePlayer) colors.secondaryContainer else colors.surfaceContainerLow,
-                        border = BorderStroke(1.dp, if (compactVoicePlayer) colors.primary else colors.outlineVariant)
-                    ) {
-                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            FilledIconButton(onClick = {
-                                compactVoicePlayer = true
-                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
-                            }, modifier = Modifier.size(42.dp)) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = null)
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text("Compact", style = MaterialTheme.typography.titleMedium)
-                                Text("Round play/pause button, short waveform, minimal height.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = colors.onSurfaceVariant)
-                            }
-                            RadioButton(selected = compactVoicePlayer, onClick = {
-                                compactVoicePlayer = true
-                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
-                            })
-                        }
-                    }
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().clickable {
-                            compactVoicePlayer = false
-                            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
-                        }.testTag("voice_player_style_full"),
-                        shape = RoundedCornerShape(18.dp),
-                        color = if (!compactVoicePlayer) colors.secondaryContainer else colors.surfaceContainerLow,
-                        border = BorderStroke(1.dp, if (!compactVoicePlayer) colors.primary else colors.outlineVariant)
-                    ) {
-                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            FilledIconButton(onClick = {
-                                compactVoicePlayer = false
-                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
-                            }, modifier = Modifier.size(42.dp)) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = null)
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text("Full", style = MaterialTheme.typography.titleMedium)
-                                Text("Larger player with recording details and a seek control.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = colors.onSurfaceVariant)
-                            }
-                            RadioButton(selected = !compactVoicePlayer, onClick = {
-                                compactVoicePlayer = false
-                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
-                            })
-                        }
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Text("Your choice is saved automatically.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.onSurfaceVariant)
-                    Button(onClick = { showVoicePlayerSettings = false }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Done")
-                    }
-                }
-            }
-        }
-    }
 }
 
 
