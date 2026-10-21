@@ -63,6 +63,17 @@ class MarkdownPreviewTest {
     }
 
     @Test
+    fun differentFenceDelimiterDoesNotCloseAnOpenCodeFence() {
+        val result = MarkdownPreview.toSpanned("```text\n~~~\n> literal quote\n---\n```")
+
+        assertTrue(result.toString().contains("~~~"))
+        assertTrue(result.toString().contains("> literal quote"))
+        assertTrue(result.toString().contains("---"))
+        assertTrue(result.getSpans(0, result.length, QuoteSpan::class.java).isEmpty())
+        assertTrue(result.getSpans(0, result.length, LineBackgroundSpan::class.java).isEmpty())
+    }
+
+    @Test
     fun blockquoteMarkerIsParsedAsMarkdownRatherThanDisplayedLiterally() {
         val result = MarkdownPreview.toSpanned("> A quoted thought")
         assertTrue(result.toString().contains("A quoted thought"))
