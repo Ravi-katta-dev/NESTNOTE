@@ -148,8 +148,9 @@ internal fun collapsibleSlotHeight(measuredHeight: Int, fraction: Float): Int =
 
 /**
  * Hides internal attachment IDs while editing without changing the saved note body.
- * Each marker is displayed as a compact, styled voice-note label. Offset mapping
- * keeps text selection and cursor movement anchored to the underlying marker.
+ * Each marker is displayed as a compact, styled voice-note chip with a visible
+ * waveform motif and recording name. Offset mapping keeps text selection and
+ * cursor movement anchored to the underlying marker.
  */
 internal class VoiceMarkerVisualTransformation(
     private val chipBackground: Color,
@@ -174,7 +175,9 @@ internal class VoiceMarkerVisualTransformation(
             outputCursor += prefix.length
             val attachmentId = match.groupValues[1]
             val displayName = if (validAttachmentId.matches(attachmentId)) names[attachmentId] ?: "Voice note" else "Voice note unavailable"
-            val label = "  🎙 " + displayName.take(28) + "  "
+            // Keep the waveform visible inside the editor itself; a composable
+            // player cannot be embedded in VisualTransformation output.
+            val label = "  ▂▅▇▄▆▃▅  " + displayName.take(20) + "  "
             val transformedStart = outputCursor
             output.pushStyle(
                 SpanStyle(
