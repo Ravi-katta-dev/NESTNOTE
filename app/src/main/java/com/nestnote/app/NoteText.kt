@@ -19,30 +19,23 @@ object NoteText {
      * Recognizes headings, bullets, numbered lists, and simple checklists; other lines stay intact.
      */
     fun toMarkdown(title: String, plainText: String): String {
-        val output = mutableListOf<String>()
-        if (title.isNotBlank()) {
-            output += "# ${title.trim()}"
-            output += ""
-        }
-        // Do not trim the body or individual prose lines: leading/trailing spaces and
-        // intentional blank lines are user content and must survive preview conversion.
-        plainText.lines().forEach { raw ->
+        val body = plainText.split("\n", ignoreCase = false, limit = Int.MAX_VALUE).joinToString("\n") { raw ->
             val indent = raw.takeWhile { it == ' ' || it == '\t' }
-            val line = raw.substring(indent.length)
-            when {
-                line.isEmpty() -> output += raw
-                line.matches(Regex("^#{1,6}\\s+.*")) -> output += raw
+            val line = raw.drop(indent.length)
+            indent + when {
+                line.matches(Regex("^#{1,6}\\s+.*")) -> line
                 line.matches(Regex("^[-*•]\\s+.*")) ->
-                    output += indent + "- " + line.replaceFirst(Regex("^[-*•]\\s+"), "")
+                    "- " + line.replaceFirst(Regex("^[-*•]\\s+"), "")
                 line.matches(Regex("^\\d+[.)]\\s+.*")) ->
-                    output += indent + line.replaceFirst(Regex("^\\d+[.)]\\s+"), "")
+                    line.replaceFirst(Regex("^\\d+[.)]\\s+"), "")
                         .let { item -> "${Regex("^\\d+").find(line)?.value ?: "1"}. $item" }
-                line.startsWith("☑ ") -> output += indent + "- [x] " + line.removePrefix("☑ ")
-                line.startsWith("☐ ") -> output += indent + "- [ ] " + line.removePrefix("☐ ")
-                else -> output += raw
+                line.startsWith("☑ ") -> "- [x] " + line.removePrefix("☑ ")
+                line.startsWith("☐ ") -> "- [ ] " + line.removePrefix("☐ ")
+                else -> line
             }
         }
-        return output.joinToString("\n") + if (plainText.endsWith("\n") || plainText.isEmpty()) "" else "\n"
+        val heading = if (title.isNotBlank()) "# ${title.trim()}\n\n" else ""
+        return heading + body
     }
 
     fun wordCount(text: String): Int =
@@ -63,17 +56,13 @@ object NoteText {
 
     fun lineStart(text: String, cursor: Int): Int {
         val c = cursor.coerceIn(0, text.length)
-        if (c == 0) return 0
-        val lf = text.lastIndexOf('\n', c - 1)
-        val cr = text.lastIndexOf('\r', c - 1)
-        return maxOf(lf, cr) + 1
+        return if (c == 0) 0 else text.lastIndexOf('\n', c - 1) + 1
     }
 
     fun lineEnd(text: String, cursor: Int): Int {
         val c = cursor.coerceIn(0, text.length)
-        val lf = text.indexOf('\n', c)
-        val cr = text.indexOf('\r', c)
-        return listOf(lf, cr).filter { it >= 0 }.minOrNull() ?: text.length
+        val i = text.indexOf('\n', c)
+        return if (i < 0) text.length else i
     }
 
     /** Leading whitespace of a line. Checklist views already tolerate it, so formatting actions must too. */
@@ -278,7 +267,7 @@ object NoteText {
         val delta = newText.length - oldText.length
         fun map(position: Int): Int {
             val mapped = when {
-                position < prefix -> position
+                position <= prefix -> position
                 position >= oldChangedEnd -> position + delta
                 else -> newChangedEnd
             }
