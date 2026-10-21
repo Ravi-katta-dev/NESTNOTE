@@ -31,18 +31,18 @@ object NoteText {
             val line = raw.substring(indent.length)
             when {
                 line.isEmpty() -> output += raw
-                line.matches(Regex("^#{1,6}\\\\s+.*")) -> output += raw
-                line.matches(Regex("^[-*•]\\\\s+.*")) ->
-                    output += indent + "- " + line.replaceFirst(Regex("^[-*•]\\\\s+"), "")
-                line.matches(Regex("^\\\\d+[.)]\\\\s+.*")) ->
-                    output += indent + line.replaceFirst(Regex("^\\\\d+[.)]\\\\s+"), "")
+                line.matches(Regex("^#{1,6}\\s+.*")) -> output += raw
+                line.matches(Regex("^[-*•]\\s+.*")) ->
+                    output += indent + "- " + line.replaceFirst(Regex("^[-*•]\\s+"), "")
+                line.matches(Regex("^\\\\d+[.)]\\s+.*")) ->
+                    output += indent + line.replaceFirst(Regex("^\\\\d+[.)]\\s+"), "")
                         .let { item -> "${Regex("^\\\\d+").find(line)?.value ?: "1"}. $item" }
                 line.startsWith("☑ ") -> output += indent + "- [x] " + line.removePrefix("☑ ")
                 line.startsWith("☐ ") -> output += indent + "- [ ] " + line.removePrefix("☐ ")
                 else -> output += raw
             }
         }
-        return output.joinToString("\\n") + if (plainText.endsWith("\\n") || plainText.isEmpty()) "" else "\\n"
+        return output.joinToString("\n") + if (plainText.endsWith("\n") || plainText.isEmpty()) "" else "\\n"
     }
 
     fun wordCount(text: String): Int =
