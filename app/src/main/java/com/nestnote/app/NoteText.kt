@@ -272,7 +272,7 @@ object NoteText {
         val delta = newText.length - oldText.length
         fun map(position: Int): Int {
             val mapped = when {
-                position <= prefix -> position
+                position < prefix -> position
                 position >= oldChangedEnd -> position + delta
                 else -> newChangedEnd
             }
