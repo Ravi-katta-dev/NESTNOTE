@@ -4,6 +4,7 @@ import android.graphics.Color
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.WriterException
 import com.google.zxing.common.HybridBinarizer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -47,9 +48,22 @@ class NoteQrCodeTest {
         assertEquals(payload, decoded.text)
     }
 
-    @Test(expected = Exception::class)
+    @Test(expected = WriterException::class)
     fun rejectsPayloadThatExceedsQrCapacity() {
         NoteQrCode.createBitmap("x".repeat(5000))
+    }
+
+    @Test
+    fun generatedQrRoundTripsUnicodeAndEmojiPayload() {
+        val payload = "नमस्ते NESTNOTE 🌿\nNotes stay on your device."
+        val bitmap = NoteQrCode.createBitmap(payload, size = 512)
+        val pixels = IntArray(bitmap.width * bitmap.height)
+        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+
+        val source = RGBLuminanceSource(bitmap.width, bitmap.height, pixels)
+        val decoded = MultiFormatReader().decode(BinaryBitmap(HybridBinarizer(source)))
+
+        assertEquals(payload, decoded.text)
     }
 
     @Test
