@@ -84,7 +84,7 @@ class MarkdownPreviewTest {
     @Test
     fun markdownFormattingIsPreservedInTextSegmentsAroundVoiceNotes() {
         val id = "11111111-1111-4111-8111-111111111111"
-        val body = "**before**\\n[[voice:$id]]\\n*after*"
+        val body = "**before**\n[[voice:$id]]\n*after*"
         val segments = NoteText.voiceSegments(body)
 
         assertEquals(3, segments.size)
