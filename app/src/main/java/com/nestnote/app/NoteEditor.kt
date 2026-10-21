@@ -1434,7 +1434,7 @@ internal fun NoteEditorContent(
     )
 
     if (qrCodeDialog) {
-        val qrPayload = remember(title, body) { NoteText.shareText(title, body) }
+        val qrPayload = remember(title, body) { NoteQrCode.sharePayload(title, body) }
         val qrBitmap = remember(qrPayload) {
             runCatching { NoteQrCode.createBitmap(qrPayload) }.getOrNull()
         }
