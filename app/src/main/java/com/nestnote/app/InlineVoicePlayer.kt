@@ -265,9 +265,9 @@ internal fun InlineVoicePlayer(
                     },
                     modifier = Modifier.size(36.dp).semantics {
                         contentDescription = when {
-                            !isActive -> "Play voice note"
-                            paused -> "Resume voice note"
-                            else -> "Pause voice note"
+                            !isActive -> "Play $displayName"
+                            paused -> "Resume $displayName"
+                            else -> "Pause $displayName"
                         }
                     }
                 ) {
