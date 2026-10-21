@@ -509,10 +509,19 @@ internal fun NoteEditorContent(
     }
 
     fun shareNote() {
+        val sharedText = NoteText.shareText(title, body)
+        if (sharedText.isBlank()) {
+            android.widget.Toast.makeText(
+                context,
+                "Add a title or note content before sharing",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, title.trim())
-            putExtra(Intent.EXTRA_TEXT, NoteText.shareText(title, body))
+            if (title.isNotBlank()) putExtra(Intent.EXTRA_SUBJECT, title.trim())
+            putExtra(Intent.EXTRA_TEXT, sharedText)
         }
         context.startActivity(Intent.createChooser(send, "Share note"))
     }
