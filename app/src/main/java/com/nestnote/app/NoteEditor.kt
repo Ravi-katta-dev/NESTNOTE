@@ -175,9 +175,10 @@ internal class VoiceMarkerVisualTransformation(
             outputCursor += prefix.length
             val attachmentId = match.groupValues[1]
             val displayName = if (validAttachmentId.matches(attachmentId)) names[attachmentId] ?: "Voice note" else "Voice note unavailable"
-            // VisualTransformation can only render text, not a live composable
-            // waveform. The inline-player preview renders the animated waveform.
-            val label = "  🎙 " + displayName.take(28) + "  "
+            // TextField visual transformations cannot embed a live composable.
+            // Use a compact static waveform motif here; the preview player animates it.
+            val waveform = "▂▄▆█▆▄"
+            val label = "  $waveform  " + displayName.take(28) + "  "
             val transformedStart = outputCursor
             output.pushStyle(
                 SpanStyle(
