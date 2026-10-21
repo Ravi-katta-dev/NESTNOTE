@@ -22,6 +22,7 @@ internal object NoteQrCode {
 
         val hints = mapOf<EncodeHintType, Any>(
             EncodeHintType.MARGIN to 1,
+            EncodeHintType.CHARACTER_SET to Charsets.UTF_8.name(),
             EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M
         )
         val matrix = QRCodeWriter().encode(
