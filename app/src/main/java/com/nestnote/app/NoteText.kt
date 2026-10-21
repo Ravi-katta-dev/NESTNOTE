@@ -246,15 +246,37 @@ object NoteText {
             val cursor = newCursor.coerceIn(0, newText.length)
             return cursor to cursor
         }
-        val startOfLine = lineStart(oldText, start)
-        val delta = newCursor - start
-        fun map(position: Int): Int {
-            val adjusted = if (position >= startOfLine) position + delta else position
-            return adjusted.coerceIn(0, newText.length)
+
+        // Derive the changed range from the texts themselves. The returned cursor can
+        // be anywhere on the edited line and is not a reliable measure of edit length.
+        var prefix = 0
+        val commonLimit = minOf(oldText.length, newText.length)
+        while (prefix < commonLimit && oldText[prefix] == newText[prefix]) prefix++
+
+        var suffix = 0
+        while (
+            suffix < oldText.length - prefix &&
+            suffix < newText.length - prefix &&
+            oldText[oldText.length - suffix - 1] == newText[newText.length - suffix - 1]
+        ) {
+            suffix++
         }
-        val mappedStart = map(start)
-        val mappedEnd = map(end)
-        return mappedStart to mappedEnd
+
+        val oldChangedEnd = oldText.length - suffix
+        val newChangedEnd = newText.length - suffix
+        val delta = newText.length - oldText.length
+        fun map(position: Int): Int {
+            val mapped = when {
+                position <= prefix -> position
+                position >= oldChangedEnd -> position + delta
+                else -> newChangedEnd
+            }
+            return mapped.coerceIn(0, newText.length)
+        }
+
+        // Keep reversed selections reversed; TextFieldValue uses them to represent
+        // selection direction as well as the selected range.
+        return map(start) to map(end)
     }
 
     data class ChecklistItem(val lineIndex: Int, val text: String, val checked: Boolean)
