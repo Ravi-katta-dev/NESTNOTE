@@ -19,24 +19,23 @@ object NoteText {
      * Recognizes headings, bullets, numbered lists, and simple checklists; other lines stay intact.
      */
     fun toMarkdown(title: String, plainText: String): String {
-        val output = mutableListOf<String>()
-        if (title.isNotBlank()) {
-            output += "# ${title.trim()}"
-            output += ""
-        }
-        plainText.trim().lines().forEach { raw ->
-            val line = raw.trim()
-            when {
-                line.isEmpty() -> output += ""
-                line.matches(Regex("^#{1,6}\\s+.*")) -> output += line
-                line.matches(Regex("^[-*•]\\s+.*")) -> output += "- " + line.replaceFirst(Regex("^[-*•]\\s+"), "")
-                line.matches(Regex("^\\d+[.)]\\s+.*")) -> output += line.replaceFirst(Regex("^\\d+[.)]\\s+"), "").let { item -> "${Regex("^\\d+").find(line)?.value ?: "1"}. $item" }
-                line.startsWith("☑ ") -> output += "- [x] " + line.removePrefix("☑ ")
-                line.startsWith("☐ ") -> output += "- [ ] " + line.removePrefix("☐ ")
-                else -> output += line
+        val body = plainText.split("\n", ignoreCase = false, limit = Int.MAX_VALUE).joinToString("\n") { raw ->
+            val indent = raw.takeWhile { it == ' ' || it == '\\t' }
+            val line = raw.drop(indent.length)
+            indent + when {
+                line.matches(Regex("^#{1,6}\\s+.*")) -> line
+                line.matches(Regex("^[-*•]\\s+.*")) ->
+                    "- " + line.replaceFirst(Regex("^[-*•]\\s+"), "")
+                line.matches(Regex("^\\d+[.)]\\s+.*")) ->
+                    line.replaceFirst(Regex("^\\d+[.)]\\s+"), "")
+                        .let { item -> "${Regex("^\\d+").find(line)?.value ?: "1"}. $item" }
+                line.startsWith("☑ ") -> "- [x] " + line.removePrefix("☑ ")
+                line.startsWith("☐ ") -> "- [ ] " + line.removePrefix("☐ ")
+                else -> line
             }
         }
-        return output.joinToString("\n").trimEnd() + "\n"
+        val heading = if (title.isNotBlank()) "# ${title.trim()}\n\n" else ""
+        return heading + body
     }
 
     fun wordCount(text: String): Int =
