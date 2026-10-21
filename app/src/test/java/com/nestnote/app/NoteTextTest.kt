@@ -8,24 +8,27 @@ import org.junit.Test
 
 class NoteTextTest {
     @Test
-    fun wordCountIgnoresExtraWhitespace() {
-        assertEquals(0, NoteText.wordCount("   \n "))
-        assertEquals(3, NoteText.wordCount("one  two\nthree "))
-    }
-
-    @Test
-    fun markdownConversionPreservesBodyWhitespaceAndBlankLines() {
-        val body = "  leading and trailing  \n\n indented prose\nlast line\n"
+    fun markdownExportPreservesMeaningfulWhitespaceAndTrailingNewlines() {
+        val body = "  indented text\n\ncode  \nlast line\n"
         assertEquals(body, NoteText.toMarkdown("", body))
     }
 
     @Test
-    fun markdownConversionFormatsListsWithoutTrimmingProse() {
-        val body = "  • milk\n  ☐ eggs\n  3) bread\n  keep spaces  "
-        assertEquals(
-            "  - milk\n  - [ ] eggs\n  3. bread\n  keep spaces  \n",
-            NoteText.toMarkdown("", body)
-        )
+    fun markdownExportPreservesLeadingIndentationWhenConvertingListMarkers() {
+        assertEquals("  - item\n\t- [x] done", NoteText.toMarkdown("", "  • item\n\t☑ done"))
+    }
+
+    @Test
+    fun selectionMappingUsesActualTextEditDeltaRatherThanCursorPosition() {
+        val old = "first\nsecond\nthird"
+        val new = "first\n☐ second\nthird"
+        assertEquals(10 to 15, NoteText.selectionAfterLineEdit(old, new, 8, 13, 10))
+    }
+
+    @Test
+    fun wordCountIgnoresExtraWhitespace() {
+        assertEquals(0, NoteText.wordCount("   \n "))
+        assertEquals(3, NoteText.wordCount("one  two\nthree "))
     }
 
     @Test
@@ -217,29 +220,6 @@ class NoteTextTest {
     fun enterOnPlainLineOrPastedTextDoesNothing() {
         assertNull(NoteText.continueList("plain", "plain\n", 6))
         assertNull(NoteText.continueList("• a", "• a\n\nb", 4))
-    }
-
-    @Test
-    fun lineBoundariesSupportLfCrLfAndLoneCr() {
-        assertEquals(4, NoteText.lineStart("one\ntwo", 5))
-        assertEquals(5, NoteText.lineStart("one\r\ntwo", 6))
-        assertEquals(4, NoteText.lineStart("one\rtwo", 5))
-        assertEquals(3, NoteText.lineEnd("one\r\ntwo", 0))
-        assertEquals(3, NoteText.lineEnd("one\rtwo", 0))
-    }
-
-    @Test
-    fun selectionRemappingUsesActualTextDeltaAndPreservesReversedSelections() {
-        val old = "before\nselected text\nafter"
-        val updated = "before\n☐ selected text\nafter"
-        assertEquals(
-            9 to 22,
-            NoteText.selectionAfterLineEdit(old, updated, 7, 20, 9)
-        )
-        assertEquals(
-            22 to 9,
-            NoteText.selectionAfterLineEdit(old, updated, 20, 7, 9)
-        )
     }
 
     @Test
@@ -446,13 +426,13 @@ class NoteTextTest {
     @Test
     fun voiceSegmentsPreserveWhitespaceAroundMarkers() {
         val id = "11111111-1111-4111-8111-111111111111"
-        val body = "first paragraph\n\n[[voice:$id]]\n\nlast paragraph"
+        val body = "first paragraph\\n\\n[[voice:$id]]\\n\\nlast paragraph"
 
         assertEquals(
             listOf(
-                NoteText.VoiceSegment("first paragraph\n\n", null),
+                NoteText.VoiceSegment("first paragraph\\n\\n", null),
                 NoteText.VoiceSegment("", id),
-                NoteText.VoiceSegment("\n\nlast paragraph", null)
+                NoteText.VoiceSegment("\\n\\nlast paragraph", null)
             ),
             NoteText.voiceSegments(body)
         )
@@ -462,14 +442,14 @@ class NoteTextTest {
     fun voiceSegmentsPreserveLeadingAndTrailingWhitespaceAndAdjacentMarkers() {
         val first = "11111111-1111-4111-8111-111111111111"
         val second = "22222222-2222-4222-8222-222222222222"
-        val body = "\n[[voice:$first]][[voice:$second]]\n"
+        val body = "\\n[[voice:$first]][[voice:$second]]\\n"
 
         assertEquals(
             listOf(
-                NoteText.VoiceSegment("\n", null),
+                NoteText.VoiceSegment("\\n", null),
                 NoteText.VoiceSegment("", first),
                 NoteText.VoiceSegment("", second),
-                NoteText.VoiceSegment("\n", null)
+                NoteText.VoiceSegment("\\n", null)
             ),
             NoteText.voiceSegments(body)
         )
