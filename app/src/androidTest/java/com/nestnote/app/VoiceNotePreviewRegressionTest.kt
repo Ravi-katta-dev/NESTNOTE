@@ -78,6 +78,8 @@ class VoiceNotePreviewRegressionTest {
         assertFalse(result.text.contains(first))
         assertFalse(result.text.contains(second))
         assertEquals(2, Regex("Voice note").findAll(result.text).count())
+        // Editable markers use a static text motif; the preview player owns animation.
+        assertEquals(2, Regex("▂▄▆█▆▄").findAll(result.text).count())
 
         val firstStart = body.indexOf("[[voice:")
         val firstEnd = firstStart + "[[voice:$first]]".length
