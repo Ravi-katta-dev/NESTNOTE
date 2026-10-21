@@ -67,6 +67,25 @@ class NoteQrCodeTest {
     }
 
     @Test
+    fun sharePayloadSanitizesEveryVoiceMarkerAndNeverIncludesAttachmentIds() {
+        val firstId = "12345678-1234-4234-8234-123456789abc"
+        val secondId = "abcdefab-cdef-4abc-8def-abcdefabcdef"
+        val payload = NoteQrCode.sharePayload(
+            "Voice notes",
+            "First [[voice:$firstId]] then [[voice:$secondId]]"
+        )
+
+        assertEquals("Voice notes\n\nFirst [Voice note] then [Voice note]", payload)
+        assertTrue(!payload.contains(firstId))
+        assertTrue(!payload.contains(secondId))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsNonPositiveBitmapSize() {
+        NoteQrCode.createBitmap("valid payload", size = 0)
+    }
+
+    @Test
     fun sharePayloadReplacesVoiceAttachmentIdsWithReadableLabel() {
         val id = "12345678-1234-4234-8234-123456789abc"
 
