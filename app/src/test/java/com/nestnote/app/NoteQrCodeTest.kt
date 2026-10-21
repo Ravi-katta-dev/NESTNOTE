@@ -30,6 +30,13 @@ class NoteQrCodeTest {
         assertTrue(whitePixels > 0)
     }
 
+    @Test
+    fun sharePayloadReplacesVoiceAttachmentIdsWithReadableLabel() {
+        val id = "12345678-1234-4234-8234-123456789abc"
+
+        assertEquals("Title\\n\\nBefore [Voice note] after", NoteQrCode.sharePayload("Title", "Before [[voice:$id]] after"))
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun rejectsBlankPayload() {
         NoteQrCode.createBitmap("  ")
