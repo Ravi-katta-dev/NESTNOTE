@@ -1,6 +1,10 @@
 package com.nestnote.app
 
 import android.graphics.Color
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -31,10 +35,31 @@ class NoteQrCodeTest {
     }
 
     @Test
+    fun generatedQrCanBeDecodedBackToExactPayload() {
+        val payload = "NESTNOTE QR round-trip: title\n\nA note with punctuation: !? & symbols."
+        val bitmap = NoteQrCode.createBitmap(payload, size = 512)
+        val pixels = IntArray(bitmap.width * bitmap.height)
+        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+
+        val source = RGBLuminanceSource(bitmap.width, bitmap.height, pixels)
+        val decoded = MultiFormatReader().decode(BinaryBitmap(HybridBinarizer(source)))
+
+        assertEquals(payload, decoded.text)
+    }
+
+    @Test(expected = Exception::class)
+    fun rejectsPayloadThatExceedsQrCapacity() {
+        NoteQrCode.createBitmap("x".repeat(5000))
+    }
+
+    @Test
     fun sharePayloadReplacesVoiceAttachmentIdsWithReadableLabel() {
         val id = "12345678-1234-4234-8234-123456789abc"
 
-        assertEquals("Title\n\nBefore [Voice note] after", NoteQrCode.sharePayload("Title", "Before [[voice:$id]] after"))
+        assertEquals(
+            "Title\n\nBefore [Voice note] after",
+            NoteQrCode.sharePayload("Title", "Before [[voice:$id]] after")
+        )
     }
 
     @Test(expected = IllegalArgumentException::class)
