@@ -251,32 +251,37 @@ object NoteText {
             val cursor = newCursor.coerceIn(0, newText.length)
             return cursor to cursor
         }
-        // Derive the actual changed range from the two texts. The returned cursor may
-        // be inside a newly inserted prefix, so it is not a reliable edit-delta anchor.
-        var prefix = 0
-        val sharedLimit = minOf(oldText.length, newText.length)
-        while (prefix < sharedLimit && oldText[prefix] == newText[prefix]) prefix++
 
-        var oldSuffix = oldText.length
-        var newSuffix = newText.length
-        while (oldSuffix > prefix && newSuffix > prefix &&
-            oldText[oldSuffix - 1] == newText[newSuffix - 1]
+        // Derive the changed range from the texts themselves. The returned cursor can
+        // be anywhere on the edited line and is not a reliable measure of edit length.
+        var prefix = 0
+        val commonLimit = minOf(oldText.length, newText.length)
+        while (prefix < commonLimit && oldText[prefix] == newText[prefix]) prefix++
+
+        var suffix = 0
+        while (
+            suffix < oldText.length - prefix &&
+            suffix < newText.length - prefix &&
+            oldText[oldText.length - suffix - 1] == newText[newText.length - suffix - 1]
         ) {
-            oldSuffix--
-            newSuffix--
+            suffix++
         }
-        val delta = newSuffix - oldSuffix
+
+        val oldChangedEnd = oldText.length - suffix
+        val newChangedEnd = newText.length - suffix
+        val delta = newText.length - oldText.length
         fun map(position: Int): Int {
             val mapped = when {
                 position <= prefix -> position
-                position >= oldSuffix -> position + delta
-                else -> if (position - prefix <= oldSuffix - position) prefix else newSuffix
+                position >= oldChangedEnd -> position + delta
+                else -> newChangedEnd
             }
             return mapped.coerceIn(0, newText.length)
         }
-        val mappedStart = map(start)
-        val mappedEnd = map(end)
-        return if (selectionStart <= selectionEnd) mappedStart to mappedEnd else mappedEnd to mappedStart
+
+        // Keep reversed selections reversed; TextFieldValue uses them to represent
+        // selection direction as well as the selected range.
+        return map(start) to map(end)
     }
 
     data class ChecklistItem(val lineIndex: Int, val text: String, val checked: Boolean)
