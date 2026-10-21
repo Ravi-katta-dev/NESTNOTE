@@ -14,6 +14,21 @@ class NoteTextTest {
     }
 
     @Test
+    fun markdownConversionPreservesBodyWhitespaceAndBlankLines() {
+        val body = "  leading and trailing  \\n\\n indented prose\\nlast line\\n"
+        assertEquals(body, NoteText.toMarkdown("", body))
+    }
+
+    @Test
+    fun markdownConversionFormatsListsWithoutTrimmingProse() {
+        val body = "  • milk\\n  ☐ eggs\\n  3) bread\\n  keep spaces  "
+        assertEquals(
+            "  - milk\\n  - [ ] eggs\\n  3. bread\\n  keep spaces  \\n",
+            NoteText.toMarkdown("", body)
+        )
+    }
+
+    @Test
     fun readingMinutesRoundsUpAndIsZeroForEmpty() {
         assertEquals(0, NoteText.readingMinutes(0))
         assertEquals(1, NoteText.readingMinutes(5))
