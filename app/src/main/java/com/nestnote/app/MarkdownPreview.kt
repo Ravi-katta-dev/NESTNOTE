@@ -76,7 +76,13 @@ internal object MarkdownPreview {
                 val quoteMatch = if (!inFence && !fenceDelimiterLine) quotePrefix.matchEntire(line) else null
                 val normalizedLine = when {
                     !inFence && !fenceDelimiterLine && horizontalRule.matches(line) -> HORIZONTAL_RULE_MARKER
-                    quoteMatch != null -> quoteMatch.groupValues[1].also(quoteLines::add)
+                    quoteMatch != null -> quoteMatch.groupValues[1].also { quotedLine ->
+                        // Search the rendered text, not the raw Markdown source. Inline
+                        // emphasis delimiters disappear during parsing, so normalize them
+                        // before locating the range that receives QuoteSpan.
+                        val renderedText = quotedLine.replace(Regex("""(\\*\\*|__|[*_`])"""), "")
+                        if (renderedText.isNotEmpty()) quoteLines.add(renderedText)
+                    }
                     else -> line
                 }
                 if (index > 0) append("\n")
