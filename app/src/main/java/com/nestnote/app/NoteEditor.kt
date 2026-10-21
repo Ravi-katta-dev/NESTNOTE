@@ -8,6 +8,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Build
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
@@ -24,6 +25,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -99,6 +101,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -302,6 +305,7 @@ internal fun NoteEditorContent(
     var reminderMenu by remember { mutableStateOf(false) }
     var voiceNoteDialog by rememberSaveable(original?.id, draftNoteId) { mutableStateOf(false) }
     var moreMenu by remember { mutableStateOf(false) }
+    var qrCodeDialog by remember { mutableStateOf(false) }
     val titleFocus = remember { FocusRequester() }
     val context = LocalContext.current
     var customWallpaperUri by rememberSaveable(original?.id, draftNoteId) { mutableStateOf(original?.wallpaperUri.orEmpty()) }
@@ -863,6 +867,12 @@ internal fun NoteEditorContent(
                                     leadingIcon = { Icon(Icons.Default.Share, null) }
                                 )
                                 DropdownMenuItem(
+                                    text = { Text("Show QR code") },
+                                    enabled = title.isNotBlank() || body.isNotBlank(),
+                                    onClick = { moreMenu = false; qrCodeDialog = true },
+                                    leadingIcon = { Icon(Icons.Default.QrCode2, null) }
+                                )
+                                DropdownMenuItem(
                                     text = { Text("Note format · " + if (noteFormat == "markdown") "Markdown" else "Plain text") },
                                     onClick = {
                                         moreMenu = false
@@ -1422,6 +1432,42 @@ internal fun NoteEditorContent(
             }
         }
     )
+
+    if (qrCodeDialog) {
+        val qrPayload = remember(title, body) { NoteText.shareText(title, body) }
+        val qrBitmap = remember(qrPayload) {
+            runCatching { NoteQrCode.createBitmap(qrPayload) }.getOrNull()
+        }
+        AlertDialog(
+            onDismissRequest = { qrCodeDialog = false },
+            title = { Text("Share with QR code") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (qrBitmap != null) {
+                        Image(
+                            bitmap = qrBitmap.asImageBitmap(),
+                            contentDescription = "QR code containing this note text",
+                            modifier = Modifier.size(240.dp)
+                        )
+                    } else {
+                        Text("This note is too long to fit in a QR code. Use Share note instead.")
+                    }
+                    Text(
+                        "Anyone who scans this code can read the note. The QR code contains the text directly; it is not an encrypted link.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { qrCodeDialog = false }) { Text("Close") }
+            },
+            dismissButton = {
+                TextButton(onClick = { qrCodeDialog = false; shareNote() }) { Text("Share text instead") }
+            }
+        )
+    }
 
     if (deleteConfirmation && onDelete != null) {
         AlertDialog(
