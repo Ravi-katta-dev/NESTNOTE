@@ -210,9 +210,13 @@ jobs:
           SITE_BASE="https://ravi-katta-dev.github.io/NESTNOTE"
           for path in "/" "/styles.css" "/app.js" "/site.webmanifest" "/assets/nestnote-icon.svg"; do
             url="$SITE_BASE$path"
+            output="$RUNNER_TEMP/pages-check"
+            if [[ "$path" == "/" ]]; then
+              output="$RUNNER_TEMP/pages-home.html"
+            fi
             ok=false
             for attempt in {1..12}; do
-              if curl --fail --silent --show-error --location "$url?verify=$GITHUB_RUN_ID-$attempt" -o "$RUNNER_TEMP/pages-check"; then
+              if curl --fail --silent --show-error --location "$url?verify=$GITHUB_RUN_ID-$attempt" -o "$output"; then
                 ok=true
                 break
               fi
@@ -223,8 +227,8 @@ jobs:
               exit 1
             fi
           done
-          grep -q "NESTNOTE" "$RUNNER_TEMP/pages-check" || {
-            echo "::error::Last checked website resource does not contain expected NESTNOTE content."
+          grep -qi "NESTNOTE" "$RUNNER_TEMP/pages-home.html" || {
+            echo "::error::Published homepage does not contain expected NESTNOTE content."
             exit 1
           }
 
