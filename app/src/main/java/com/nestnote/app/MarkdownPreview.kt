@@ -80,7 +80,7 @@ internal object MarkdownPreview {
                         // Search the rendered text, not the raw Markdown source. Inline
                         // emphasis delimiters disappear during parsing, so normalize them
                         // before locating the range that receives QuoteSpan.
-                        val renderedText = quotedLine.replace(Regex("""(\\*\\*|__|[*_`])"""), "")
+                        val renderedText = quotedLine.replace(Regex("""(\*\*|__|[*_`])"""), "")
                         if (renderedText.isNotEmpty()) quoteLines.add(renderedText)
                     }
                     else -> line
