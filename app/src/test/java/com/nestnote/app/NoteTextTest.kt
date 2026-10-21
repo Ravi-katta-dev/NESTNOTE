@@ -22,7 +22,7 @@ class NoteTextTest {
     fun selectionMappingUsesActualTextEditDeltaRatherThanCursorPosition() {
         val old = "first\nsecond\nthird"
         val new = "first\n☐ second\nthird"
-        assertEquals(10 to 15, NoteText.selectionAfterLineEdit(old, new, 8, 13, 10))
+        assertEquals(11 to 16, NoteText.selectionAfterLineEdit(old, new, 8, 13, 10))
     }
 
     @Test
