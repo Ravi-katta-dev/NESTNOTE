@@ -440,6 +440,32 @@ internal fun SettingsScreen(
             }
         }
         }
+        if (settingsSearch.isBlank() || listOf("voice", "player", "audio", "playback").any { settingsSearch.contains(it, ignoreCase = true) }) {
+        item(key = "settings_voice_player") {
+            val context = LocalContext.current
+            var compactVoicePlayer by rememberSaveable {
+                mutableStateOf(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    .getBoolean(PREF_VOICE_PLAYER_COMPACT, true))
+            }
+            SettingsSection(title = "Voice player", subtitle = "Choose your inline playback style", icon = Icons.Default.Mic) {
+                SwitchRow(
+                    title = "Compact voice player",
+                    summary = "Round play button with a small waveform beside it",
+                    checked = compactVoicePlayer,
+                    onChange = {
+                        compactVoicePlayer = it
+                        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                            .putBoolean(PREF_VOICE_PLAYER_COMPACT, it).apply()
+                    }
+                )
+                Text(
+                    if (compactVoicePlayer) "Compact · minimal height" else "Full · expanded playback controls",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant
+                )
+            }
+        }
+        }
         if (settingsSearch.isBlank() || listOf("privacy", "permissions", "device", "local", "internet", "security").any { settingsSearch.contains(it, ignoreCase = true) }) {
         item(key = SettingsItemKeys[5]) {
             SettingsSection(title = "Privacy", subtitle = "Your notes stay under your control", icon = Icons.Default.Lock) {
@@ -484,7 +510,7 @@ internal fun SettingsScreen(
                 Text("Reset settings to defaults")
             }
         }
-        if (settingsSearch.isNotBlank() && listOf("appearance", "theme", "wallpaper", "color", "colour", "dark", "oled", "dynamic", "layout", "dashboard", "density", "grid", "list", "compact", "behavior", "category", "sort", "pin", "preview", "date", "reminder", "notes", "editor", "writing", "text", "size", "word", "reading", "count", "data", "backup", "restore", "export", "import", "archive", "privacy", "permissions", "device", "local", "internet", "security", "markdown").none { settingsSearch.contains(it, ignoreCase = true) }) {
+        if (settingsSearch.isNotBlank() && listOf("appearance", "theme", "wallpaper", "color", "colour", "dark", "oled", "dynamic", "layout", "dashboard", "density", "grid", "list", "compact", "behavior", "category", "sort", "pin", "preview", "date", "reminder", "notes", "editor", "writing", "text", "size", "word", "reading", "count", "data", "backup", "restore", "export", "import", "archive", "privacy", "permissions", "device", "local", "internet", "security", "markdown", "voice", "player", "audio", "playback").none { settingsSearch.contains(it, ignoreCase = true) }) {
             item(key = "settings_no_search_results") {
                 Text("No matching settings", style = MaterialTheme.typography.titleMedium)
                 Text("Try searching for theme, layout, category, text size, or backup.", color = colors.onSurfaceVariant)
