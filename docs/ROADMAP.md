@@ -73,6 +73,12 @@ Implemented a unified Material 3 editor with saveable title/body/category/color/
 
 Still not implemented: reminder delivery (alarms/notifications), rich-text formatting beyond checklist/bullet prefixes, tap-to-toggle checkboxes inside the text.
 
+
+## Sharing follow-up — local QR and encrypted links
+
+- [ ] Add encrypted share links with a unique, revocable URL and browser-based decryption. Do not upload note plaintext or the decryption key. This needs a minimal hosted recipient page and encrypted-payload storage; keep setup and maintenance close to zero and do not require the app owner to manage a paid domain. Do not present the feature as available until the end-to-end hosted flow is deployed and tested.
+- [x] Add a local QR-code option to the editor's sharing menu. It encodes the same share-safe note text used by Android sharing and displays a clear warning that scanned content is plaintext. QR generation does not require network access or a hosting account.
+
 ## Release and validation policy
 - Android CI targets API 36 and is the required automated validation.
 - Separate emulator UI workflow is manual-only and not a blocking check.
