@@ -20,7 +20,7 @@ object NoteText {
      */
     fun toMarkdown(title: String, plainText: String): String {
         val body = plainText.split("\n", ignoreCase = false, limit = Int.MAX_VALUE).joinToString("\n") { raw ->
-            val indent = raw.takeWhile { it == ' ' || it == '\\t' }
+            val indent = raw.takeWhile { it == ' ' || it == '\t' }
             val line = raw.drop(indent.length)
             indent + when {
                 line.matches(Regex("^#{1,6}\\s+.*")) -> line
