@@ -32,6 +32,16 @@ class MarkdownPreviewTest {
     }
 
     @Test
+    fun blockquotesWithInlineFormattingReceiveQuoteStyling() {
+        val result = MarkdownPreview.toSpanned("> **important**\n> *quoted text*")
+        val quoteSpans = result.getSpans(0, result.length, QuoteSpan::class.java)
+
+        assertTrue(result.toString().contains("important"))
+        assertTrue(result.toString().contains("quoted text"))
+        assertEquals(2, quoteSpans.size)
+    }
+
+    @Test
     fun emptyAndPlainTextPreviewAreHandled() {
         assertTrue(MarkdownPreview.toSpanned("").isEmpty())
         assertTrue(MarkdownPreview.toSpanned("ordinary note").toString().contains("ordinary note"))
