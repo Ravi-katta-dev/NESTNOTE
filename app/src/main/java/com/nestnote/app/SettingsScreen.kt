@@ -973,8 +973,6 @@ internal fun BackupRestoreScreen(
             }
         }
     }
-}
-
 
     if (showVoicePlayerSettings) {
         val context = LocalContext.current
@@ -1088,6 +1086,8 @@ internal fun BackupRestoreScreen(
             }
         }
     }
+}
+
 
 
 @Composable
