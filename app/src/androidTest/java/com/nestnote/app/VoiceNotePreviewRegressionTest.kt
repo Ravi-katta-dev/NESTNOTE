@@ -92,7 +92,10 @@ class VoiceNotePreviewRegressionTest {
         val secondLabelStart = mapping.originalToTransformed(secondStart)
         val secondLabelEnd = mapping.originalToTransformed(secondEnd)
 
-        assertEquals(firstLabelStart, result.text.indexOf("Voice note") - (result.text.indexOf("Voice note") - firstLabelStart))
+        val firstNameStart = result.text.indexOf("Voice note")
+        val secondNameStart = result.text.indexOf("Voice note", firstNameStart + 1)
+        assertTrue(firstNameStart in firstLabelStart until firstLabelEnd)
+        assertTrue(secondNameStart in secondLabelStart until secondLabelEnd)
         // The original offset between adjacent markers is shared by both
         // markers, so it maps to the end of the first label. The next source
         // offset is inside the second marker and maps to the second label start.
