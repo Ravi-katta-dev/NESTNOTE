@@ -267,6 +267,17 @@ class NoteTextTest {
     }
 
     @Test
+    fun shareTextMakesMarkdownLinksUsableInPlainText() {
+        assertEquals(
+            "Read the guide (https://example.com/guide)\nVisit https://example.com",
+            NoteText.shareText(
+                "",
+                "[Read the guide](https://example.com/guide)\nVisit https://example.com"
+            )
+        )
+    }
+
+    @Test
     fun reminderPresetsLandOnExpectedTimes() {
         // Wednesday 2026-10-14 15:20
         val now = Calendar.getInstance().apply { clear(); set(2026, Calendar.OCTOBER, 14, 15, 20, 0) }
