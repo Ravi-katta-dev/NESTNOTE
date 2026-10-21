@@ -302,10 +302,18 @@ object NoteText {
      * friendly label when sharing rather than leaking the internal marker.
      */
     fun shareText(title: String, body: String): String {
-        val readableBody = body.replace(
-            Regex("""\[\[voice:[^\]\n]+\]\]"""),
-            "[Voice note]"
-        ).trim()
+        val readableBody = body
+            .replace(
+                Regex("""\[\[voice:[^\]\n]+\]\]"""),
+                "[Voice note]"
+            )
+            // Plain-text share targets do not render Markdown links. Keep the URL
+            // visible beside its label so recipients can still tap/copy it.
+            .replace(
+                Regex("""\[([^\]\n]+)]\((https?://[^)\s]+)\)"""),
+                "$1 ($2)"
+            )
+            .trim()
         return listOf(title.trim(), readableBody)
             .filter { it.isNotEmpty() }
             .joinToString("\n\n")
