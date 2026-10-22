@@ -25,7 +25,7 @@ The project Gradle configuration accepts `-PversionName` and `-PversionCode`. A 
 Candidate build commands in the existing CI toolchain (validate these for the exact tag before submission):
 
 ```sh
-gradle --no-daemon testDebugUnitTest -PversionName=1.3.11 -PversionCode=<monotonic-version-code>
+gradle --no-daemon testDebugUnitTest -PversionName=1.3.11 -PversionCode=REPLACE_WITH_VERIFIED_MONOTONIC_CODE
 gradle --no-daemon assembleRelease -PversionName=1.3.11 -PversionCode=<monotonic-version-code>
 ```
 
