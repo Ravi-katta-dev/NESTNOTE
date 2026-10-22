@@ -5,6 +5,9 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.ImageSpan
 import android.text.style.LineBackgroundSpan
 import android.text.style.QuoteSpan
+import android.text.style.RelativeSizeSpan
+import android.text.style.StyleSpan
+import android.graphics.Typeface
 import android.text.style.URLSpan
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
