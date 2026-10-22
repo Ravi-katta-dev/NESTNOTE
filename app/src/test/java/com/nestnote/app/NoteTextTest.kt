@@ -50,6 +50,17 @@ class NoteTextTest {
     }
 
     @Test
+    fun inlineFormatPreservesReversedSelectionDirectionWhenWrappingAndUnwrapping() {
+        val wrapped = NoteText.toggleInlineFormat("hello world", 11, 6, "**")
+        assertEquals("hello **world**", wrapped.first)
+        assertEquals(13 to 8, wrapped.second to wrapped.third)
+
+        val unwrapped = NoteText.toggleInlineFormat(wrapped.first, wrapped.second, wrapped.third, "**")
+        assertEquals("hello world", unwrapped.first)
+        assertEquals(11 to 6, unwrapped.second to unwrapped.third)
+    }
+
+    @Test
     fun inlineFormatInsertsMarkerPairAtCollapsedCursor() {
         val result = NoteText.toggleInlineFormat("abcd", 2, 2, "_")
         assertEquals("ab__cd", result.first)
@@ -146,6 +157,10 @@ class NoteTextTest {
         assertEquals(selected.second, selected.third)
         assertEquals("visit [site](https://) now".indexOf("https://") + "https://".length, selected.second)
 
+        val reversed = NoteText.insertMarkdownLink("visit site now", 10, 6)
+        assertEquals(selected.first, reversed.first)
+        assertEquals(selected.second to selected.third, reversed.second to reversed.third)
+
         val empty = NoteText.insertMarkdownLink("abc", 1, 1)
         assertEquals("a[text](https://)bc", empty.first)
         assertEquals(empty.first.indexOf("https://") + "https://".length, empty.second)
@@ -164,6 +179,15 @@ class NoteTextTest {
     @Test
     fun numberedListToggleOnlyChangesCurrentLineAndReplacesOtherListPrefix() {
         assertEquals("☐ first\n1. second\nthird", NoteText.toggleNumberedList("☐ first\n• second\nthird", 12).first)
+    }
+
+    @Test
+    fun listActionsReplaceMarkdownBulletPrefixesInsteadOfStackingThem() {
+        assertEquals("• item", NoteText.toggleBullet("- item", 4).first)
+        assertEquals("• item", NoteText.toggleBullet("* item", 4).first)
+        assertEquals("1. item", NoteText.toggleNumberedList("- item", 4).first)
+        assertEquals("1. item", NoteText.toggleNumberedList("* item", 4).first)
+        assertEquals("☐ item", NoteText.cycleChecklist("- item", 4).first)
     }
 
     @Test
