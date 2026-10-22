@@ -149,8 +149,6 @@ class MarkdownPreviewTest {
         assertTrue("parser foregrounds should use the theme color",
             foregrounds.all { it.foregroundColor == Color.WHITE })
     }
-}
-
     @Test
     fun broaderBlockSyntaxKeepsHeadingsListsAndChecklistTextReadable() {
         val markdown = "# Heading\n\n- bullet\n- [ ] unchecked\n- [x] checked\n\n1. first\n2. second"
@@ -190,3 +188,4 @@ class MarkdownPreviewTest {
         assertTrue(result.contains("footnote body"))
         assertTrue(result.contains("struck"))
     }
+}
