@@ -105,9 +105,32 @@ object NoteText {
             val updated = text.substring(0, start) + marker + marker + text.substring(end)
             return Triple(updated, start + marker.length, start + marker.length)
         }
-        val alreadyWrapped = start >= marker.length && end + marker.length <= text.length &&
-            text.substring(start - marker.length, start) == marker &&
-            text.substring(end, end + marker.length) == marker
+        val alreadyWrapped = if (marker.all { it == marker.first() }) {
+            // For repeated-character markers (*, **, _, __, ~~), distinguish a
+            // single formatting layer from a longer adjacent run. Without this,
+            // italic on **bold** mistakes one star from each strong marker for an
+            // italic wrapper and destructively changes the existing formatting.
+            val char = marker.first()
+            var leftRun = 0
+            var index = start - 1
+            while (index >= 0 && text[index] == char) {
+                leftRun++
+                index--
+            }
+            var rightRun = 0
+            index = end
+            while (index < text.length && text[index] == char) {
+                rightRun++
+                index++
+            }
+            leftRun >= marker.length && rightRun >= marker.length &&
+                (leftRun / marker.length) % 2 == 1 &&
+                (rightRun / marker.length) % 2 == 1
+        } else {
+            start >= marker.length && end + marker.length <= text.length &&
+                text.substring(start - marker.length, start) == marker &&
+                text.substring(end, end + marker.length) == marker
+        }
         return if (alreadyWrapped) {
             val updated = text.removeRange(end, end + marker.length).removeRange(start - marker.length, start)
             val innerStart = start - marker.length
