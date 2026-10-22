@@ -150,3 +150,43 @@ class MarkdownPreviewTest {
             foregrounds.all { it.foregroundColor == Color.WHITE })
     }
 }
+
+    @Test
+    fun broaderBlockSyntaxKeepsHeadingsListsAndChecklistTextReadable() {
+        val markdown = "# Heading\n\n- bullet\n- [ ] unchecked\n- [x] checked\n\n1. first\n2. second"
+        val result = MarkdownPreview.toSpanned(markdown).toString()
+
+        assertTrue(result.contains("Heading"))
+        assertTrue(result.contains("bullet"))
+        assertTrue(result.contains("unchecked"))
+        assertTrue(result.contains("checked"))
+        assertTrue(result.contains("1. first") || result.contains("first"))
+        assertTrue(result.contains("2. second") || result.contains("second"))
+    }
+
+    @Test
+    fun fencedCodeKeepsMarkdownLookingContentReadableWithoutBlockFormatting() {
+        val result = MarkdownPreview.toSpanned(
+            "```kotlin\nval literal = \"**not bold**\"\n> not a quote\n---\n```"
+        )
+        val styles = result.getSpans(0, result.length, StyleSpan::class.java)
+        val quotes = result.getSpans(0, result.length, QuoteSpan::class.java)
+        val rules = result.getSpans(0, result.length, LineBackgroundSpan::class.java)
+
+        assertTrue(result.toString().contains("not bold"))
+        assertTrue(result.toString().contains("> not a quote"))
+        assertTrue(result.toString().contains("---"))
+        assertTrue("code samples must not be interpreted as blockquotes", quotes.isEmpty())
+        assertTrue("code samples must not be interpreted as thematic breaks", rules.isEmpty())
+        assertTrue("fenced code must not apply inline emphasis", styles.isEmpty())
+    }
+
+    @Test
+    fun unsupportedMarkdownConstructsRemainReadableInsteadOfLosingContent() {
+        val markdown = "A footnote[^1] and ~~struck~~ text\n\n[^1]: footnote body"
+        val result = MarkdownPreview.toSpanned(markdown).toString()
+
+        assertTrue(result.contains("A footnote"))
+        assertTrue(result.contains("footnote body"))
+        assertTrue(result.contains("struck"))
+    }
