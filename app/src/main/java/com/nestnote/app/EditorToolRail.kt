@@ -199,7 +199,7 @@ internal fun EditorToolRail(
                                 Box(
                                     Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
                                         .border(if (isSelected) 3.dp else 1.dp, if (isSelected) Color(0xFF383044) else Color(0xFF77734F), RoundedCornerShape(12.dp))
-                                        .clickable { onBackgroundSelected(index) }
+                                        .clickable(role = Role.Button) { onBackgroundSelected(index) }
                                         .semantics { contentDescription = name + (if (isSelected) ", selected" else ""); this.selected = isSelected }
                                         .testTag("note_background_$index")
                                 ) {
