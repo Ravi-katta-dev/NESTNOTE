@@ -28,7 +28,7 @@ internal object MarkdownPreview {
     ): Spanned {
         val renderer = Markwon.builder(context.applicationContext)
             .usePlugin(StrikethroughPlugin.create())
-            .usePlugin(TaskListPlugin.create())
+            .usePlugin(TaskListPlugin.create(context.applicationContext))
             .build()
         val rendered = SpannableStringBuilder(renderer.toMarkdown(markdown))
 
