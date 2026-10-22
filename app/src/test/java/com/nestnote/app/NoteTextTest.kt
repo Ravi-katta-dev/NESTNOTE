@@ -495,15 +495,15 @@ class NoteTextTest {
     @Test
     fun numberedListContinuationHandlesDigitBoundariesAndIndentedEmptyItems() {
         val old = "  9. item"
-        assertEquals("  9. item\\n  10. ", NoteText.continueList(old, "$old\\n", old.length + 1)!!.first)
+        assertEquals("  9. item\n  10. ", NoteText.continueList(old, "$old\n", old.length + 1)!!.first)
         val parenthesized = "  9) item"
-        assertEquals("  9) item\\n  10) ", NoteText.continueList(parenthesized, "$parenthesized\\n", parenthesized.length + 1)!!.first)
+        assertEquals("  9) item\n  10) ", NoteText.continueList(parenthesized, "$parenthesized\n", parenthesized.length + 1)!!.first)
         assertEquals("item", NoteText.toggleNumberedList("9) item", 7).first)
 
-        val empty = "first\\n  10. "
-        val result = NoteText.continueList(empty, "$empty\\n", empty.length + 1)!!
-        assertEquals("first\\n", result.first)
-        assertEquals("first\\n".length, result.second)
+        val empty = "first\n  10. "
+        val result = NoteText.continueList(empty, "$empty\n", empty.length + 1)!!
+        assertEquals("first\n", result.first)
+        assertEquals("first\n".length, result.second)
     }
 
     @Test
@@ -511,7 +511,7 @@ class NoteTextTest {
         assertEquals("  ☐ task", NoteText.cycleChecklist("  - task", 7).first)
         assertEquals("  • task", NoteText.toggleBullet("  * task", 7).first)
         val markdownBullet = "- task"
-        assertEquals("- task\\n- ", NoteText.continueList(markdownBullet, "$markdownBullet\\n", markdownBullet.length + 1)!!.first)
+        assertEquals("- task\n- ", NoteText.continueList(markdownBullet, "$markdownBullet\n", markdownBullet.length + 1)!!.first)
     }
 
     @Test
