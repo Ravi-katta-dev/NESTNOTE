@@ -254,7 +254,10 @@ internal fun NoteEditorContent(
         if (hasUnsavedChanges) discardConfirmation = true else onDismiss()
     }
 
-    fun buildNote(archived: Boolean = original?.archived ?: false): NestNote {
+    fun buildNote(
+        archived: Boolean = original?.archived ?: false,
+        keepReminder: Boolean = true
+    ): NestNote {
         val now = System.currentTimeMillis()
         return NestNote(
             id = original?.id ?: draftNoteId,
@@ -263,7 +266,7 @@ internal fun NoteEditorContent(
             category = category,
             color = colorIndex,
             pinned = if (archived) false else pinned,
-            reminder = reminder,
+            reminder = if (keepReminder) reminder else "",
             updated = original?.updated ?: 0L,
             created = original?.created ?: now,
             archived = archived,
@@ -290,7 +293,13 @@ internal fun NoteEditorContent(
         DatePickerDialog(context, { _, year, month, day ->
             TimePickerDialog(context, { _, hour, minute ->
                 val picked = Calendar.getInstance().apply { set(year, month, day, hour, minute, 0) }
-                reminder = NoteText.formatReminder(picked)
+                if (picked.timeInMillis <= System.currentTimeMillis()) {
+                    android.widget.Toast.makeText(
+                        context, "Pick a time in the future", android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    reminder = NoteText.formatReminder(picked)
+                }
             }, seed.get(Calendar.HOUR_OF_DAY), seed.get(Calendar.MINUTE), true).show()
         }, seed.get(Calendar.YEAR), seed.get(Calendar.MONTH), seed.get(Calendar.DAY_OF_MONTH)).show()
     }
@@ -318,7 +327,19 @@ internal fun NoteEditorContent(
         setBody(TextFieldValue(text, TextRange(selectionStart, selectionEnd)))
     }
 
+    // Markdown-only markers would render as literal characters in a plain-text note,
+    // so the first Bold/Italic/Link on a plain note switches the note to Markdown.
+    fun switchToMarkdownIfPlain() {
+        if (noteFormat == "markdown") return
+        noteFormat = "markdown"
+        previewVisible = false
+        android.widget.Toast.makeText(
+            context, "Note switched to Markdown", android.widget.Toast.LENGTH_SHORT
+        ).show()
+    }
+
     fun applyMarkdownLink() {
+        switchToMarkdownIfPlain()
         val oldValue = bodyValue
         val (text, selectionStart, selectionEnd) = NoteText.insertMarkdownLink(
             oldValue.text, oldValue.selection.start, oldValue.selection.end
@@ -326,7 +347,8 @@ internal fun NoteEditorContent(
         setBody(TextFieldValue(text, TextRange(selectionStart, selectionEnd)))
     }
 
-    fun applyInlineEdit(marker: String) {
+    fun applyInlineEdit(marker: String, switchToMarkdown: Boolean = false) {
+        if (switchToMarkdown) switchToMarkdownIfPlain()
         val oldValue = bodyValue
         val (text, selectionStart, selectionEnd) = NoteText.toggleInlineFormat(
             oldValue.text, oldValue.selection.start, oldValue.selection.end, marker
@@ -376,25 +398,23 @@ internal fun NoteEditorContent(
 
     // ---- Autosave ----
     val currentHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
-    fun writeDraftNow() {
+    suspend fun writeDraftNow() {
         if (!currentHasUnsavedChanges) return
         if (original == null && title.isBlank() && bodyValue.text.isBlank()) return
-        runCatching {
-            DraftStore(context).write(
-                DraftStore.Draft(
-                    noteId = voiceNoteId,
-                    title = title,
-                    body = bodyValue.text,
-                    category = category,
-                    color = colorIndex,
-                    background = backgroundIndex,
-                    pinned = pinned,
-                    reminder = reminder,
-                    wallpaperUri = customWallpaperUri,
-                    savedAtMillis = System.currentTimeMillis()
-                )
-            )
-        }
+        // Read Compose state here (main thread), then do file I/O off the main thread.
+        val draft = DraftStore.Draft(
+            noteId = voiceNoteId,
+            title = title,
+            body = bodyValue.text,
+            category = category,
+            color = colorIndex,
+            background = backgroundIndex,
+            pinned = pinned,
+            reminder = reminder,
+            wallpaperUri = customWallpaperUri,
+            savedAtMillis = System.currentTimeMillis()
+        )
+        withContext(Dispatchers.IO) { runCatching { DraftStore(context).write(draft) } }
     }
 
     LaunchedEffect(
@@ -569,7 +589,7 @@ internal fun NoteEditorContent(
                     onLock = { editorModeViewModel.lock() },
                     onEdit = { editorModeViewModel.edit() },
                     onArchive = { performSave(buildNote(archived = true)) },
-                    onDuplicate = { onDuplicate?.invoke(buildNote()) },
+                    onDuplicate = { onDuplicate?.invoke(buildNote(keepReminder = false)) },
                     onShare = ::shareNote,
                     onShowQr = { qrCodeDialog = true },
                     onToggleFormat = {
@@ -723,8 +743,8 @@ internal fun NoteEditorContent(
                 FormatAction.Quote -> applyLineEdit { text, cursor ->
                     NoteText.toggleBlockquote(text, cursor)
                 }
-                FormatAction.Bold -> applyInlineEdit("**")
-                FormatAction.Italic -> applyInlineEdit("_")
+                FormatAction.Bold -> applyInlineEdit("**", switchToMarkdown = true)
+                FormatAction.Italic -> applyInlineEdit("_", switchToMarkdown = true)
                 FormatAction.Strike -> applyInlineEdit("~~")
                 FormatAction.Code -> applyInlineEdit("`")
                 FormatAction.Link -> applyMarkdownLink()
