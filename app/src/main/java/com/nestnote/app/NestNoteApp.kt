@@ -334,18 +334,19 @@ internal fun NestNoteApp(store: NoteStore) {
                 }
             } else {
                 val now = System.currentTimeMillis()
+                val usedNotes = notes.toMutableList()
                 val imported = parsed.filterNotNull().mapIndexed { index, (title, body) ->
                     val timestamp = now + index
-                    NestNote(
-                        id = NoteStore.allocateNoteId(notes + parsed.filterNotNull().mapIndexed { innerIndex, _ ->
-                            NestNote(id = now + innerIndex, title = "", body = "")
-                        }, timestamp),
+                    val note = NestNote(
+                        id = NoteStore.allocateNoteId(usedNotes, timestamp),
                         title = title,
                         body = body,
                         category = defaultNoteCategory,
                         updated = timestamp,
                         created = timestamp
                     )
+                    usedNotes += note
+                    note
                 }
                 if (persist(imported + notes)) {
                     selectedView = "Home"
