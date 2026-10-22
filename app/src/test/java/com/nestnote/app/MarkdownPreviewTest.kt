@@ -118,7 +118,7 @@ class MarkdownPreviewTest {
     @Test
     fun headingsBoldItalicListsAndLinksRetainFormattingAndReadableColors() {
         val result = MarkdownPreview.toSpanned(
-            "# Heading\\n\\n**bold** and *italic*\\n\\n- list item\\n\\n[safe link](https://example.com)",
+            "# Heading\n\n**bold** and *italic*\n\n- list item\n\n[safe link](https://example.com)",
             Color.WHITE
         )
         val sizes = result.getSpans(0, result.length, RelativeSizeSpan::class.java)
@@ -129,6 +129,7 @@ class MarkdownPreviewTest {
         assertTrue("heading size should be preserved", sizes.isNotEmpty())
         assertTrue("bold style should be preserved", styles.any { it.style == Typeface.BOLD })
         assertTrue("italic style should be preserved", styles.any { it.style == Typeface.ITALIC })
+        assertTrue("list content should be preserved", result.toString().contains("list item"))
         assertTrue("links should remain clickable", links.any { it.url == "https://example.com" })
         assertTrue("parser foregrounds should use the theme color",
             foregrounds.all { it.foregroundColor == Color.WHITE })
