@@ -279,8 +279,13 @@ object NoteText {
         val oldChangedEnd = oldText.length - suffix
         val newChangedEnd = newText.length - suffix
         val delta = newText.length - oldText.length
-        fun map(position: Int): Int {
+        fun map(position: Int, isSelectionStart: Boolean): Int {
             val mapped = when {
+                // A pure insertion at a selection boundary needs endpoint affinity:
+                // keep an ending endpoint before inserted text, but move a starting
+                // endpoint after it so the selection continues to cover the same text.
+                oldChangedEnd == prefix && position == prefix ->
+                    if (isSelectionStart) newChangedEnd else prefix
                 position <= prefix -> position
                 position >= oldChangedEnd -> position + delta
                 else -> newChangedEnd
@@ -288,9 +293,9 @@ object NoteText {
             return mapped.coerceIn(0, newText.length)
         }
 
-        // Keep reversed selections reversed; TextFieldValue uses them to represent
-        // selection direction as well as the selected range.
-        return map(start) to map(end)
+        // Preserve selection direction while keeping both endpoints anchored to the
+        // original text. TextFieldValue uses reversed ranges to represent direction.
+        return map(start, isSelectionStart = true) to map(end, isSelectionStart = false)
     }
 
     data class ChecklistItem(val lineIndex: Int, val text: String, val checked: Boolean)
