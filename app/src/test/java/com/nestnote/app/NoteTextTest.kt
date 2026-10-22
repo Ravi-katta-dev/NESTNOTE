@@ -48,7 +48,8 @@ class NoteTextTest {
         listOf("\n", "\r\n", "\r").forEach { newline ->
             val old = "  9. nested"
             val new = old + newline
-            assertEquals("  9. nested${newline}  10. ", NoteText.continueList(old, new, new.length))
+            val expected = "  9. nested${newline}  10. "
+            assertEquals(expected to expected.length, NoteText.continueList(old, new, new.length))
         }
     }
 
