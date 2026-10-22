@@ -1,10 +1,44 @@
 # NESTNOTE Changelog
 
-## v1.3.9 — 2026-10-21 (release notes draft)
+## v1.3.11 — Current branch release record (2026-10-22)
+
+Versioned notes: [docs/release-notes/v1.3.11.md](release-notes/v1.3.11.md).
+
+This is the current release record prepared in PR #76 for the next NESTNOTE version. The documentation is current for the branch; publishing v1.3.11 still requires a stable tag and successful release workflow.
+
+### Fixed
+- Improve editor foreground contrast on dark surfaces using surface luminance and theme-provided colors.
+- Improve Markdown blockquote and horizontal-rule rendering while keeping raw HTML inert.
+- Preserve whitespace, indentation, trailing-newline behavior, and LF/CRLF/lone-CR line endings during text conversion and list operations.
+- Improve selection remapping after line edits and harden inline formatting and checklist/bullet transitions.
+- Restrict actionable Markdown links to `http`, `https`, and `mailto` schemes.
+- Improve accessibility touch targets and standalone Markdown heading semantics.
+
+### Markdown and link-insertion follow-up
+- PR #74 proposes replacing the regex-based preview preprocessor with Markwon/CommonMark and adding task-list and strikethrough extensions.
+- PR #74 also covers safe link-label escaping and cursor placement.
+- These PR #74 changes remain pending merge and validation; they are documented here as follow-up work, not as shipped code on `main`.
+
+### Validation status
+- Confirm exact-head Android CI before declaring the release validated.
+- Production APK signing, installation/upgrade checks, and physical-device accessibility checks are not claimed complete by this documentation update.
+
+---
+
+## v1.3.10 — 2026-10-21 (published release)
+
+- Fixed GitHub Pages preservation during F-Droid publishing.
+- Showed the voice-note waveform in the in-place note editor.
+- Release asset: [NESTNOTE-v1.3.10.apk](https://github.com/Ravi-katta-dev/NESTNOTE/releases/download/v1.3.10/NESTNOTE-v1.3.10.apk).
+
+---
+
+
+## v1.3.9 — 2026-10-21 (published release; historical entry)
 
 Versioned notes: [docs/release-notes/v1.3.9.md](release-notes/v1.3.9.md).
 
-This draft consolidates recent voice-note/editor fixes and release-facing changes. Publish it as the final v1.3.9 changelog only after the release candidate, CI, and required device checks are confirmed.
+This section is retained as the historical v1.3.9 release record. Later fixes and release changes are tracked in the newer version sections above.
 
 ### Improved
 - Keep voice-note playback inline with the note instead of opening a separate player or covering the page.
