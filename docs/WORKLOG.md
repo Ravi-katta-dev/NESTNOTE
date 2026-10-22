@@ -1,11 +1,12 @@
 # NESTNOTE Work Log
 
-## 2026-10-22 — v1.3.11 current branch release record
+## 2026-10-22 — PR #74 merged; v1.3.11 release metadata sync
 
 - Updated the root changelog, documentation changelog, README, release-note record, F-Droid metadata proposal, and F-Droid distribution notes to reflect the current v1.3.11 branch work and latest published upstream release v1.3.10.
 - Aligned the local Gradle version-name fallback and About screen fallback with v1.3.11; updated the corresponding JVM test assertion.
-- PR #74 remains open as a draft and its Markwon/link-insertion changes are explicitly described as pending merge/validation, not shipped.
-- Validation status: GitHub file updates only. No Android build, test suite, CI run, device checks, APK signature verification, v1.3.11 release publication, or F-Droid publication was performed.
+- PR #74 merged on 2026-10-22 as `479d6a2013a18a6673f179c00e147c24e4ed798f`. Markwon/CommonMark preview rendering, task-list/strikethrough support, and safe link-label/cursor handling are now in `main`.
+- Merge-triggered Android CI run [39727819191](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/39727819191) was in progress at log update time; the release must not be marked validated until it completes successfully.
+- Validation status: repository metadata updated through GitHub. PR #74's merge-triggered CI was in progress; no local Android build/test run, device checks, APK signature verification, v1.3.11 release publication, or F-Droid publication was performed.
 
 Last updated: 2026-10-22
 
@@ -15,6 +16,8 @@ Repository: [Ravi-katta-dev/NESTNOTE](https://github.com/Ravi-katta-dev/NESTNOTE
 This activity record is assembled from visible repository commits, pull requests, and GitHub Actions runs. Statuses reflect the latest checks observed when written; use the linked run for live status.
 
 ## Current snapshot
+- PR #74 is merged into `main`; merge commit `479d6a2013a18a6673f179c00e147c24e4ed798f`. Verify its CI run before declaring release validation complete.
+- PR #76 contains the v1.3.11 release metadata/version fallback changes; it is not merged yet at the time this log was authored.
 - Latest published stable GitHub Release observed on 2026-10-22: v1.3.10. The v1.3.11 release record is current on branch `docs/changelog-1.3.11-issue-61`; it is not yet a published tag/release.
 - PR #76 carries the current release-record and metadata updates. PR #74 remains an open draft; do not count its changes as merged.
 - Native Android app using Kotlin, Jetpack Compose, and Material 3; target SDK API 36, minimum SDK 26.
