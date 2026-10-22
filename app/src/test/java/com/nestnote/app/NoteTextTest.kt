@@ -507,6 +507,22 @@ class NoteTextTest {
     }
 
     @Test
+    fun selectionMappingKeepsSelectedTextOutsideInsertedLinePrefixes() {
+        val old = "heading"
+        val insertedHeading = "## heading"
+        assertEquals(3 to 10, NoteText.selectionAfterLineEdit(old, insertedHeading, 0, old.length, 3))
+
+        // If the selection ends exactly where text is inserted, it must not absorb the insertion.
+        assertEquals(0 to 1, NoteText.selectionAfterLineEdit("abc", "aXbc", 0, 1, 0))
+
+        // A selection beginning at the insertion point must move after the inserted prefix.
+        assertEquals(2 to 4, NoteText.selectionAfterLineEdit("abc", "aXbc", 1, 3, 2))
+
+        // Reversed selection direction is preserved as well.
+        assertEquals(4 to 2, NoteText.selectionAfterLineEdit("abc", "aXbc", 3, 1, 2))
+    }
+
+    @Test
     fun numberedListTogglePreservesSelectionAcrossPrefixInsertionAndRemoval() {
         val old = "before\n• selected text\nafter"
         val selectionStart = old.indexOf("selected")
