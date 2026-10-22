@@ -21,7 +21,7 @@ import org.robolectric.RuntimeEnvironment
 class MarkdownPreviewTest {
     @Test
     fun rawHtmlIsRenderedAsTextRatherThanActiveHtml() {
-        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), RuntimeEnvironment.getApplication(), """<script>alert("x")</script><img src="https://example.invalid/x.png">""")
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), """<script>alert("x")</script><img src="https://example.invalid/x.png">""")
         assertTrue(result.toString().contains("<script>"))
         assertFalse(result.getSpans(0, result.length, ImageSpan::class.java).isNotEmpty())
         assertFalse(result.getSpans(0, result.length, URLSpan::class.java).isNotEmpty())
