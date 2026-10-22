@@ -682,7 +682,7 @@ class NoteTextTest {
     fun markdownLinkEscapesLabelDelimitersAndKeepsUrlCursorCorrect() {
         val text = "a]b\\\\c"
         val linked = NoteText.insertMarkdownLink(text, 0, text.length)
-        assertEquals("[a\\\\]b\\\\\\\\c](https://)", linked.first)
+        assertEquals("[a\\]b\\\\\\\\c](https://)", linked.first)
         assertEquals(linked.first.indexOf("https://") + "https://".length, linked.second)
         assertEquals(linked.second, linked.third)
 
