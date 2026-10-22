@@ -412,14 +412,15 @@ internal fun NoteEditorContent(
             pinned = pinned,
             reminder = reminder,
             wallpaperUri = customWallpaperUri,
-            savedAtMillis = System.currentTimeMillis()
+            savedAtMillis = System.currentTimeMillis(),
+            format = noteFormat
         )
         withContext(Dispatchers.IO) { runCatching { DraftStore(context).write(draft) } }
     }
 
     LaunchedEffect(
         title, bodyValue.text, category, colorIndex, backgroundIndex,
-        pinned, reminder, customWallpaperUri
+        pinned, reminder, customWallpaperUri, noteFormat
     ) {
         delay(2_000L)
         writeDraftNow()
@@ -811,6 +812,7 @@ internal fun NoteEditorContent(
                 pinned = draft.pinned
                 reminder = draft.reminder
                 customWallpaperUri = draft.wallpaperUri
+                noteFormat = draft.format
                 undoManager.clear()
                 canUndo = false
                 canRedo = false
