@@ -1708,6 +1708,7 @@ internal fun PreviewWithInlineVoice(
     modifier: Modifier = Modifier,
     renderMarkdown: Boolean = true
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val segments = remember(body) { NoteText.voiceSegments(body) }
     val bodySp = textSize.bodySp.toFloat()
     Column(modifier.verticalScroll(rememberScrollState())) {
