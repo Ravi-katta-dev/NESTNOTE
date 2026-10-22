@@ -507,6 +507,21 @@ class NoteTextTest {
     }
 
     @Test
+    fun numberedListTogglePreservesSelectionAcrossPrefixInsertionAndRemoval() {
+        val old = "before\\n9) selected text\\nafter"
+        val selectionStart = old.indexOf("selected")
+        val selectionEnd = selectionStart + "selected text".length
+        val (numbered, cursor) = NoteText.toggleNumberedList(old, selectionEnd)
+        assertEquals("before\\n1. 9) selected text\\nafter", numbered)
+        val mapped = NoteText.selectionAfterLineEdit(old, numbered, selectionStart, selectionEnd, cursor)
+        assertEquals("selected text", numbered.substring(mapped.first, mapped.second))
+
+        val (plain, plainCursor) = NoteText.toggleNumberedList(numbered, cursor)
+        val restored = NoteText.selectionAfterLineEdit(numbered, plain, mapped.first, mapped.second, plainCursor)
+        assertEquals("selected text", plain.substring(restored.first, restored.second))
+    }
+
+    @Test
     fun checklistAndBulletConversionsReplacePrefixesAndKeepIndentationAcrossEnter() {
         assertEquals("  ☐ task", NoteText.cycleChecklist("  - task", 7).first)
         assertEquals("  • task", NoteText.toggleBullet("  * task", 7).first)
