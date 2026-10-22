@@ -14,10 +14,10 @@ This is the current release record prepared in PR #76 for the next NESTNOTE vers
 - Restrict actionable Markdown links to `http`, `https`, and `mailto` schemes.
 - Improve accessibility touch targets and standalone Markdown heading semantics.
 
-### Markdown and link-insertion follow-up
-- PR #74 proposes replacing the regex-based preview preprocessor with Markwon/CommonMark and adding task-list and strikethrough extensions.
-- PR #74 also covers safe link-label escaping and cursor placement.
-- These PR #74 changes remain pending merge and validation; they are documented here as follow-up work, not as shipped code on `main`.
+### Markdown renderer and link insertion — PR #74 merged 2026-10-22
+- Replaced the regex-based preview preprocessor with Markwon/CommonMark and added task-list and strikethrough extensions.
+- Hardened safe link-label escaping and cursor placement, with Unicode, punctuation, selection, and boundary regression cases.
+- PR #74 merged as `479d6a2013a18a6673f179c00e147c24e4ed798f`. Its merge-triggered Android CI run is still in progress; do not call the release validated until it completes successfully.
 
 ### Validation status
 - Confirm exact-head Android CI before declaring the release validated.
