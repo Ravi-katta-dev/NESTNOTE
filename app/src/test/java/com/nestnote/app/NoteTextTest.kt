@@ -508,11 +508,11 @@ class NoteTextTest {
 
     @Test
     fun numberedListTogglePreservesSelectionAcrossPrefixInsertionAndRemoval() {
-        val old = "before\\n• selected text\\nafter"
+        val old = "before\n• selected text\nafter"
         val selectionStart = old.indexOf("selected")
         val selectionEnd = selectionStart + "selected text".length
         val (numbered, cursor) = NoteText.toggleNumberedList(old, selectionEnd)
-        assertEquals("before\\n1. selected text\\nafter", numbered)
+        assertEquals("before\n1. selected text\nafter", numbered)
         val mapped = NoteText.selectionAfterLineEdit(old, numbered, selectionStart, selectionEnd, cursor)
         assertEquals("selected text", numbered.substring(mapped.first, mapped.second))
 
