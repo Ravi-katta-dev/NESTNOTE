@@ -7,6 +7,8 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -127,12 +129,18 @@ class SlimRailPanelRegressionTest {
         }
 
         composeRule.waitForIdle()
+        composeRule.onNodeWithTag("note_background_0")
+            .assertIsDisplayed()
+            .assertIsSelected()
         composeRule.onNodeWithTag("note_background_1")
             .assertIsDisplayed()
+            .assertIsNotSelected()
             .assertHasClickAction()
             .performClick()
         composeRule.waitForIdle()
         org.junit.Assert.assertEquals(1, selectedBackground)
+        composeRule.onNodeWithTag("note_background_1").assertIsSelected()
+        composeRule.onNodeWithTag("note_background_0").assertIsNotSelected()
     }
 
 }
