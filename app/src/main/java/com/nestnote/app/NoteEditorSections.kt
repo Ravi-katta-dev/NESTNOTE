@@ -40,6 +40,9 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mic
@@ -54,6 +57,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -157,8 +161,8 @@ internal fun EditorTopBar(
                     modifier = Modifier.testTag("editor_format_button")
                 ) {
                     Icon(
-                        Icons.Default.FormatSize,
-                        contentDescription = "Formatting",
+                        Icons.Default.TextFields,
+                        contentDescription = "Formatting options",
                         tint = colors.onSurfaceVariant
                     )
                 }
@@ -275,6 +279,7 @@ internal fun EditorTopBar(
                     )
                     DropdownMenuItem(
                         text = { Text("Note format · " + if (noteFormat == "markdown") "Markdown" else "Plain text") },
+                        leadingIcon = { Icon(Icons.Default.FormatSize, contentDescription = null) },
                         onClick = {
                             moreMenu = false
                             onToggleFormat()
@@ -394,7 +399,13 @@ internal fun EditorTopBar(
                         }
                     },
                     enabled = mode == EditorMode.Locked || hasContent
-                ) { Text(if (mode == EditorMode.Editing) "Save" else "Done") }
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.size(6.dp))
+                        Text(if (mode == EditorMode.Editing) "Save" else "Done")
+                    }
+                }
             }
         }
     )
@@ -449,15 +460,11 @@ internal fun EditorBottomBar(
                 } else {
                     Spacer(Modifier.weight(1f))
                 }
-                if (canUndo) {
-                    IconButton(onClick = { onUndo() }) {
-                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo")
-                    }
+                IconButton(onClick = onUndo, enabled = canUndo) {
+                    Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo")
                 }
-                if (canRedo) {
-                    IconButton(onClick = { onRedo() }) {
-                        Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = "Redo")
-                    }
+                IconButton(onClick = onRedo, enabled = canRedo) {
+                    Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = "Redo")
                 }
             }
         }
@@ -613,20 +620,61 @@ internal fun ColumnScope.EditorBodySection(
         NoteText.voiceSegments(body).any { it.attachmentId != null }
     }
     if (editable && (noteFormat == "markdown" || hasInlineVoiceNotes)) {
+        val reducedMotion = rememberSystemReducedMotion()
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End
         ) {
             if (hasInlineVoiceNotes) {
-                TextButton(onClick = { onEditVoiceTextChange(!editVoiceText) }) {
-                    Text(if (editVoiceText) "Play voice notes inline" else "Edit note text")
-                }
+                FilterChip(
+                    selected = editVoiceText,
+                    onClick = { onEditVoiceTextChange(!editVoiceText) },
+                    leadingIcon = {
+                        Icon(
+                            if (editVoiceText) Icons.Default.Edit else Icons.Default.Visibility,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    label = {
+                        AnimatedContent(
+                            targetState = editVoiceText,
+                            transitionSpec = {
+                                if (reducedMotion) fadeIn(snap()) togetherWith fadeOut(snap())
+                                else fadeIn() togetherWith fadeOut()
+                            },
+                            label = "voice-text-mode"
+                        ) { editingText ->
+                            Text(if (editingText) "Edit text" else "Play notes")
+                        }
+                    }
+                )
             }
             if (noteFormat == "markdown") {
-                TextButton(onClick = { onPreviewVisibleChange(!previewVisible) }) {
-                    Text(if (previewVisible) "Edit Markdown" else "Preview Markdown")
-                }
+                FilterChip(
+                    selected = previewVisible,
+                    onClick = { onPreviewVisibleChange(!previewVisible) },
+                    leadingIcon = {
+                        Icon(
+                            if (previewVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    label = {
+                        AnimatedContent(
+                            targetState = previewVisible,
+                            transitionSpec = {
+                                if (reducedMotion) fadeIn(snap()) togetherWith fadeOut(snap())
+                                else fadeIn() togetherWith fadeOut()
+                            },
+                            label = "markdown-preview-mode"
+                        ) { showingPreview ->
+                            Text(if (showingPreview) "Edit Markdown" else "Preview")
+                        }
+                    }
+                )
             }
         }
     }
