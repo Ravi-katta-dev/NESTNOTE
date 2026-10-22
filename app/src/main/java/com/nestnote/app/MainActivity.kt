@@ -3,6 +3,7 @@ package com.nestnote.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -36,8 +37,14 @@ class MainActivity : ComponentActivity() {
     private fun markdownUriFrom(intent: Intent?): Uri? {
         if (intent?.action != Intent.ACTION_VIEW) return null
         val uri = intent.data ?: return null
-        val mimeType = intent.type
-        val fileName = uri.lastPathSegment.orEmpty().substringAfterLast('/')
+        val mimeType = intent.type ?: contentResolver.getType(uri)
+        val displayName = runCatching {
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getString(0).orEmpty() else ""
+                }
+        }.getOrNull().orEmpty()
+        val fileName = displayName.ifBlank { uri.lastPathSegment.orEmpty().substringAfterLast('/') }
         val isMarkdown = mimeType == "text/markdown" ||
             mimeType == "text/x-markdown" ||
             fileName.endsWith(".md", ignoreCase = true) ||
