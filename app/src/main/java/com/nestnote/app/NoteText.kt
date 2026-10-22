@@ -72,6 +72,7 @@ object NoteText {
     private fun prefixOf(line: String): String? {
         val content = line.substring(indentOf(line).length)
         return listPrefixes.firstOrNull { content.startsWith(it) }
+            ?: Regex("""^[-*] """).find(content)?.value
             ?: Regex("""^\d+\. """).find(content)?.value
     }
 
@@ -95,8 +96,11 @@ object NoteText {
      */
     fun toggleInlineFormat(text: String, selectionStart: Int, selectionEnd: Int, marker: String): Triple<String, Int, Int> {
         require(marker.isNotEmpty())
-        val start = selectionStart.coerceIn(0, text.length)
-        val end = selectionEnd.coerceIn(start, text.length)
+        val rawStart = selectionStart.coerceIn(0, text.length)
+        val rawEnd = selectionEnd.coerceIn(0, text.length)
+        val reversed = rawStart > rawEnd
+        val start = minOf(rawStart, rawEnd)
+        val end = maxOf(rawStart, rawEnd)
         if (start == end) {
             val updated = text.substring(0, start) + marker + marker + text.substring(end)
             return Triple(updated, start + marker.length, start + marker.length)
@@ -106,17 +110,23 @@ object NoteText {
             text.substring(end, end + marker.length) == marker
         return if (alreadyWrapped) {
             val updated = text.removeRange(end, end + marker.length).removeRange(start - marker.length, start)
-            Triple(updated, start - marker.length, end - marker.length)
+            val innerStart = start - marker.length
+            val innerEnd = end - marker.length
+            Triple(updated, if (reversed) innerEnd else innerStart, if (reversed) innerStart else innerEnd)
         } else {
             val updated = text.substring(0, start) + marker + text.substring(start, end) + marker + text.substring(end)
-            Triple(updated, start + marker.length, end + marker.length)
+            val innerStart = start + marker.length
+            val innerEnd = end + marker.length
+            Triple(updated, if (reversed) innerEnd else innerStart, if (reversed) innerStart else innerEnd)
         }
     }
 
     /** Inserts a Markdown link; selected text becomes its label, with the URL ready to edit. */
     fun insertMarkdownLink(text: String, selectionStart: Int, selectionEnd: Int): Triple<String, Int, Int> {
-        val start = selectionStart.coerceIn(0, text.length)
-        val end = selectionEnd.coerceIn(start, text.length)
+        val first = selectionStart.coerceIn(0, text.length)
+        val second = selectionEnd.coerceIn(0, text.length)
+        val start = minOf(first, second)
+        val end = maxOf(first, second)
         val label = if (start == end) "text" else text.substring(start, end)
         val replacement = "[$label](https://)"
         val updated = text.substring(0, start) + replacement + text.substring(end)
