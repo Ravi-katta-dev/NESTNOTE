@@ -147,13 +147,20 @@ internal fun EditorToolRail(
                                 noteAccents.forEachIndexed { index, tint ->
                                 val isSelected = index == colorIndex
                                 Box(
-                                    Modifier.size(48.dp).clip(CircleShape).background(Color.Transparent)
+                                    Modifier.size(48.dp)
                                         .clickable { onColorSelected(index) }
-                                        .border(if (isSelected) 3.dp else 1.dp, if (isSelected) Color(0xFF383044) else Color(0xFF77734F), CircleShape)
                                         .semantics { contentDescription = "Note colour ${index + 1}" + (if (isSelected) ", selected" else ""); this.selected = isSelected }
                                         .testTag("note_color_$index"),
                                     contentAlignment = Alignment.Center
-                                ) { if (isSelected) Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF383044)) }
+                                ) {
+                                    Box(
+                                        Modifier.size(34.dp).clip(CircleShape).background(tint)
+                                            .border(if (isSelected) 3.dp else 1.dp, if (isSelected) Color(0xFF383044) else Color(0xFF77734F), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (isSelected) Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF383044))
+                                    }
+                                }
                                 }
                             }
                             ToolRailTab.Background -> {
