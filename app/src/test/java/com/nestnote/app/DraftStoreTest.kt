@@ -139,7 +139,7 @@ class DraftStoreTest {
         val firstStore = DraftStore(root)
         val noteOne = sampleDraft(id = 101L).copy(
             title = "Note one",
-            body = "line one\\n\\n  indented\\n[[voice:attachment-one]]"
+            body = "line one\n\n  indented\n[[voice:attachment-one]]"
         )
         val noteTwo = sampleDraft(id = 202L).copy(
             title = "Note two",
