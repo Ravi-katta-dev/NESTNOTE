@@ -26,5 +26,3 @@ This release candidate collects the note-editor and Markdown fixes merged while 
 - Confirm CI passes on the final release commit, including unit tests, lint, release compilation, and the configured emulator/UI-test jobs.
 - Verify production signing and the exact release APK certificate; do not distribute unsigned or inspection-only artifacts.
 - Record any remaining physical-device checks, including TalkBack semantics, large fonts, keyboard/insets, theme contrast, and process-death recovery, before declaring release readiness.
-
-[Unreleased]: https://github.com/Ravi-katta-dev/NESTNOTE/compare/v1.3.10...HEAD
