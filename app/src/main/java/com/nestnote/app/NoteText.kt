@@ -247,8 +247,10 @@ object NoteText {
         if (new.removeRange(newlineStart, cursor) != old) return null
         val start = lineStart(old, newlineStart)
         val beforeCursor = old.substring(start, newlineStart)
-        val prefix = prefixOf(beforeCursor) ?: return null
         val indent = indentOf(beforeCursor)
+        val prefix = prefixOf(beforeCursor)
+            ?: Regex("""^\\d+\\. """).find(beforeCursor.removePrefix(indent))?.value
+            ?: return null
         if (beforeCursor.removePrefix(indent).removePrefix(prefix).isBlank()) {
             // Empty item: Enter ends the list instead of adding another bullet.
             return old.removeRange(start, start + indent.length + prefix.length) to start
