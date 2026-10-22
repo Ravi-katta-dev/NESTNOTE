@@ -380,11 +380,11 @@ object NoteText {
         var lineStart = 0
         var index = 0
         while (index < text.length) {
-            if (text[index] == '\\n' || text[index] == '\\r') {
+            if (text[index] == '\n' || text[index] == '\r') {
                 lines += text.substring(lineStart, index)
-                val separator = if (text[index] == '\\r' && index + 1 < text.length && text[index + 1] == '\\n') {
+                val separator = if (text[index] == '\r' && index + 1 < text.length && text[index + 1] == '\n') {
                     index += 2
-                    "\\r\\n"
+                    "\r\n"
                 } else {
                     text[index++].toString()
                 }
@@ -397,7 +397,7 @@ object NoteText {
         lines += text.substring(lineStart)
         if (lineIndex !in lines.indices) return text
         val line = lines[lineIndex]
-        val indentation = line.takeWhile { it == ' ' || it == '\\t' }
+        val indentation = line.takeWhile { it == ' ' || it == '\t' }
         val content = line.drop(indentation.length)
         val prefix = when {
             content.startsWith(UNCHECKED) -> UNCHECKED
