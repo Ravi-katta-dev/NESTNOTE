@@ -8,7 +8,7 @@ This is a working draft for an eventual merge request to the official `fdroiddat
 - **License:** `GPL-3.0-only`
 - **Source code:** https://github.com/Ravi-katta-dev/NESTNOTE
 - **Issue tracker:** https://github.com/Ravi-katta-dev/NESTNOTE/issues
-- **Latest release documented in `CHANGELOG.md`:** `v1.2.7`; the `v1.2.8` notes are currently marked upcoming. Confirm the published GitHub Release and tag before treating a version as current.
+- **Latest published upstream release:** `v1.3.10` ([GitHub Release](https://github.com/Ravi-katta-dev/NESTNOTE/releases/tag/v1.3.10)). The v1.3.11 release record is being prepared in the current branch; do not use it as an upstream version until its stable tag is published.
 - **Build system:** Gradle / Android Gradle Plugin
 - **Build environment observed in CI:** Java 17, Gradle 8.13, Android SDK platform 36, build tools 36.0.0
 - **Minimum SDK:** 26
@@ -20,13 +20,13 @@ This is a working draft for an eventual merge request to the official `fdroiddat
 
 Use a pinned upstream tag that includes the GPL license file and all final metadata-related fixes. Confirm the selected tag contains those changes before submitting.
 
-The project Gradle configuration accepts `-PversionName` and `-PversionCode`. A candidate F-Droid build should use a monotonically increasing numeric version code that is stable for the release. A candidate version code such as `10205` is only illustrative until confirmed against the selected source-build recipe; do not treat it as the upstream APK's actual version code.
+The project Gradle configuration accepts `-PversionName` and `-PversionCode`. A candidate F-Droid build should use a monotonically increasing numeric version code that is stable for the release. Choose and verify a monotonically increasing numeric version code for the exact upstream tag. Do not assume the GitHub Actions run number is the F-Droid version code; the actual source-build recipe must set it deterministically.
 
 Candidate build commands in the existing CI toolchain (validate these for the exact tag before submission):
 
 ```sh
-gradle --no-daemon testDebugUnitTest -PversionName=1.2.5 -PversionCode=10205
-gradle --no-daemon assembleRelease -PversionName=1.2.5 -PversionCode=10205
+gradle --no-daemon testDebugUnitTest -PversionName=1.3.11 -PversionCode=<monotonic-version-code>
+gradle --no-daemon assembleRelease -PversionName=1.3.11 -PversionCode=<monotonic-version-code>
 ```
 
 This is a starting point, **not a verified F-Droid build recipe**. The final `fdroiddata` build block must use the syntax accepted by current F-Droid tooling and should be tested with `fdroid build` in a compatible build environment. Do not require upstream release signing secrets. F-Droid normally signs its own built APKs.
