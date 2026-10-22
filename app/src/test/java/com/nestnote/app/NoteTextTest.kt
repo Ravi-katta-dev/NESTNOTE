@@ -534,8 +534,8 @@ class NoteTextTest {
 
         val partial = "[label](https://"
         val linked = NoteText.insertMarkdownLink(partial, 1, 6)
-        assertEquals("[[label](https://](https://)", linked.first)
-        assertEquals(linked.first.indexOf("https://", linked.first.indexOf("](https://") + 1) + "https://".length, linked.second)
+        assertEquals("[[label](https://)](https://", linked.first)
+        assertEquals(linked.first.indexOf("https://") + "https://".length, linked.second)
     }
 
 }
