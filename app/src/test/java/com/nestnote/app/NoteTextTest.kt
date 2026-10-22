@@ -493,6 +493,25 @@ class NoteTextTest {
     }
 
     @Test
+    fun inlineFormattingNestsItalicInsideBoldWithoutRemovingExistingMarkers() {
+        val bold = NoteText.toggleInlineFormat("bold", 0, 4, "**")
+        assertEquals("**bold**", bold.first)
+
+        val italicInsideBold = NoteText.toggleInlineFormat(bold.first, 2, 6, "*")
+        assertEquals("***bold***", italicInsideBold.first)
+        assertEquals(3 to 7, italicInsideBold.second to italicInsideBold.third)
+
+        val toggledOff = NoteText.toggleInlineFormat(
+            italicInsideBold.first,
+            italicInsideBold.second,
+            italicInsideBold.third,
+            "*"
+        )
+        assertEquals("**bold**", toggledOff.first)
+        assertEquals(2 to 6, toggledOff.second to toggledOff.third)
+    }
+
+    @Test
     fun numberedListContinuationHandlesDigitBoundariesAndIndentedEmptyItems() {
         val old = "  9. item"
         assertEquals("  9. item\n  10. ", NoteText.continueList(old, "$old\n", old.length + 1)!!.first)
