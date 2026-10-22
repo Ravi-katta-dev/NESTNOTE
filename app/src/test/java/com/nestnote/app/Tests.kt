@@ -2,14 +2,16 @@ import com.nestnote.app.*
 import java.io.*
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
-import android.content.Context
+import android.content.ContextWrapper
 
 var failures = 0; var passes = 0
 fun check(name: String, ok: Boolean, detail: String = "") {
     if (ok) passes++ else { failures++; println("FAIL $name $detail") }
 }
 fun tmpRoot(name: String): File = File("/tmp/nn_test/${name}_${System.nanoTime()}").apply { mkdirs() }
-fun fakeContext(dir: File) = object : Context() { override val filesDir: File = dir }
+fun fakeContext(dir: File) = object : ContextWrapper(null) {
+    override fun getFilesDir(): File = dir
+}
 val key: SecretKey = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
 
 fun main() {
