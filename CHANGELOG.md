@@ -4,7 +4,7 @@ All notable changes to NESTNOTE are documented here.
 
 ## [1.3.11] - Unreleased
 
-This release candidate collects the note-editor and Markdown fixes merged while addressing [issue #61](https://github.com/Ravi-katta-dev/NESTNOTE/issues/61). This section is intentionally marked **Unreleased** until the release candidate passes the required CI and release checks.
+This release candidate collects the note-editor and Markdown fixes merged and developed while addressing [issue #61](https://github.com/Ravi-katta-dev/NESTNOTE/issues/61). This section is intentionally marked **Unreleased** until the release candidate passes the required CI and release checks.
 
 ### Fixed
 - Corrected editor text contrast selection for dark surfaces by using surface luminance and theme-provided foreground colors.
@@ -15,6 +15,17 @@ This release candidate collects the note-editor and Markdown fixes merged while 
 - Restricted actionable Markdown preview links to `http`, `https`, and `mailto` schemes; unsupported schemes are removed from actionable preview content.
 - Improved accessibility touch-target sizing and added standalone Markdown heading semantics for preview segments.
 
+### Markdown renderer replacement — PR #74
+- Replace the regex-based inline/block Markdown preprocessor with **Markwon**, using its CommonMark-based Android rendering pipeline.
+- Add Markwon task-list and strikethrough extensions for richer Markdown preview support.
+- Pass the current Android context into preview rendering.
+- Keep the original note source unchanged during preview, disable raw HTML rendering, and restrict actionable links to `http`, `https`, and `mailto` schemes.
+- Update preview regression tests to assert rendered behavior rather than parser-specific spans.
+
+### Link insertion — PR #74
+- Escape backslashes and both square-bracket delimiters in selected link labels in a single pass.
+- Add coverage for Unicode labels, punctuation, empty selections, document boundaries, reversed selections, escaping, and cursor placement inside the URL placeholder.
+
 ### Tests and engineering
 - Added regression coverage for Markdown rendering, formatting toggles, list/checklist transitions, link escaping and cursor placement, line-ending preservation, and safe-link handling.
 - Added draft persistence/isolation and undo/redo regression coverage.
@@ -22,6 +33,7 @@ This release candidate collects the note-editor and Markdown fixes merged while 
 - Added CI workflow coverage to execute Android emulator UI tests on pull requests.
 
 ### Known validation gaps
+- PR #74's latest CI status and integration behavior must be confirmed before treating its Markwon replacement and link-insertion changes as verified.
 - Do not consider every item in issue #61 complete solely from this changelog. Check the issue and linked pull requests for exact scope and evidence.
 - Confirm CI passes on the final release commit, including unit tests, lint, release compilation, and the configured emulator/UI-test jobs.
 - Verify production signing and the exact release APK certificate; do not distribute unsigned or inspection-only artifacts.
