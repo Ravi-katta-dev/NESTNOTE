@@ -205,10 +205,9 @@ object NoteText {
         }
         val replacement = "[$label](https://)"
         val updated = text.substring(0, start) + replacement + text.substring(end)
-        // "[label](" is label.length + 3 characters, so the placeholder URL starts there.
-        val urlStart = start + label.length + 3
-        // Select the placeholder URL so typing replaces it, as the KDoc describes.
-        return Triple(updated, urlStart, urlStart + "https://".length)
+        // Place the caret at the end of the URL placeholder so typing can continue there.
+        val urlCursor = start + label.length + 3 + "https://".length
+        return Triple(updated, urlCursor, urlCursor)
     }
 
     /** Toggles a Markdown blockquote prefix on the cursor's line. */
