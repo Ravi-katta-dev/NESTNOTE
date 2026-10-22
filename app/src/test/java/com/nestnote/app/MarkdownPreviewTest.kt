@@ -5,9 +5,8 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.ImageSpan
 import android.text.style.LineBackgroundSpan
 import android.text.style.QuoteSpan
-import android.text.style.RelativeSizeSpan
-import android.text.style.StyleSpan
-import android.graphics.Typeface
+import io.noties.markwon.core.spans.EmphasisSpan
+import io.noties.markwon.core.spans.StrongEmphasisSpan
 import android.text.style.URLSpan
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -128,13 +127,14 @@ class MarkdownPreviewTest {
             "# Heading\n\n**bold** and *italic*\n\n- list item\n\n[safe link](https://example.com)",
             Color.WHITE
         )
-        val styles = result.getSpans(0, result.length, StyleSpan::class.java)
+        val boldSpans = result.getSpans(0, result.length, StrongEmphasisSpan::class.java)
+        val italicSpans = result.getSpans(0, result.length, EmphasisSpan::class.java)
         val links = result.getSpans(0, result.length, URLSpan::class.java)
         val foregrounds = result.getSpans(0, result.length, ForegroundColorSpan::class.java)
 
         assertTrue("heading text should be rendered", result.toString().contains("Heading"))
-        assertTrue("bold style should be preserved", styles.any { it.style == Typeface.BOLD })
-        assertTrue("italic style should be preserved", styles.any { it.style == Typeface.ITALIC })
+        assertTrue("bold style should be preserved", boldSpans.isNotEmpty())
+        assertTrue("italic style should be preserved", italicSpans.isNotEmpty())
         assertTrue("list content should be preserved", result.toString().contains("list item"))
         assertTrue("links should remain clickable", links.any { it.url == "https://example.com" })
         assertTrue("parser foregrounds should use the theme color",
@@ -158,7 +158,6 @@ class MarkdownPreviewTest {
         val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), 
             "```kotlin\nval literal = \"**not bold**\"\n> not a quote\n---\n```"
         )
-        val styles = result.getSpans(0, result.length, StyleSpan::class.java)
         val quotes = result.getSpans(0, result.length, QuoteSpan::class.java)
         val rules = result.getSpans(0, result.length, LineBackgroundSpan::class.java)
 
