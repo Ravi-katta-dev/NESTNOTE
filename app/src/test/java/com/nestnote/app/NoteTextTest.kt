@@ -496,6 +496,9 @@ class NoteTextTest {
     fun numberedListContinuationHandlesDigitBoundariesAndIndentedEmptyItems() {
         val old = "  9. item"
         assertEquals("  9. item\\n  10. ", NoteText.continueList(old, "$old\\n", old.length + 1)!!.first)
+        val parenthesized = "  9) item"
+        assertEquals("  9) item\\n  10) ", NoteText.continueList(parenthesized, "$parenthesized\\n", parenthesized.length + 1)!!.first)
+        assertEquals("item", NoteText.toggleNumberedList("9) item", 7).first)
 
         val empty = "first\\n  10. "
         val result = NoteText.continueList(empty, "$empty\\n", empty.length + 1)!!
