@@ -1789,7 +1789,7 @@ private fun AnimatedWaveformPreview(
             val sinVal = if (reducedMotion || !active) {
                 Math.sin(i * 0.4).toFloat().coerceIn(0f, 1f)
             } else {
-                ((Math.sin(i * 0.45 + phase) + 1f) / 2f).coerceIn(0f, 1f)
+                ((Math.sin(i * 0.45 + phase.toDouble()) + 1.0) / 2.0).toFloat().coerceIn(0f, 1f)
             }
             val barH = minHeight + sinVal * (maxHeight - minHeight)
             val left = i * (barWidth + barSpacing)
