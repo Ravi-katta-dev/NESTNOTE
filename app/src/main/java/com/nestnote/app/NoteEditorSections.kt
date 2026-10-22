@@ -496,7 +496,10 @@ internal fun EditorTitleField(
                 if (title.isEmpty()) {
                     Text(
                         "Title",
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontSize = textSize.titleSp.sp,
+                            lineHeight = (textSize.titleSp * 1.26f).sp
+                        ),
                         color = muted
                     )
                 }
@@ -692,7 +695,10 @@ internal fun ColumnScope.EditorBodySection(
                     if (bodyValue.text.isEmpty()) {
                         Text(
                             "Note",
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontSize = textSize.bodySp.sp,
+                                lineHeight = (textSize.bodySp * 1.45f).sp
+                            ),
                             color = muted
                         )
                     }
