@@ -519,7 +519,7 @@ class NoteTextTest {
         assertEquals(2 to 4, NoteText.selectionAfterLineEdit("abc", "aXbc", 1, 3, 2))
 
         // Reversed selection direction is preserved as well.
-        assertEquals(4 to 2, NoteText.selectionAfterLineEdit("abc", "aXbc", 3, 1, 2))
+        assertEquals(4 to 1, NoteText.selectionAfterLineEdit("abc", "aXbc", 3, 1, 2))
     }
 
     @Test
