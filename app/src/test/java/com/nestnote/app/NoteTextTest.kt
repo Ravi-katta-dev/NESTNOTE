@@ -709,12 +709,12 @@ class NoteTextTest {
         val twoStart = adjacent.indexOf("two")
         val twoEnd = twoStart + 3
         val toggled = NoteText.toggleInlineFormat(adjacent, twoStart, twoEnd, "**")
-        assertEquals("onetwo****three**", toggled.first)
+        assertEquals("onetwo**three**", toggled.first)
         assertEquals(twoStart to twoEnd, toggled.second to toggled.third)
 
         val reversed = NoteText.toggleInlineFormat("alpha beta", 10, 6, "~~")
         assertEquals("alpha ~~beta~~", reversed.first)
-        assertEquals(14 to 10, reversed.second to reversed.third)
+        assertEquals(12 to 8, reversed.second to reversed.third)
     }
 
     @Test
