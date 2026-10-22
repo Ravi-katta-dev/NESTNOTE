@@ -149,8 +149,11 @@ object NoteText {
                 rightRun++
                 index++
             }
-            leftRun >= marker.length && rightRun >= marker.length &&
-                (leftRun / marker.length) % 2 == 1
+            // Only remove a wrapper when the selected text is enclosed by exactly
+            // one marker run on each side. Longer runs can represent nested Markdown
+            // (for example ***bold and italic***) or malformed user input; treating
+            // their parity as a toggle can silently delete an unrelated formatting layer.
+            leftRun == marker.length && rightRun == marker.length
         } else {
             start >= marker.length && end + marker.length <= text.length &&
                 text.substring(start - marker.length, start) == marker &&
