@@ -133,7 +133,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
-internal fun NestNoteApp(store: NoteStore) {
+internal fun NestNoteApp(
+    store: NoteStore,
+    externalMarkdownUri: android.net.Uri? = null,
+    onExternalMarkdownHandled: () -> Unit = {}
+) {
     val context = LocalContext.current
     val appVersion = remember { readAppVersion(context) }
     val windowSizeClass = (context as? ComponentActivity)?.let { calculateWindowSizeClass(it) }
