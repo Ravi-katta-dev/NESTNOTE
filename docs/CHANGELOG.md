@@ -52,18 +52,18 @@ This section is retained as the historical v1.3.9 release record. Later fixes an
 - Persist plain-text versus Markdown note format and safely default older notes to plain text.
 - Add regression coverage for inline/adjacent voice markers, text preservation, and marker removal.
 
-### Release validation
-- Do not treat inline playback while actively editing as complete until it is verified on a real device; the current audit records this as outstanding.
-- Confirm wallpaper import is fully integrated into the editor and covered by tests before listing it as a shipped v1.3.9 feature.
-- Encrypted unique-link sharing and QR-code sharing are not included in these release notes until their implementation PRs are merged and validated.
-- Verify the exact release-tag CI, production APK signature, install/upgrade behavior, and applicable device checks before publishing.
+### Scope note (historical)
+- Encrypted unique-link sharing and QR-code sharing were not part of the v1.3.9 release record.
+- Wallpaper-import availability must be checked against the current implementation and tests; this historical entry does not claim it shipped in v1.3.9.
 
 ---
 
-## Unreleased
+## Historical voice-player implementation notes — superseded by v1.3.10
+
+The following entries preserve earlier implementation notes for traceability. The current published release scope is recorded under v1.3.10 above; this is not a separate unreleased release.
 
 ### Changed
-- Added a dedicated inline voice-player area to the note editor so voice attachments can be played while editing, without opening Markdown preview. Validation is in progress.
+- Added a dedicated inline voice-player area to the note editor so voice attachments can be played while editing, without opening Markdown preview.
 
 ### Fixed
 - Voice-note playback cards stack their title/waveform and seek controls vertically, preventing the seek bar from overlapping the voice-note label.
@@ -73,8 +73,8 @@ This section is retained as the historical v1.3.9 release record. Later fixes an
 - Note format is persisted as plain text or Markdown, with older notes defaulting safely to plain text.
 - The note format menu no longer references an unavailable Material icon, fixing the Android CI compilation failure.
 
-### Known issue
-- The editor screenshot still shows a highlighted voice-note marker rather than an inline player while editing. Inline playback in read mode and Markdown preview is implemented, but direct playback from the editable text field is not yet verified/fixed. Do not consider this interaction complete until tested on-device.
+### Historical validation note
+- Earlier editor screenshots showed a highlighted voice-note marker rather than an inline player while editing. v1.3.10 subsequently records the in-place voice-note waveform fix; this historical note alone does not certify device-level validation.
 
 ### Tests
 - Added regression coverage for inline and adjacent voice markers, text preservation, and marker removal.
