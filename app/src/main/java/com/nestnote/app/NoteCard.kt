@@ -64,6 +64,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Title
@@ -141,7 +143,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 // Dashboard note card.
 
 @Composable
-internal fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorStyle, showPreview: Boolean, showTimestamp: Boolean, onOpen: () -> Unit, onPin: () -> Unit, onDelete: () -> Unit, onArchive: () -> Unit, modifier: Modifier = Modifier) {
+internal fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorStyle, showPreview: Boolean, showTimestamp: Boolean, onOpen: () -> Unit, onPin: () -> Unit, onDelete: () -> Unit, onArchive: () -> Unit, onSelect: () -> Unit = {}, isSelected: Boolean = false, modifier: Modifier = Modifier) {
     var menu by remember { mutableStateOf(false) }
     val interaction = remember { MutableInteractionSource() }
     val haptics = LocalHapticFeedback.current
@@ -178,7 +180,7 @@ internal fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorSty
             ),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = if (note.background > 0 || note.wallpaperUri.isNotBlank()) Color.Transparent else tint, contentColor = cardText),
-        border = BorderStroke(1.dp, colors.outlineVariant)
+        border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) colors.primary else colors.outlineVariant)
     ) {
         Box {
             if (note.wallpaperUri.isNotBlank()) {
@@ -192,6 +194,9 @@ internal fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorSty
                     .padding(if (compact) 10.dp else 16.dp)
             ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isSelected) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = "Selected", tint = colors.primary, modifier = Modifier.padding(end = 6.dp).size(20.dp))
+                }
                 Surface(color = tint, shape = RoundedCornerShape(8.dp)) {
                     Text(note.category, Modifier.padding(horizontal = 8.dp, vertical = 5.dp), color = cardText, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
                 }
@@ -213,6 +218,7 @@ internal fun NoteCard(note: NestNote, compact: Boolean, colorStyle: NoteColorSty
                             leadingIcon = { Icon(Icons.Default.Download, null) },
                             modifier = Modifier.testTag("note_export_markdown")
                         )
+                        DropdownMenuItem(text = { Text(if (isSelected) "Remove from selection" else "Select note") }, onClick = { menu = false; onSelect() }, leadingIcon = { Icon(Icons.Default.CheckCircleOutline, null) })
                         DropdownMenuItem(text = { Text("Edit") }, onClick = { menu = false; onOpen() }, leadingIcon = { Icon(Icons.Default.Edit, null) })
                         DropdownMenuItem(text = { Text(if (note.archived) "Restore from archive" else "Archive") }, onClick = { menu = false; onArchive() }, leadingIcon = { Icon(if (note.archived) Icons.Default.Unarchive else Icons.Default.Archive, null) })
                         HorizontalDivider()

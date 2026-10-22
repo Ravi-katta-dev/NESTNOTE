@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -478,6 +480,8 @@ internal fun EditorTitleField(
     editable: Boolean,
     focusRequester: FocusRequester,
     textSize: EditorTextSize,
+    bodyTextSp: Int = textSize.bodySp,
+    fontFamily: androidx.compose.ui.text.font.FontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
     ink: Color,
     muted: Color
 ) {
@@ -490,9 +494,10 @@ internal fun EditorTitleField(
             .padding(vertical = 8.dp)
             .testTag("editor_title_field"),
         textStyle = MaterialTheme.typography.headlineSmall.copy(
-            fontSize = textSize.titleSp.sp,
-            lineHeight = (textSize.titleSp * 1.26f).sp,
+            fontSize = (bodyTextSp * 1.65f).sp,
+            lineHeight = (bodyTextSp * 2.05f).sp,
             fontWeight = FontWeight.Normal,
+            fontFamily = fontFamily,
             color = ink
         ),
         keyboardOptions = KeyboardOptions(
@@ -504,8 +509,9 @@ internal fun EditorTitleField(
                     Text(
                         "Title",
                         style = MaterialTheme.typography.headlineSmall.copy(
-                            fontSize = textSize.titleSp.sp,
-                            lineHeight = (textSize.titleSp * 1.26f).sp
+                            fontSize = (bodyTextSp * 1.65f).sp,
+                            lineHeight = (bodyTextSp * 2.05f).sp,
+                            fontFamily = fontFamily
                         ),
                         color = muted
                     )
@@ -603,6 +609,9 @@ internal fun ColumnScope.EditorBodySection(
     onEditVoiceTextChange: (Boolean) -> Unit,
     voiceNoteId: Long,
     textSize: EditorTextSize,
+    bodyTextSp: Int = textSize.bodySp,
+    fontFamily: androidx.compose.ui.text.font.FontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
+    typeface: android.graphics.Typeface = android.graphics.Typeface.DEFAULT,
     ink: Color,
     muted: Color,
     visualTransformation: VisualTransformation,
@@ -696,6 +705,8 @@ internal fun ColumnScope.EditorBodySection(
                 body = body,
                 noteId = voiceNoteId,
                 textSize = textSize,
+                bodyTextSp = bodyTextSp,
+                typeface = typeface,
                 ink = ink,
                 activePlayerId = activePlayerId,
                 onPlayRequested = onPlayRequested,
@@ -730,8 +741,9 @@ internal fun ColumnScope.EditorBodySection(
                 .padding(top = 3.dp)
                 .testTag("editor_body_field"),
             textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = textSize.bodySp.sp,
-                lineHeight = (textSize.bodySp * 1.45f).sp,
+                fontSize = bodyTextSp.sp,
+                lineHeight = (bodyTextSp * 1.45f).sp,
+                fontFamily = fontFamily,
                 color = ink
             ),
             minLines = 1,
@@ -758,9 +770,49 @@ internal fun ColumnScope.EditorBodySection(
 }
 
 @Composable
+internal fun EditorRelatedNotes(
+    title: String,
+    body: String,
+    currentId: Long,
+    notes: List<NestNote>,
+    onOpen: (NestNote) -> Unit
+) {
+    val links = remember(body, notes, currentId) { resolveNoteLinks(body, notes, currentId) }
+    val backlinks = remember(title, notes, currentId) { notesLinkingTo(title, notes, currentId) }
+    val resolvedTitles = remember(links) { links.map { it.label.lowercase() }.toSet() }
+    val missing = remember(body, resolvedTitles) { noteLinkTitles(body).filterNot { it.lowercase() in resolvedTitles } }
+    if (links.isNotEmpty() || backlinks.isNotEmpty() || missing.isNotEmpty()) {
+        Column(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (links.isNotEmpty()) {
+                Text("Linked notes", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    links.forEach { link ->
+                        FilterChip(selected = false, onClick = { onOpen(link.note) }, label = { Text(link.label) }, leadingIcon = {
+                            Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(16.dp))
+                        })
+                    }
+                }
+            }
+            if (backlinks.isNotEmpty()) {
+                Text("Linked from", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    backlinks.forEach { source ->
+                        FilterChip(selected = false, onClick = { onOpen(source) }, label = { Text(source.title.ifBlank { "Untitled note" }) })
+                    }
+                }
+            }
+            if (missing.isNotEmpty()) {
+                Text("Missing notes: ${missing.joinToString()}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+            }
+        }
+    }
+}
+
+@Composable
 internal fun EditorFooter(
     editable: Boolean,
     category: String,
+    categoryOptions: List<String> = categories,
     onCategoryChange: (String) -> Unit,
     reminder: String,
     onPickReminder: () -> Unit,
@@ -787,7 +839,7 @@ internal fun EditorFooter(
             expanded = categoryMenu,
             onDismissRequest = { categoryMenu = false }
         ) {
-            categories.forEach { item ->
+            categoryOptions.forEach { item ->
                 DropdownMenuItem(
                     text = { Text(item) },
                     onClick = { onCategoryChange(item); categoryMenu = false },

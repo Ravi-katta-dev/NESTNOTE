@@ -1,6 +1,9 @@
 package com.nestnote.app
 
 import android.content.Context
+import android.graphics.Typeface as AndroidTypeface
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -86,9 +89,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * Keys for every item in the settings LazyColumn, in display order.
@@ -138,6 +143,8 @@ internal fun SettingsScreen(
     onShowNoteTimestampsChange: (Boolean) -> Unit,
     defaultNoteCategory: String,
     onDefaultNoteCategoryChange: (String) -> Unit,
+    categoryOptions: List<String> = categories,
+    onCategoryOptionsChange: (List<String>) -> Unit = {},
     editorTextSize: EditorTextSize,
     onEditorTextSizeChange: (EditorTextSize) -> Unit,
     showEditorCounts: Boolean,
@@ -156,6 +163,58 @@ internal fun SettingsScreen(
     var showVoicePlayerSettings by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val settingsScope = rememberCoroutineScope()
+    val editorPreferences = remember(context) { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
+    var customTextSizeSp by rememberSaveable {
+        mutableIntStateOf(editorPreferences.getInt(PREF_TEXT_SIZE_SP, editorTextSize.bodySp).coerceIn(12, 32))
+    }
+    var editorFontStyle by rememberSaveable {
+        mutableStateOf(runCatching {
+            EditorFontFamily.valueOf(editorPreferences.getString(PREF_EDITOR_FONT, "SANS") ?: "SANS")
+        }.getOrDefault(EditorFontFamily.SANS))
+    }
+    var customFontPath by rememberSaveable { mutableStateOf(editorPreferences.getString(PREF_EDITOR_FONT_FILE, null)) }
+    var defaultNoteFormat by rememberSaveable {
+        mutableStateOf(editorPreferences.getString(PREF_DEFAULT_NOTE_FORMAT, "plain") ?: "plain")
+    }
+    var categoryDraft by rememberSaveable { mutableStateOf("") }
+    val fontImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            runCatching {
+                val tempFile = File(context.filesDir, "editor-font-import.tmp")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    tempFile.outputStream().use { output ->
+                        val buffer = ByteArray(8192)
+                        var total = 0L
+                        while (true) {
+                            val count = input.read(buffer)
+                            if (count < 0) break
+                            total += count
+                            require(total <= 8L * 1024 * 1024) { "Font files must be 8 MB or smaller" }
+                            output.write(buffer, 0, count)
+                        }
+                    }
+                } ?: error("Couldn't read that font file")
+                AndroidTypeface.createFromFile(tempFile)
+                val installed = File(context.filesDir, "editor-font-${System.currentTimeMillis()}.font")
+                check(tempFile.renameTo(installed)) { "Couldn't save that font" }
+                customFontPath?.let { File(it).delete() }
+                customFontPath = installed.absolutePath
+                editorFontStyle = EditorFontFamily.CUSTOM
+                editorPreferences.edit()
+                    .putString(PREF_EDITOR_FONT_FILE, installed.absolutePath)
+                    .putString(PREF_EDITOR_FONT, EditorFontFamily.CUSTOM.name)
+                    .apply()
+                android.widget.Toast.makeText(context, "Custom font installed", android.widget.Toast.LENGTH_SHORT).show()
+            }.onFailure { error ->
+                File(context.filesDir, "editor-font-import.tmp").delete()
+                android.widget.Toast.makeText(
+                    context,
+                    error.message ?: "Choose a valid TTF or OTF font file",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
 
     val settingsDestinations = remember {
         listOf(
@@ -187,7 +246,7 @@ internal fun SettingsScreen(
             ).any { it.contains(query) || query.contains(it) }
             "editor" -> listOf(
                 "editor", "note editor", "markdown", "writing", "reading", "text size",
-                "size", "word count", "bottom sheet", "full-screen", "quick dialog"
+                "size", "font", "typeface", "templates", "shortcuts", "word count", "bottom sheet", "full-screen", "quick dialog"
             ).any { it.contains(query) || query.contains(it) }
             "voice" -> listOf(
                 "voice", "player", "voice player", "audio", "playback", "mic", "compact", "full", "waveform"
@@ -516,7 +575,7 @@ internal fun SettingsScreen(
                             .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        categories.forEach { category ->
+                        categoryOptions.forEach { category ->
                             val selected = defaultNoteCategory == category
                             FilterChip(
                                 selected = selected,
@@ -529,6 +588,49 @@ internal fun SettingsScreen(
                             )
                         }
                     }
+
+                    SettingLabel("Manage categories")
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = categoryDraft,
+                            onValueChange = { categoryDraft = it.take(24) },
+                            modifier = Modifier.weight(1f).testTag("new_category_field"),
+                            label = { Text("New category") },
+                            singleLine = true
+                        )
+                        FilledIconButton(
+                            onClick = {
+                                val clean = categoryDraft.trim()
+                                if (clean.isNotBlank() && categoryOptions.none { it.equals(clean, ignoreCase = true) } && categoryOptions.size < 24) {
+                                    onCategoryOptionsChange(categoryOptions + clean)
+                                    categoryDraft = ""
+                                }
+                            },
+                            enabled = categoryDraft.isNotBlank() && categoryOptions.size < 24,
+                            modifier = Modifier.testTag("add_category_button")
+                        ) { Icon(Icons.Default.Check, contentDescription = "Add category") }
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        categoryOptions.forEach { category ->
+                            AssistChip(
+                                onClick = { onDefaultNoteCategoryChange(category) },
+                                label = { Text(category) },
+                                trailingIcon = {
+                                    IconButton(
+                                        onClick = {
+                                            if (categoryOptions.size > 1) onCategoryOptionsChange(categoryOptions - category)
+                                        },
+                                        enabled = categoryOptions.size > 1,
+                                        modifier = Modifier.size(28.dp).testTag("remove_category_${category.lowercase().replace(' ', '_')}")
+                                    ) { Icon(Icons.Default.Close, contentDescription = "Remove $category", modifier = Modifier.size(16.dp)) }
+                                }
+                            )
+                        }
+                    }
+                    Text("Removing a category moves its notes to the first remaining category.", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
 
                     HorizontalDivider(Modifier.padding(vertical = 4.dp), color = colors.outlineVariant.copy(alpha = 0.5f))
 
@@ -589,15 +691,93 @@ internal fun SettingsScreen(
 
                     HorizontalDivider(Modifier.padding(vertical = 4.dp), color = colors.outlineVariant.copy(alpha = 0.5f))
 
-                    SettingLabel("Text size")
-                    SegmentedChoice(EditorTextSize.entries, editorTextSize, { it.label }, onEditorTextSizeChange)
+                    SettingLabel("Font family")
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        EditorFontFamily.entries.filter { it != EditorFontFamily.CUSTOM || customFontPath != null }
+                            .forEach { family ->
+                                FilterChip(
+                                    selected = editorFontStyle == family,
+                                    onClick = {
+                                        editorFontStyle = family
+                                        editorPreferences.edit().putString(PREF_EDITOR_FONT, family.name).apply()
+                                    },
+                                    label = { Text(family.label) }
+                                )
+                            }
+                    }
+                    OutlinedButton(
+                        onClick = { fontImportLauncher.launch(arrayOf("font/ttf", "font/otf", "application/octet-stream")) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.Default.FileOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (customFontPath == null) "Import TTF or OTF font" else "Replace imported font")
+                    }
+                    Text(
+                        "Imported fonts stay in this app's private storage.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant
+                    )
+
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp), color = colors.outlineVariant.copy(alpha = 0.5f))
+                    SettingLabel("Body text size · $customTextSizeSp sp")
+                    Slider(
+                        value = customTextSizeSp.toFloat(),
+                        onValueChange = { value ->
+                            customTextSizeSp = value.roundToInt().coerceIn(12, 32)
+                            editorPreferences.edit().putInt(PREF_TEXT_SIZE_SP, customTextSizeSp).apply()
+                        },
+                        valueRange = 12f..32f,
+                        steps = 19,
+                        modifier = Modifier.testTag("editor_font_size_slider")
+                    )
+                    SegmentedChoice(
+                        EditorTextSize.entries,
+                        editorTextSize,
+                        { it.label },
+                        { preset ->
+                            onEditorTextSizeChange(preset)
+                            customTextSizeSp = preset.bodySp
+                            editorPreferences.edit().putInt(PREF_TEXT_SIZE_SP, preset.bodySp).apply()
+                        }
+                    )
+
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp), color = colors.outlineVariant.copy(alpha = 0.5f))
+                    SettingLabel("Default format for new notes")
+                    SegmentedChoice(
+                        listOf("plain", "markdown"),
+                        defaultNoteFormat,
+                        { if (it == "markdown") "Markdown" else "Plain text" },
+                        { format ->
+                            defaultNoteFormat = format
+                            editorPreferences.edit().putString(PREF_DEFAULT_NOTE_FORMAT, format).apply()
+                        }
+                    )
 
                     // Live animated preview note card
                     val animatedFontSize by animateFloatAsState(
-                        targetValue = editorTextSize.bodySp.toFloat(),
+                        targetValue = customTextSizeSp.toFloat(),
                         animationSpec = NestMotion.spatial(reducedMotion),
                         label = "editor-font-size-preview"
                     )
+                    val previewTypeface = remember(editorFontStyle, customFontPath) {
+                        when (editorFontStyle) {
+                            EditorFontFamily.SERIF -> AndroidTypeface.SERIF
+                            EditorFontFamily.MONOSPACE -> AndroidTypeface.MONOSPACE
+                            EditorFontFamily.CURSIVE -> AndroidTypeface.create("casual", AndroidTypeface.NORMAL)
+                            EditorFontFamily.CUSTOM -> customFontPath?.let { path ->
+                                runCatching { AndroidTypeface.createFromFile(path) }.getOrNull()
+                            } ?: AndroidTypeface.SANS_SERIF
+                            EditorFontFamily.SANS -> AndroidTypeface.SANS_SERIF
+                        }
+                    }
+                    val previewFontFamily = remember(previewTypeface) {
+                        androidx.compose.ui.text.font.FontFamily(previewTypeface)
+                    }
 
                     Surface(
                         shape = RoundedCornerShape(16.dp),
@@ -618,7 +798,7 @@ internal fun SettingsScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    "${editorTextSize.label} · ${editorTextSize.bodySp} sp",
+                                    "${editorFontStyle.label} · $customTextSizeSp sp",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = colors.onSurfaceVariant
                                 )
@@ -628,7 +808,8 @@ internal fun SettingsScreen(
                                 fontSize = animatedFontSize.sp,
                                 lineHeight = (animatedFontSize * 1.45f).sp,
                                 color = colors.onSurface,
-                                fontWeight = FontWeight.Normal
+                                fontWeight = FontWeight.Normal,
+                                fontFamily = previewFontFamily
                             )
                         }
                     }
@@ -926,6 +1107,14 @@ internal fun SettingsScreen(
                 TextButton(onClick = {
                     confirmReset = false
                     onResetDefaults()
+                    customTextSizeSp = EditorTextSize.MEDIUM.bodySp
+                    editorFontStyle = EditorFontFamily.SANS
+                    customFontPath?.let { File(it).delete() }
+                    customFontPath = null
+                    defaultNoteFormat = "plain"
+                    categoryDraft = ""
+                    editorPreferences.edit().remove(PREF_TEXT_SIZE_SP).remove(PREF_EDITOR_FONT)
+                        .remove(PREF_EDITOR_FONT_FILE).remove(PREF_DEFAULT_NOTE_FORMAT).apply()
                 }) { Text("Reset", color = colors.error) }
             },
             dismissButton = {
