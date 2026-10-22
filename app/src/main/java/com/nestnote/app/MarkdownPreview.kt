@@ -33,8 +33,10 @@ internal object MarkdownPreview {
         val rendered = SpannableStringBuilder(renderer.toMarkdown(markdown))
 
         if (foregroundColor != Color.BLACK) {
+            // Normalize every explicit foreground span to the active note color. Markdown
+            // renderers may use more than pure black for headings or other block elements;
+            // leaving those defaults intact can make text unreadable on dark surfaces.
             rendered.getSpans(0, rendered.length, ForegroundColorSpan::class.java)
-                .filter { it.foregroundColor == Color.BLACK }
                 .forEach { span ->
                     val start = rendered.getSpanStart(span)
                     val end = rendered.getSpanEnd(span)
