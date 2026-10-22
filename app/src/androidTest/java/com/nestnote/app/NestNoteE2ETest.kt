@@ -521,4 +521,41 @@ class NestNoteE2ETest {
         composeRule.onNodeWithTag("editor_body_field").assertTextEquals("Second body")
     }
 
+
+    @Test
+    fun lineFormattingForNumberedListsAndBlockquotesSupportsUndoRedo() {
+        composeRule.onNodeWithContentDescription("Create note").performClick()
+        composeRule.onNodeWithTag("editor_body_field").performTextInput("item")
+        composeRule.onNodeWithContentDescription("Formatting").performClick()
+
+        composeRule.onNodeWithTag("format_Numbered").performClick()
+        composeRule.onNodeWithTag("editor_body_field").assertTextEquals("1. item")
+        composeRule.onNodeWithContentDescription("Undo").performClick()
+        composeRule.onNodeWithTag("editor_body_field").assertTextEquals("item")
+        composeRule.onNodeWithContentDescription("Redo").performClick()
+        composeRule.onNodeWithTag("editor_body_field").assertTextEquals("1. item")
+
+        composeRule.onNodeWithTag("format_Quote").performClick()
+        composeRule.onNodeWithTag("editor_body_field").assertTextEquals("> 1. item")
+        composeRule.onNodeWithContentDescription("Undo").performClick()
+        composeRule.onNodeWithTag("editor_body_field").assertTextEquals("1. item")
+        composeRule.onNodeWithContentDescription("Redo").performClick()
+        composeRule.onNodeWithTag("editor_body_field").assertTextEquals("> 1. item")
+    }
+
+    @Test
+    fun linkFormattingKeepsSelectedLabelAndPlacesCursorInUrl() {
+        composeRule.onNodeWithContentDescription("Create note").performClick()
+        composeRule.onNodeWithTag("editor_body_field").performTextInput("label")
+        composeRule.onNodeWithTag("editor_body_field")
+            .performTextInputSelection(TextRange(0, 5))
+        composeRule.onNodeWithContentDescription("Formatting").performClick()
+        composeRule.onNodeWithTag("format_Link").performClick()
+
+        composeRule.onNodeWithTag("editor_body_field").assertTextEquals("[label](https://)")
+        composeRule.onNodeWithTag("editor_body_field").performTextInput("example.com")
+        composeRule.onNodeWithTag("editor_body_field")
+            .assertTextEquals("[label](https://example.com)")
+    }
+
 }
