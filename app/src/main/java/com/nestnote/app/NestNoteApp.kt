@@ -309,31 +309,53 @@ internal fun NestNoteApp(store: NoteStore) {
         AutomaticBackupScheduler.cancel(context)
         coroutineScope.launch { snackbarHostState.showSnackbar("Settings reset to defaults") }
     }
-    val markdownImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            val markdown = runCatching {
-                context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
-            }.getOrNull()
-            if (markdown == null) {
-                coroutineScope.launch { snackbarHostState.showSnackbar("Couldn't read that Markdown file") }
+    val markdownImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) {
+            // Read every selected document first so an unreadable file cannot cause a partial import.
+            val parsed = uris.map { uri ->
+                runCatching {
+                    val markdown = context.contentResolver.openInputStream(uri)
+                        ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                        ?: error("Unable to read Markdown file")
+                    val firstHeading = Regex("(?m)^#\\s+(.+?)\\s*$").find(markdown)
+                    val title = firstHeading?.groupValues?.get(1)?.trim().orEmpty()
+                        .ifBlank {
+                            uri.lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.')
+                                ?.ifBlank { "Imported note" } ?: "Imported note"
+                        }
+                    val body = if (firstHeading != null) markdown.removeRange(firstHeading.range).trim()
+                        else markdown.trim()
+                    title to body
+                }.getOrNull()
+            }
+            if (parsed.any { it == null }) {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Couldn't read one or more Markdown files. Nothing was imported.")
+                }
             } else {
-                val firstHeading = Regex("(?m)^#\\s+(.+?)\\s*$").find(markdown)
-                val importedTitle = firstHeading?.groupValues?.get(1)?.trim().orEmpty()
-                    .ifBlank { uri.lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.')?.ifBlank { "Imported note" } ?: "Imported note" }
-                val importedBody = if (firstHeading != null) {
-                    markdown.removeRange(firstHeading.range).trim()
-                } else markdown.trim()
-                val imported = NestNote(
-                    id = System.currentTimeMillis(),
-                    title = importedTitle,
-                    body = importedBody,
-                    category = defaultNoteCategory,
-                    updated = System.currentTimeMillis(),
-                    created = System.currentTimeMillis()
-                )
-                persist(listOf(imported) + notes)
-                selectedView = "Home"
-                coroutineScope.launch { snackbarHostState.showSnackbar("Markdown file imported as a new note") }
+                val now = System.currentTimeMillis()
+                val imported = parsed.filterNotNull().mapIndexed { index, (title, body) ->
+                    val timestamp = now + index
+                    NestNote(
+                        id = NoteStore.allocateNoteId(notes + parsed.filterNotNull().mapIndexed { innerIndex, _ ->
+                            NestNote(id = now + innerIndex, title = "", body = "")
+                        }, timestamp),
+                        title = title,
+                        body = body,
+                        category = defaultNoteCategory,
+                        updated = timestamp,
+                        created = timestamp
+                    )
+                }
+                if (persist(imported + notes)) {
+                    selectedView = "Home"
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            if (imported.size == 1) "Markdown file imported as a new note"
+                            else "${imported.size} Markdown files imported as new notes"
+                        )
+                    }
+                }
             }
         }
     }
