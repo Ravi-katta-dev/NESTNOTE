@@ -807,8 +807,8 @@ class NoteTextTest {
     @Test
     fun markdownLinkInsertionHandlesReversedSelectionAndEscapesClosingBracket() {
         val source = "A [label] B"
-        val start = source.indexOf("label") + "label".length
-        val end = source.indexOf("label")
+        val start = source.indexOf("[label]") + "[label]".length
+        val end = source.indexOf("[label]")
         val result = NoteText.insertMarkdownLink(source, start, end)
 
         assertEquals("A [\\[label\\]](https://) B", result.first)
