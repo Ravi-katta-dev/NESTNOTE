@@ -699,23 +699,15 @@ internal fun NestNoteApp(store: NoteStore) {
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = colors.secondaryContainer,
-                                contentColor = colors.onSecondaryContainer
-                            ) {
-                                Icon(
-                                    when {
-                                        search.isNotBlank() -> Icons.Default.Search
-                                        selectedView == "Archived" -> Icons.Default.Archive
-                                        selectedView == "Pinned" -> Icons.Default.PushPin
-                                        selectedView == "Reminders" -> Icons.Default.NotificationsNone
-                                        else -> Icons.Default.Add
-                                    },
-                                    contentDescription = null,
-                                    modifier = Modifier.padding(18.dp).size(30.dp)
-                                )
-                            }
+                            NestEmptyIllustration(
+                                when {
+                                    search.isNotBlank() -> Icons.Default.Search
+                                    selectedView == "Archived" -> Icons.Default.Archive
+                                    selectedView == "Pinned" -> Icons.Default.PushPin
+                                    selectedView == "Reminders" -> Icons.Default.NotificationsNone
+                                    else -> Icons.Default.Add
+                                }
+                            )
                             Text(
                                 when {
                                     search.isNotBlank() -> "No matching notes"
@@ -756,7 +748,8 @@ internal fun NestNoteApp(store: NoteStore) {
                                 NoteCard(note, compact = dashboardDensity == DashboardDensity.COMPACT, colorStyle = noteColorStyle, showPreview = showNotePreviews, showTimestamp = showNoteTimestamps,
                                     onOpen = { editorNoteId = note.id; editorDraftId = note.id; editorVisible = true },
                                     onPin = { persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { deleteNote(note) }, onArchive = { persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) })
+                                    onDelete = { deleteNote(note) }, onArchive = { persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }),
+                                    modifier = Modifier.animateItem())
                             }
                         }
                     } else {
@@ -769,7 +762,8 @@ internal fun NestNoteApp(store: NoteStore) {
                                 NoteCard(note, compact = dashboardDensity == DashboardDensity.COMPACT, colorStyle = noteColorStyle, showPreview = showNotePreviews, showTimestamp = showNoteTimestamps,
                                     onOpen = { editorNoteId = note.id; editorDraftId = note.id; editorVisible = true },
                                     onPin = { persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { deleteNote(note) }, onArchive = { persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) })
+                                    onDelete = { deleteNote(note) }, onArchive = { persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }),
+                                    modifier = Modifier.animateItem())
                             }
                         }
                     }
