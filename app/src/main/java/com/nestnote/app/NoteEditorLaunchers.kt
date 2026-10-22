@@ -19,7 +19,9 @@ internal fun rememberWallpaperImportLauncher(
         if (uri != null) {
             val importResult = runCatching {
                 val resolver = context.contentResolver
-                require(resolver.getType(uri)?.startsWith("image/") == true) {
+                // Some providers report no MIME type; the decode check below is the real gate.
+                val mimeType = resolver.getType(uri)
+                require(mimeType == null || mimeType.startsWith("image/")) {
                     "Please choose an image file"
                 }
                 // Verify the provider can actually read and decode this image before
