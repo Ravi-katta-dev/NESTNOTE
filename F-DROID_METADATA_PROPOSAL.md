@@ -1,8 +1,8 @@
-# F-Droid metadata proposal (not yet submitted)
+# F-Droid metadata preparation record (not submitted)
 
-This is a working draft for an eventual merge request to the official `fdroiddata` repository. It is not a valid repository URL and does not itself publish NESTNOTE to F-Droid.
+This document records the metadata prepared for a possible merge request to the official `fdroiddata` repository. It is not itself an official metadata submission and does not publish NESTNOTE to F-Droid.
 
-## Candidate metadata
+## Prepared metadata fields
 
 - **Package ID:** `com.nestnote.app`
 - **License:** `GPL-3.0-only`
@@ -16,7 +16,7 @@ This is a working draft for an eventual merge request to the official `fdroiddat
 - **Suggested summary:** Local-first encrypted notes with Markdown and voice attachments.
 - **Suggested description:** NESTNOTE is a native Android note-taking app for creating, organizing, searching, archiving, and backing up notes. It supports categories, checklists, Markdown formatting and preview, themes, voice recording with a review-before-attach flow, WAV import, and inline playback cards for multiple audio attachments. Notes are stored locally; note payloads are encrypted using AES-GCM with a key held by Android Keystore. The app has no account-based cloud sync. JSON backups contain plaintext note data, and audio attachments are not currently included in JSON backup/restore.
 
-## Candidate build recipe — validate before submission
+## Proposed build recipe — validation required before submission
 
 Use a pinned upstream tag that includes the GPL license file and all final metadata-related fixes. Confirm the selected tag contains those changes before submitting.
 
