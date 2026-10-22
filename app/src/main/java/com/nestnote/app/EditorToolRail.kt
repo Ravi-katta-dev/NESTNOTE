@@ -77,7 +77,7 @@ internal enum class FormatAction(val label: String) {
 private val backgroundNames = listOf("Plain colour", "Botanical", "Sunset", "Waves", "Soft shapes", "Night sky", "Geometric", "Cherry blossom", "Forest", "Paper")
 
 /**
- * Slim vertical tool rail for the editor: Colour, Background and Format tabs in a ~58dp pill on the
+ * Slim vertical tool rail for the editor: Colour, Background and Format tabs in a 64dp pill on the
  * right edge. Replaces the two wide side panels. Colour/Background edits are a draft until
  * [onApply]; [onCancel] (close button, outside tap on appearance tabs, or system Back) reverts them.
  * Format actions apply immediately to the note text.
@@ -148,7 +148,7 @@ internal fun EditorToolRail(
                                 val isSelected = index == colorIndex
                                 Box(
                                     Modifier.size(48.dp)
-                                        .clickable { onColorSelected(index) }
+                                        .clickable(role = Role.Button) { onColorSelected(index) }
                                         .semantics { contentDescription = "Note colour ${index + 1}" + (if (isSelected) ", selected" else ""); this.selected = isSelected }
                                         .testTag("note_color_$index"),
                                     contentAlignment = Alignment.Center
@@ -238,7 +238,7 @@ internal fun EditorToolRail(
                     }
                     RailDivider()
                     Box(
-                        Modifier.size(44.dp).clip(RoundedCornerShape(15.dp)).clickable(role = Role.Button, onClick = onCancel)
+                        Modifier.size(48.dp).clip(RoundedCornerShape(15.dp)).clickable(role = Role.Button, onClick = onCancel)
                             .semantics { contentDescription = "Cancel and close tools" }.testTag("appearance_cancel"),
                         contentAlignment = Alignment.Center
                     ) { Icon(Icons.Default.Close, contentDescription = null, tint = colors.onSurfaceVariant) }
