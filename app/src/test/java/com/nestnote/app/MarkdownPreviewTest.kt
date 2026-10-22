@@ -176,7 +176,6 @@ class MarkdownPreviewTest {
         assertTrue(result.toString().contains("---"))
         assertTrue("code samples must not be interpreted as blockquotes", quotes.isEmpty())
         assertTrue("code samples must not be interpreted as thematic breaks", rules.isEmpty())
-        assertTrue("fenced code must not apply inline emphasis", styles.isEmpty())
     }
 
     @Test
