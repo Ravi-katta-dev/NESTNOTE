@@ -117,7 +117,7 @@ internal fun EditorToolRail(
             exit = slideOutHorizontally(NestMotion.fast(reducedMotion)) { it + 48 } + fadeOut(NestMotion.fast(reducedMotion))
         ) {
             Surface(
-                modifier = Modifier.width(58.dp).heightIn(max = maxHeight * 0.86f).testTag("tool_rail"),
+                modifier = Modifier.width(64.dp).heightIn(max = maxHeight * 0.86f).testTag("tool_rail"),
                 shape = RoundedCornerShape(29.dp),
                 color = colors.surfaceContainerHigh,
                 tonalElevation = 3.dp,
@@ -125,7 +125,7 @@ internal fun EditorToolRail(
                 border = BorderStroke(1.dp, colors.outlineVariant)
             ) {
                 Column(
-                    Modifier.padding(horizontal = 7.dp, vertical = 8.dp),
+                    Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -147,9 +147,9 @@ internal fun EditorToolRail(
                                 noteAccents.forEachIndexed { index, tint ->
                                 val isSelected = index == colorIndex
                                 Box(
-                                    Modifier.size(34.dp).clip(CircleShape).background(tint)
-                                        .border(if (isSelected) 3.dp else 1.dp, if (isSelected) Color(0xFF383044) else Color(0xFF77734F), CircleShape)
+                                    Modifier.size(48.dp).clip(CircleShape).background(Color.Transparent)
                                         .clickable { onColorSelected(index) }
+                                        .border(if (isSelected) 3.dp else 1.dp, if (isSelected) Color(0xFF383044) else Color(0xFF77734F), CircleShape)
                                         .semantics { contentDescription = "Note colour ${index + 1}" + (if (isSelected) ", selected" else ""); this.selected = isSelected }
                                         .testTag("note_color_$index"),
                                     contentAlignment = Alignment.Center
@@ -158,7 +158,7 @@ internal fun EditorToolRail(
                             }
                             ToolRailTab.Background -> {
                                 Box(
-                                    Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                                    Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
                                         .background(colors.secondaryContainer)
                                         .clickable(role = Role.Button, onClick = onImportWallpaper)
                                         .semantics { contentDescription = "Import wallpaper image" }
@@ -169,7 +169,7 @@ internal fun EditorToolRail(
                                 }
                                 if (customWallpaperUri.isNotBlank()) {
                                     Box(
-                                        Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                                        Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
                                             .border(3.dp, colors.primary, RoundedCornerShape(12.dp))
                                             .semantics {
                                                 contentDescription = "Imported wallpaper, selected"
@@ -190,7 +190,7 @@ internal fun EditorToolRail(
                                 backgroundNames.forEachIndexed { index, name ->
                                 val isSelected = index == backgroundIndex
                                 Box(
-                                    Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                                    Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
                                         .border(if (isSelected) 3.dp else 1.dp, if (isSelected) Color(0xFF383044) else Color(0xFF77734F), RoundedCornerShape(12.dp))
                                         .clickable { onBackgroundSelected(index) }
                                         .semantics { contentDescription = name + (if (isSelected) ", selected" else ""); this.selected = isSelected }
@@ -204,7 +204,7 @@ internal fun EditorToolRail(
                             ToolRailTab.Format -> FormatAction.values().forEach { action ->
                                 if (action == FormatAction.Bold || action == FormatAction.Heading1) RailDivider()
                                 Box(
-                                    Modifier.size(44.dp).clip(RoundedCornerShape(15.dp))
+                                    Modifier.size(48.dp).clip(RoundedCornerShape(15.dp))
                                         .clickable(role = Role.Button) { onFormat(action) }
                                         .semantics { contentDescription = action.label }
                                         .testTag("format_${action.name}"),
@@ -235,7 +235,7 @@ internal fun EditorToolRail(
                             .semantics { contentDescription = "Cancel and close tools" }.testTag("appearance_cancel"),
                         contentAlignment = Alignment.Center
                     ) { Icon(Icons.Default.Close, contentDescription = null, tint = colors.onSurfaceVariant) }
-                    FilledIconButton(onClick = onApply, modifier = Modifier.size(44.dp).testTag("appearance_apply")) {
+                    FilledIconButton(onClick = onApply, modifier = Modifier.size(48.dp).testTag("appearance_apply")) {
                         Icon(Icons.Default.Check, contentDescription = "Apply and close tools")
                     }
                 }
@@ -247,7 +247,7 @@ internal fun EditorToolRail(
 @Composable
 private fun RailSelectable(label: String, selected: Boolean, onClick: () -> Unit): Modifier {
     val colors = MaterialTheme.colorScheme
-    return Modifier.size(44.dp).clip(RoundedCornerShape(15.dp))
+    return Modifier.size(48.dp).clip(RoundedCornerShape(15.dp))
         .background(if (selected) colors.primary.copy(alpha = 0.16f) else Color.Transparent)
         .selectable(selected = selected, role = Role.Tab, onClick = onClick)
 }
