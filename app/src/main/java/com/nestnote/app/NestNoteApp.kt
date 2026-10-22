@@ -317,7 +317,7 @@ internal fun NestNoteApp(store: NoteStore) {
                     updated = System.currentTimeMillis(),
                     created = System.currentTimeMillis()
                 )
-                notes = listOf(imported) + notes
+                persist(listOf(imported) + notes)
                 selectedView = "Home"
                 coroutineScope.launch { snackbarHostState.showSnackbar("Markdown file imported as a new note") }
             }
