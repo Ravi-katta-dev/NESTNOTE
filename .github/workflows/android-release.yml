@@ -14,7 +14,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
 
 concurrency:
   # Do not cancel a release midway through signing or publishing.
@@ -25,6 +24,7 @@ jobs:
   release:
     name: Build, sign and publish APK
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     outputs:
       release_tag: ${{ steps.version.outputs.release_tag }}
 
