@@ -21,7 +21,7 @@ import org.robolectric.RuntimeEnvironment
 class MarkdownPreviewTest {
     @Test
     fun rawHtmlIsRenderedAsTextRatherThanActiveHtml() {
-        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), """<script>alert("x")</script><img src="https://example.invalid/x.png">""")
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), RuntimeEnvironment.getApplication(), """<script>alert("x")</script><img src="https://example.invalid/x.png">""")
         assertTrue(result.toString().contains("<script>"))
         assertFalse(result.getSpans(0, result.length, ImageSpan::class.java).isNotEmpty())
         assertFalse(result.getSpans(0, result.length, URLSpan::class.java).isNotEmpty())
@@ -29,7 +29,7 @@ class MarkdownPreviewTest {
 
     @Test
     fun markdownLinksRemainClickableAndPlainHtmlDoesNotCreateLinks() {
-        val result = MarkdownPreview.toSpanned("[safe link](https://example.com) <a href=\"https://evil.invalid\">raw html</a>")
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), "[safe link](https://example.com) <a href=\"https://evil.invalid\">raw html</a>")
         val links = result.getSpans(0, result.length, URLSpan::class.java)
         assertTrue(links.any { it.url == "https://example.com" })
         assertFalse(links.any { it.url == "https://evil.invalid" })
@@ -37,7 +37,7 @@ class MarkdownPreviewTest {
 
     @Test
     fun blockquotesWithInlineFormattingReceiveQuoteStyling() {
-        val result = MarkdownPreview.toSpanned("> **important**\n> *quoted text*")
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), "> **important**\n> *quoted text*")
         assertTrue(result.toString().contains("important"))
         assertTrue(result.toString().contains("quoted text"))
         assertFalse(result.toString().contains(">"))
@@ -45,7 +45,7 @@ class MarkdownPreviewTest {
 
     @Test
     fun unsafeMarkdownLinkSchemesAreNotActionable() {
-        val result = MarkdownPreview.toSpanned(
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), 
             "[safe](https://example.com) [mail](mailto:notes@example.com) " +
                 "[script](javascript:alert%281%29) [local](file:///etc/passwd) " +
                 "[data](data:text/html,hello)"
@@ -60,13 +60,13 @@ class MarkdownPreviewTest {
 
     @Test
     fun emptyAndPlainTextPreviewAreHandled() {
-        assertTrue(MarkdownPreview.toSpanned("").isEmpty())
-        assertTrue(MarkdownPreview.toSpanned("ordinary note").toString().contains("ordinary note"))
+        assertTrue(MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), "").isEmpty())
+        assertTrue(MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), "ordinary note").toString().contains("ordinary note"))
     }
 
     @Test
     fun explicitBlackMarkdownSpansUseThemeForegroundInDarkMode() {
-        val result = MarkdownPreview.toSpanned("# Dark heading\n\n- dark list item", Color.WHITE)
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), "# Dark heading\n\n- dark list item", Color.WHITE)
         val spans = result.getSpans(0, result.length, ForegroundColorSpan::class.java)
         assertTrue(spans.isNotEmpty())
         assertTrue(spans.all { it.foregroundColor == Color.WHITE })
@@ -74,7 +74,7 @@ class MarkdownPreviewTest {
 
     @Test
     fun horizontalRulesRenderAsThematicBreaks() {
-        val result = MarkdownPreview.toSpanned("before\n---\nafter\n\n___\nend", Color.WHITE)
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), "before\n---\nafter\n\n___\nend", Color.WHITE)
 
         assertFalse(result.toString().contains("---"))
         assertFalse(result.toString().contains("___"))
@@ -82,14 +82,14 @@ class MarkdownPreviewTest {
 
     @Test
     fun horizontalRuleLikeTextInsideFencedCodeIsNotConverted() {
-        val result = MarkdownPreview.toSpanned("```text\n---\n```")
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), "```text\n---\n```")
 
         assertTrue(result.toString().contains("---"))
     }
 
     @Test
     fun differentFenceDelimiterDoesNotCloseAnOpenCodeFence() {
-        val result = MarkdownPreview.toSpanned("```text\n~~~\n> literal quote\n---\n```")
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), "```text\n~~~\n> literal quote\n---\n```")
 
         assertTrue(result.toString().contains("~~~"))
         assertTrue(result.toString().contains("> literal quote"))
@@ -99,7 +99,7 @@ class MarkdownPreviewTest {
 
     @Test
     fun blockquoteMarkerIsParsedAsMarkdownRatherThanDisplayedLiterally() {
-        val result = MarkdownPreview.toSpanned("> A quoted thought")
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), "> A quoted thought")
         assertTrue(result.toString().contains("A quoted thought"))
         assertFalse(result.toString().contains(">"))
     }
@@ -111,21 +111,21 @@ class MarkdownPreviewTest {
         val segments = NoteText.voiceSegments(body)
 
         assertEquals(3, segments.size)
-        assertTrue(MarkdownPreview.toSpanned(segments[0].text).toString().contains("before"))
+        assertTrue(MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), segments[0].text).toString().contains("before"))
         assertEquals(id, segments[1].attachmentId)
-        assertTrue(MarkdownPreview.toSpanned(segments[2].text).toString().contains("after"))
+        assertTrue(MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), segments[2].text).toString().contains("after"))
     }
 
     @Test
     fun blockquoteIndicatorUsesActiveThemeForeground() {
-        val result = MarkdownPreview.toSpanned("> readable quote", Color.WHITE)
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), "> readable quote", Color.WHITE)
         assertTrue(result.toString().contains("readable quote"))
         assertFalse(result.toString().contains(">"))
     }
 
     @Test
     fun headingsBoldItalicListsAndLinksRetainFormattingAndReadableColors() {
-        val result = MarkdownPreview.toSpanned(
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), 
             "# Heading\n\n**bold** and *italic*\n\n- list item\n\n[safe link](https://example.com)",
             Color.WHITE
         )
@@ -145,7 +145,7 @@ class MarkdownPreviewTest {
     @Test
     fun broaderBlockSyntaxKeepsHeadingsListsAndChecklistTextReadable() {
         val markdown = "# Heading\n\n- bullet\n- [ ] unchecked\n- [x] checked\n\n1. first\n2. second"
-        val result = MarkdownPreview.toSpanned(markdown).toString()
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), markdown).toString()
 
         assertTrue(result.contains("Heading"))
         assertTrue(result.contains("bullet"))
@@ -157,7 +157,7 @@ class MarkdownPreviewTest {
 
     @Test
     fun fencedCodeKeepsMarkdownLookingContentReadableWithoutBlockFormatting() {
-        val result = MarkdownPreview.toSpanned(
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), 
             "```kotlin\nval literal = \"**not bold**\"\n> not a quote\n---\n```"
         )
         val styles = result.getSpans(0, result.length, StyleSpan::class.java)
@@ -174,7 +174,7 @@ class MarkdownPreviewTest {
     @Test
     fun unsupportedMarkdownConstructsRemainReadableInsteadOfLosingContent() {
         val markdown = "A footnote[^1] and ~~struck~~ text\n\n[^1]: footnote body"
-        val result = MarkdownPreview.toSpanned(markdown).toString()
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), markdown).toString()
 
         assertTrue(result.contains("A footnote"))
         assertTrue(result.contains("footnote body"))
