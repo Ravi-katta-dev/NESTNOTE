@@ -105,4 +105,32 @@ class MarkdownPreviewTest {
         assertEquals(id, segments[1].attachmentId)
         assertTrue(MarkdownPreview.toSpanned(segments[2].text).toString().contains("after"))
     }
+
+    @Test
+    fun blockquoteIndicatorUsesActiveThemeForeground() {
+        val result = MarkdownPreview.toSpanned("> readable quote", Color.WHITE)
+        val quoteSpans = result.getSpans(0, result.length, QuoteSpan::class.java)
+
+        assertTrue(quoteSpans.isNotEmpty())
+        assertTrue(quoteSpans.all { it.color == Color.WHITE })
+    }
+
+    @Test
+    fun headingsBoldItalicListsAndLinksRetainFormattingAndReadableColors() {
+        val result = MarkdownPreview.toSpanned(
+            "# Heading\\n\\n**bold** and *italic*\\n\\n- list item\\n\\n[safe link](https://example.com)",
+            Color.WHITE
+        )
+        val sizes = result.getSpans(0, result.length, RelativeSizeSpan::class.java)
+        val styles = result.getSpans(0, result.length, StyleSpan::class.java)
+        val links = result.getSpans(0, result.length, URLSpan::class.java)
+        val foregrounds = result.getSpans(0, result.length, ForegroundColorSpan::class.java)
+
+        assertTrue("heading size should be preserved", sizes.isNotEmpty())
+        assertTrue("bold style should be preserved", styles.any { it.style == Typeface.BOLD })
+        assertTrue("italic style should be preserved", styles.any { it.style == Typeface.ITALIC })
+        assertTrue("links should remain clickable", links.any { it.url == "https://example.com" })
+        assertTrue("parser foregrounds should use the theme color",
+            foregrounds.all { it.foregroundColor == Color.WHITE })
+    }
 }
