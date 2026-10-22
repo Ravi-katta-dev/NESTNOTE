@@ -321,12 +321,23 @@ internal fun NestNoteApp(
                 val markdown = context.contentResolver.openInputStream(uri)
                     ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
                     ?: error("Unable to read Markdown file")
+                val displayName = runCatching {
+                    context.contentResolver.query(
+                        uri,
+                        arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
+                        null,
+                        null,
+                        null
+                    )?.use { cursor ->
+                        if (cursor.moveToFirst()) cursor.getString(0).orEmpty() else ""
+                    }
+                }.getOrNull().orEmpty()
+                val fileName = displayName.ifBlank {
+                    uri.lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.') ?: ""
+                }
                 val firstHeading = Regex("(?m)^#\\s+(.+?)\\s*$").find(markdown)
                 val title = firstHeading?.groupValues?.get(1)?.trim().orEmpty()
-                    .ifBlank {
-                        uri.lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.')
-                            ?.ifBlank { "Imported note" } ?: "Imported note"
-                    }
+                    .ifBlank { fileName.ifBlank { "Imported note" } }
                 val body = if (firstHeading != null) markdown.removeRange(firstHeading.range).trim()
                     else markdown.trim()
                 title to body
