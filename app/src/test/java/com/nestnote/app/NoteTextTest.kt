@@ -479,4 +479,63 @@ class NoteTextTest {
         )
     }
 
+    @Test
+    fun inlineFormattingHandlesAdjacentAndNestedMarkersWithoutEatingNeighborText() {
+        val adjacent = NoteText.toggleInlineFormat("ab cd", 0, 2, "**")
+        assertEquals("**ab** cd", adjacent.first)
+        assertEquals("ab cd", NoteText.toggleInlineFormat(adjacent.first, 2, 4, "**").first)
+
+        val nested = NoteText.toggleInlineFormat("bold italic", 5, 11, "_")
+        assertEquals("bold _italic_", nested.first)
+        val nestedBold = NoteText.toggleInlineFormat(nested.first, 0, nested.first.length, "**")
+        assertEquals("**bold _italic_**", nestedBold.first)
+        assertEquals(nested.first, NoteText.toggleInlineFormat(nestedBold.first, 2, nestedBold.first.length - 2, "**").first)
+    }
+
+    @Test
+    fun numberedListContinuationHandlesDigitBoundariesAndIndentedEmptyItems() {
+        val old = "  9. item"
+        assertEquals("  9. item\\n  10. ", NoteText.continueList(old, "$old\\n", old.length + 1)!!.first)
+
+        val empty = "first\\n  10. "
+        val result = NoteText.continueList(empty, "$empty\\n", empty.length + 1)!!
+        assertEquals("first\\n", result.first)
+        assertEquals("first\\n".length, result.second)
+    }
+
+    @Test
+    fun checklistAndBulletConversionsReplacePrefixesAndKeepIndentationAcrossEnter() {
+        assertEquals("  ☐ task", NoteText.cycleChecklist("  - task", 7).first)
+        assertEquals("  • task", NoteText.toggleBullet("  * task", 7).first)
+        val markdownBullet = "- task"
+        assertEquals("- task\\n- ", NoteText.continueList(markdownBullet, "$markdownBullet\\n", markdownBullet.length + 1)!!.first)
+    }
+
+    @Test
+    fun markdownLinksPreserveUnicodePunctuationAndDocumentBoundaries() {
+        val text = "😀 café, 世界!"
+        val start = text.indexOf("café")
+        val end = text.indexOf("!", start)
+        val linked = NoteText.insertMarkdownLink(text, start, end)
+        assertEquals("😀 [café, 世界](https://)!", linked.first)
+        assertEquals(linked.first.indexOf("https://") + "https://".length, linked.second)
+
+        val beginning = NoteText.insertMarkdownLink("site", 0, 4)
+        assertEquals("[site](https://)", beginning.first)
+        val ending = NoteText.insertMarkdownLink("site", 0, 4)
+        assertEquals(ending.first.length - 1, ending.second)
+    }
+
+    @Test
+    fun markdownLinkInsertionAtEmptyDocumentAndIncompleteMarkdownRemainsSafe() {
+        val emptyDocument = NoteText.insertMarkdownLink("", 0, 0)
+        assertEquals("[text](https://)", emptyDocument.first)
+        assertEquals(emptyDocument.first.indexOf("https://") + "https://".length, emptyDocument.second)
+
+        val partial = "[label](https://"
+        val linked = NoteText.insertMarkdownLink(partial, 1, 6)
+        assertEquals("[[label](https://](https://)", linked.first)
+        assertEquals(linked.first.indexOf("https://", linked.first.indexOf("](https://") + 1) + "https://".length, linked.second)
+    }
+
 }
