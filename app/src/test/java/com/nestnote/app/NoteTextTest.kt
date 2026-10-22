@@ -811,7 +811,7 @@ class NoteTextTest {
         val end = source.indexOf("label")
         val result = NoteText.insertMarkdownLink(source, start, end)
 
-        assertEquals("A [label\\\\]](https://) B", result.first)
+        assertEquals("A [\\[label\\]](https://) B", result.first)
         assertEquals(result.first.indexOf("https://") + "https://".length, result.second)
         assertEquals(result.second, result.third)
     }
