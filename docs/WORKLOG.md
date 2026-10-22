@@ -31,7 +31,7 @@ This activity record is assembled from visible repository commits, pull requests
 | [#1](https://github.com/Ravi-katta-dev/NESTNOTE/pull/1) | feat: Material 3 personalization and flexible note creation | **Merged** 2026-10-11 | Phase 1 dashboard modernization and personalization. |
 | [#2](https://github.com/Ravi-katta-dev/NESTNOTE/pull/2) | feat: resilient inline note editor | **Merged** 2026-10-11 | Unified create/edit experience and draft safety. |
 | [#3](https://github.com/Ravi-katta-dev/NESTNOTE/pull/3) | Expand settings | **Merged** 2026-10-11 | Theme, colors, layout, sorting, and note display preferences. |
-| [#4](https://github.com/Ravi-katta-dev/NESTNOTE/pull/4) | feat: modernize everyday note-taking experience | **Open draft — awaiting owner review** | Phase 4 editor refinement, sorting, timestamp compatibility, archive/restore, deletion Undo, and explicit reminder-status messaging. |
+| [#4](https://github.com/Ravi-katta-dev/NESTNOTE/pull/4) | feat: modernize everyday note-taking experience | **Merged** 2026-10-12 | Phase 4 editor refinement, sorting, timestamp compatibility, archive/restore, deletion Undo, and explicit reminder-status messaging. |
 
 ## Work completed
 ### Foundation and delivery automation
