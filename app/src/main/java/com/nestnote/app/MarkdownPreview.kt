@@ -19,10 +19,6 @@ import java.util.Locale
  * restricted to supported schemes. Rendering never rewrites the stored Markdown source.
  */
 internal object MarkdownPreview {
-    /** Compatibility entry point for existing JVM/Robolectric tests. */
-    fun toSpanned(markdown: String, foregroundColor: Int = Color.BLACK): Spanned =
-        toSpanned(androidx.test.core.app.ApplicationProvider.getApplicationContext(), markdown, foregroundColor)
-
     private val allowedLinkSchemes = setOf("http", "https", "mailto")
 
     fun toSpanned(
