@@ -848,7 +848,7 @@ internal fun NestNoteApp(
                 } else if (selectedView == "PrivateVaultSettings") {
                     PrivateVaultSettingsScreen(
                         passwordConfigured = PrivateVaultSecurity.isConfigured(context),
-                        biometricAvailable = privateVaultBiometricAvailable,
+                        biometricAvailable = false, // Keep opt-in disabled until device/emulator validation and enrollment UX are complete.
                         biometricEnabled = privateVaultBiometricEnabled,
                         privateNoteCount = notes.count { it.privateNote },
                         onBiometricEnabledChange = { enabled ->
@@ -1403,8 +1403,8 @@ internal fun NestNoteApp(
         if (showPrivateVaultGate) {
             PrivateVaultGateDialog(
                 passwordConfigured = PrivateVaultSecurity.isConfigured(context),
-                // Biometric UI authentication is not yet cryptographically bound to the isolated
-                // vault key. Disable it rather than granting a UI-only unlock.
+                // CryptoObject/key-binding primitives now exist, but enrollment, recovery and
+                // device validation are not complete. Never expose biometric unlock yet.
                 biometricEnabled = false,
                 onDismiss = { showPrivateVaultGate = false },
                 onSubmit = { password, confirmation ->
@@ -1458,7 +1458,7 @@ internal fun NestNoteApp(
                     }
                     accepted
                 },
-                onBiometricUnlock = { /* Disabled until a biometric-bound crypto key is implemented. */ }
+                onBiometricUnlock = { _ -> /* Intentionally disabled until enrollment/recovery validation is complete. */ }
             )
         }
 
