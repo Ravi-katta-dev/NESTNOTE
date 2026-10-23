@@ -171,7 +171,7 @@ internal fun PrivateVaultGateDialog(
     val activity = context.findFragmentActivity()
     val biometricAvailable = remember(activity, passwordConfigured, biometricEnabled) {
         passwordConfigured && biometricEnabled && activity != null &&
-            BiometricManager.from(activity).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) ==
+            BiometricManager.from(activity).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
             BiometricManager.BIOMETRIC_SUCCESS
     }
     var password by remember { mutableStateOf("") }
