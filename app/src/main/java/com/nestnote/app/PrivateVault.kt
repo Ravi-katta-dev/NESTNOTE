@@ -7,15 +7,26 @@ import android.provider.Settings
 import android.util.Base64
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -223,9 +235,21 @@ internal fun PrivateVaultGateDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (passwordConfigured) "Unlock Private Vault" else "Set up Private Vault") },
+        title = {
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                    Icon(
+                        if (passwordConfigured) Icons.Default.Lock else Icons.Default.Security,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(10.dp).size(24.dp)
+                    )
+                }
+                Text(if (passwordConfigured) "Unlock Private Vault" else "Set up Private Vault")
+            }
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(modifier = Modifier.animateContentSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     if (passwordConfigured) {
                         "Enter your vault password to reveal hidden notes, or use an enrolled strong biometric."
@@ -240,7 +264,8 @@ internal fun PrivateVaultGateDialog(
                     label = { Text("Password") },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    shape = RoundedCornerShape(14.dp)
                 )
                 if (!passwordConfigured) {
                     OutlinedTextField(
@@ -250,11 +275,12 @@ internal fun PrivateVaultGateDialog(
                         label = { Text("Confirm password") },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        shape = RoundedCornerShape(14.dp)
                     )
                 }
-                if (error.isNotBlank()) {
-                    Text(error, color = MaterialTheme.colorScheme.error)
+                AnimatedVisibility(visible = error.isNotBlank(), enter = fadeIn(tween(160)) + slideInVertically(tween(180)) { -it / 4 }, exit = fadeOut(tween(100))) {
+                    Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             }
         },
@@ -277,6 +303,8 @@ internal fun PrivateVaultGateDialog(
             Column {
                 if (biometricAvailable && PrivateVaultBiometricKey(context).isEnrolled()) {
                     TextButton(onClick = ::launchBiometricPrompt) {
+                        Icon(Icons.Default.Fingerprint, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.size(7.dp))
                         Text("Unlock with fingerprint")
                     }
                 }
@@ -310,11 +338,20 @@ internal fun PrivateVaultBiometricEnrollmentDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Enable biometric unlock") },
+        title = {
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                    Icon(Icons.Default.Fingerprint, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(10.dp).size(24.dp))
+                }
+                Text("Enable biometric unlock")
+            }
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.animateContentSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Confirm your fingerprint or strong device biometric to protect the vault key. Your vault password will remain available as a recovery method.")
-                if (message.isNotBlank()) Text(message, color = MaterialTheme.colorScheme.error)
+                AnimatedVisibility(visible = message.isNotBlank(), enter = fadeIn(tween(160)) + slideInVertically(tween(180)) { -it / 4 }, exit = fadeOut(tween(100))) {
+                    Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
             }
         },
         confirmButton = {
