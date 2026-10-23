@@ -2,6 +2,8 @@
 
 Last updated: 2026-10-23
 
+> Audit note: ordinary-view filters and the user-facing export selector exclude private notes, but private editor drafts are currently persisted separately by `DraftStore` as plaintext UTF-8/Properties files. Those draft files are inside app-private storage, but they do not inherit `NoteStore`'s AES-GCM encryption. Private draft encryption/classification and safe orphan recovery remain a release-blocking follow-up.
+
 ## Scope and assets
 
 This threat model covers local note confidentiality, the Private Vault UI gate, private-note filtering, screenshot protection, lifecycle behavior, and user-exported backups.
@@ -32,7 +34,8 @@ The vault password does not derive, wrap, or unlock an independent key for priva
 - **Screenshot protection:** `FLAG_SECURE` requests capture protection for the protected window. It does not guarantee protection against external cameras, a compromised OS, every OEM path, or content already exported.
 - **Lifecycle:** backgrounding should relock and hide private editor UI. Activity/process recreation and saveable editor state require dedicated tests.
 
-- **Backups:** user-exported JSON may contain readable private-note titles and bodies. The flag is not encryption; anyone who obtains the file can read it.
+- **Backups:** the current user-facing plaintext JSON export selector excludes private notes (including archived private notes). The backup serializer itself is not a security boundary: callers that pass private notes directly to `encodeBackup` can produce readable private-note titles and bodies. The flag is not encryption; anyone who obtains such a file can read it.
+- **Drafts:** `DraftStore` persists editor draft title/body and metadata in plaintext files. The files live in app-private storage, but are not encrypted by `NoteStore`; a private-note draft may therefore remain readable to an attacker with access to app-private files or a device/runtime compromise. Drafts currently do not persist a private/public classification, so orphan recovery cannot reliably apply the vault boundary. Encrypt and classify private drafts, or prevent them from being written in plaintext, before release.
 - **Lockout:** persisted cooldown/backoff slows repeated attempts through the app flow. Restart, boundary, maximum delay, and clock-change behavior require tests.
 - **Biometrics:** cancellation, failure, unavailable hardware, enrollment changes, and fallback must never grant access except after explicit successful authentication.
 - **Key loss:** invalidation or loss of the local-storage key may make encrypted data unrecoverable. Recovery behavior must preserve original bytes and be tested.
