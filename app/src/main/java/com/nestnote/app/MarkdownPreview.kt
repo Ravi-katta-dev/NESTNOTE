@@ -10,6 +10,7 @@ import android.text.style.URLSpan
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
 import io.noties.markwon.ext.tasklist.TaskListPlugin
+import io.noties.markwon.ext.tables.TablePlugin
 import java.util.Locale
 
 /**
@@ -29,6 +30,7 @@ internal object MarkdownPreview {
         val renderer = Markwon.builder(context.applicationContext)
             .usePlugin(StrikethroughPlugin.create())
             .usePlugin(TaskListPlugin.create(context.applicationContext))
+            .usePlugin(TablePlugin.create(context.applicationContext))
             .build()
         val rendered = SpannableStringBuilder(renderer.toMarkdown(markdown))
 
