@@ -137,9 +137,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-
-private const val MAX_BACKUP_BYTES = 16 * 1024 * 1024
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 internal fun NestNoteApp(
@@ -561,7 +558,7 @@ internal fun NestNoteApp(
                             val count = input.read(buffer)
                             if (count < 0) break
                             total += count
-                            require(total <= MAX_BACKUP_BYTES) { "Backup file is too large" }
+                            require(total <= NoteStore.MAX_BACKUP_BYTES) { "Backup file is too large" }
                             output.write(buffer, 0, count)
                         }
                         NoteStore.decodeBackup(output.toByteArray().toString(Charsets.UTF_8))
