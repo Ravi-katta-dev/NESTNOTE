@@ -13,6 +13,8 @@ import java.nio.file.Files
 import java.util.Base64
 import java.util.Properties
 import java.io.StringWriter
+import javax.crypto.Cipher
+import java.nio.ByteBuffer
 import javax.crypto.spec.SecretKeySpec
 
 class DraftStoreTest {
@@ -124,6 +126,7 @@ class DraftStoreTest {
             Charsets.UTF_8
         )
         assertNull(store.read(1L))
+        assertFalse(File(root, "note-1.json").exists())
         assertTrue(store.listAll().isEmpty())
     }
 
@@ -241,6 +244,25 @@ class DraftStoreTest {
         assertTrue(encryptedStore().write(draft))
         assertTrue(store.listAll().isEmpty())
         assertEquals(draft, encryptedStore().listAll(includePrivate = true).single())
+    }
+
+
+    @Test
+    fun `public classification inside authenticated private envelope is rejected`() {
+        val props = Properties().apply {
+            setProperty("schemaVersion", "2"); setProperty("noteId", "83")
+            setProperty("title", "Public marked private"); setProperty("body", "must reject")
+            setProperty("privateNote", "false")
+        }
+        val plain = StringWriter().also { props.store(it, null) }.toString().toByteArray(Charsets.UTF_8)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, testKey)
+        cipher.updateAAD("com.nestnote.app|drafts|private|v2".toByteArray(Charsets.UTF_8))
+        val encrypted = cipher.doFinal(plain)
+        val payload = ByteBuffer.allocate(cipher.iv.size + encrypted.size).put(cipher.iv).put(encrypted).array()
+        val envelope = "NESTNOTE_DRAFT_PRIVATE_V2:" + Base64.getEncoder().withoutPadding().encodeToString(payload)
+        File(root, "note-83.json").writeText(envelope, Charsets.UTF_8)
+        assertNull(encryptedStore().read(83L))
     }
 
 }
