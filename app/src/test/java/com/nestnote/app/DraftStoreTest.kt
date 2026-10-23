@@ -168,4 +168,15 @@ class DraftStoreTest {
         assertEquals(42L, restored?.noteId)
         assertEquals(987654321L, restored?.savedAtMillis)
     }
+    @Test
+    fun latestDraftSnapshotCanBeFlushedImmediatelyBeforeEditorRemoval() {
+        val older = sampleDraft(id = 404L).copy(title = "Earlier", body = "old", savedAtMillis = 1000L)
+        val latest = older.copy(title = "Latest at stop", body = "final keystrokes", savedAtMillis = 1001L)
+        assertTrue(store.write(older))
+        assertTrue(DraftStore(root).write(latest))
+        val recovered = DraftStore(root).read(404L)
+        assertEquals("Latest at stop", recovered?.title)
+        assertEquals("final keystrokes", recovered?.body)
+        assertEquals(1001L, recovered?.savedAtMillis)
+    }
 }
