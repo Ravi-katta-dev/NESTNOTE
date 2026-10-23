@@ -24,6 +24,7 @@ class PrivateVaultSecurityTest {
             .remove(PREF_PRIVATE_VAULT_HASH)
             .remove("private_vault_failed_attempts")
             .remove("private_vault_retry_at_millis")
+            .remove("private_vault_retry_boot_count")
             .commit()
     }
 
@@ -64,10 +65,10 @@ class PrivateVaultSecurityTest {
         val secondLockout = PrivateVaultSecurity.recordFailedAttempt(context, firstLockout)
         assertEquals(firstLockout + 60_000L, secondLockout)
         assertTrue(PrivateVaultSecurity.isLockedOut(context, firstLockout))
-        assertEquals(secondLockout, PrivateVaultSecurity.retryAtMillis(context))
+        assertEquals(secondLockout, PrivateVaultSecurity.retryAtMillis(context, firstLockout))
 
         PrivateVaultSecurity.clearFailedAttempts(context)
-        assertEquals(0L, PrivateVaultSecurity.retryAtMillis(context))
+        assertEquals(0L, PrivateVaultSecurity.retryAtMillis(context, now))
         assertFalse(PrivateVaultSecurity.isLockedOut(context, now))
     }
 
@@ -84,7 +85,7 @@ class PrivateVaultSecurityTest {
             assertTrue(PrivateVaultSecurity.isLockedOut(context, now))
             assertFalse(PrivateVaultSecurity.isLockedOut(context, deadline))
             // Simulate a fresh read of persisted state after process recreation.
-            assertEquals(deadline, PrivateVaultSecurity.retryAtMillis(context))
+            assertEquals(deadline, PrivateVaultSecurity.retryAtMillis(context, now))
             now = deadline
         }
     }
