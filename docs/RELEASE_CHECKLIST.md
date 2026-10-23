@@ -39,7 +39,7 @@ Use this checklist for every candidate. A successful build is necessary but does
 - [ ] Recreate the activity/process during vault/editor use; verify private content is not restored into a visible editor while locked.
 - [ ] Verify biometric success, cancellation, failure, unavailable hardware, enrollment changes, and disabled-biometric password fallback; only explicit success unlocks.
 - [ ] Round-trip mixed public/private backup data and verify private notes stay excluded from Home, categories, pinned, archived, search, and insights.
-- [ ] Verify lockout escalation, cooldown boundary, persistence after restart, 15-minute cap, and behavior under forward/backward wall-clock changes.
+- [ ] Verify lockout escalation, cooldown boundary, persistence after restart, 15-minute cap, monotonic behavior under forward/backward wall-clock changes, and bounded behavior after device reboot. Automated regression coverage exists; device verification remains required.
 - [ ] Verify FLAG_SECURE on vault and private editor through Recents snapshots, rapid navigation, and lifecycle transitions on supported Android versions.
 - [ ] Confirm user-facing security copy says the vault password is a UI gate, not a separate encryption key, and exported JSON may contain readable private content.
 - [ ] Record exact-head CI result and device/emulator evidence; source inspection alone is not sufficient.
