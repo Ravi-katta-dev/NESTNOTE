@@ -38,15 +38,15 @@ Use this checklist for every candidate. A successful build is necessary but does
 - [ ] Background the app while a private note editor is visible; verify no editor content reappears before reauthentication.
 - [ ] Recreate the activity/process during vault/editor use; verify private content is not restored into a visible editor while locked.
 - [ ] Verify biometric success, cancellation, failure, unavailable hardware, enrollment changes, and disabled-biometric password fallback; only explicit success unlocks.
-- [ ] Round-trip mixed public/private backup data and verify private notes stay excluded from Home, categories, pinned, archived, search, and insights.
+- [ ] Round-trip mixed public/private backup data; verify private notes stay excluded from ordinary views/search/insights and from user-facing plaintext export.
 - [ ] Verify lockout escalation, cooldown boundary, persistence after restart, 15-minute cap, monotonic behavior under forward/backward wall-clock changes, and bounded behavior after device reboot. Automated regression coverage exists; device verification remains required.
 - [ ] Verify FLAG_SECURE on vault and private editor through Recents snapshots, rapid navigation, and lifecycle transitions on supported Android versions.
-- [ ] Confirm user-facing security copy says the vault password is a UI gate, not a separate encryption key, and exported JSON may contain readable private content.
+- [ ] Confirm security copy says the vault password is a UI gate, not a separate encryption key, and exported JSON is plaintext; verify private notes are excluded from user-facing export.
 - [ ] Record exact-head CI result and device/emulator evidence; source inspection alone is not sufficient.
 
 ## 3. Backup, encryption, and recovery
 - [ ] Export a backup and confirm expected note fields round-trip.
-- [ ] Verify backup/restore is **notes-only**: voice audio attachments are excluded, and the export/restore UI clearly warns that recordings are not included.
+- [ ] Verify backup/restore is **notes-only**: voice audio attachments are excluded, private notes are excluded from user-facing plaintext export, and the UI warns that recordings are not included.
 - [ ] Restore versioned backup and legacy JSON-array backup.
 - [ ] Preview restore additions/updates before applying.
 - [ ] Confirm newer incoming notes update existing notes; older/equal timestamps do not overwrite.
