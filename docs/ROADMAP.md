@@ -583,3 +583,9 @@ This section reconciles the implementation checklists above with the latest P0�
 - [x] Reduce excess spacing above the formatting toolbar while preserving its horizontal scrolling and existing Markdown actions.
 - [ ] Verify create/edit, keyboard/insets, narrow/wide layouts, large text, TalkBack and light/dark themes on an emulator/device; no device verification is claimed by this source change.
 - Implementation commit: [4e68cac](https://github.com/Ravi-katta-dev/NESTNOTE/commit/4e68cac1cd003ddad9cc89954d0a986b3b98f250).
+
+## 2026-10-23 — Home, zoom, and Power tools candidate
+- **Implemented in PR #94:** Home quick-create summary card with active/pinned counts; offline Text Toolbox; editor and saved-note reader body zoom slider (50%–200%, 5% steps).
+- **Documentation:** README, changelog, and development guide distinguish the v1.3.11 repository candidate from published v1.3.10.
+- **Validation still required:** exact-head Android CI, compact/expanded layouts, dark/light theme, accessibility/large text, editor and read-mode zoom behavior, and confirm zoom never modifies saved note content.
+- **Release status:** candidate work only; do not call v1.3.11 published until a versioned tag and release workflow complete.
