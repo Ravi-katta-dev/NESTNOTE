@@ -153,6 +153,13 @@ internal fun NestNoteApp(
         windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
     val preferences = remember { context.getSharedPreferences(PREFS, 0) }
     var notes by remember { mutableStateOf<List<NestNote>>(emptyList()) }
+    // Private records are held in the general encrypted blob only until the first authenticated
+    // vault unlock can migrate them. Never expose them to ordinary views or overwrite them while
+    // migration is pending.
+    var legacyPrivateNotes by remember { mutableStateOf<List<NestNote>>(emptyList()) }
+    val privateNoteCrypto = remember(context) { PrivateNoteCrypto(context) }
+    val privateNoteStore = remember(context) { PrivateNoteStore(context) }
+    var privateVaultSession by remember { mutableStateOf<PrivateNoteCrypto.Session?>(null) }
     var storageLoaded by remember { mutableStateOf(false) }
     var lastBackupAt by remember { mutableLongStateOf(preferences.getLong(PREF_BACKUP_LAST_SUCCESS_AT, 0L)) }
     var backupStatus by remember { mutableStateOf(preferences.getString(PREF_BACKUP_LAST_STATUS, "Not yet backed up") ?: "Not yet backed up") }
@@ -170,7 +177,10 @@ internal fun NestNoteApp(
     var showExternalMarkdownDialog by remember { mutableStateOf(false) }
     LaunchedEffect(store) {
         val result = withContext(Dispatchers.IO) { store.loadSafely() }
-        notes = result.notes
+        // Legacy private notes stay encrypted by the old store key and are not rendered in any
+        // ordinary list. They are migrated only after successful vault-password verification.
+        notes = result.notes.filterNot { it.privateNote }
+        legacyPrivateNotes = result.notes.filter { it.privateNote }
         storageRecoveryRequired = result.recoveryRequired
         showStorageRecoveryDialog = result.recoveryRequired
         storageLoaded = true
@@ -225,13 +235,19 @@ internal fun NestNoteApp(
     var selectedView by remember { mutableStateOf("Home") }
     var showPrivateVaultGate by remember { mutableStateOf(false) }
     var privateVaultUnlocked by remember { mutableStateOf(false) }
+    fun lockPrivateVault() {
+        privateVaultSession = null
+        privateVaultUnlocked = false
+        notes = notes.filterNot { it.privateNote }
+        if (selectedView == "Private") selectedView = "Home"
+    }
     var privateVaultBiometricEnabled by remember { mutableStateOf(preferences.getBoolean(PREF_PRIVATE_VAULT_BIOMETRIC_ENABLED, true)) }
     val privateVaultBiometricAvailable = remember(context) {
         BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
     }
     fun requestPrivateVault() { showPrivateVaultGate = true }
     LaunchedEffect(selectedView) {
-        if (selectedView != "Private") privateVaultUnlocked = false
+        if (selectedView != "Private") lockPrivateVault()
         if (selectedView == "Backup") {
             automaticBackupLastRun = preferences.getLong(PREF_BACKUP_AUTOMATIC_LAST_RUN, 0L)
             automaticBackupStatus = preferences.getString(PREF_BACKUP_AUTOMATIC_STATUS, "Not run yet") ?: "Not run yet"
@@ -313,7 +329,30 @@ internal fun NestNoteApp(
             coroutineScope.launch { snackbarHostState.showSnackbar("Restore a backup before changing notes. Existing local data was not overwritten.") }
             return false
         }
-        val saved = store.save(next)
+        val session = privateVaultSession
+        val publicNext = next.filterNot { it.privateNote }
+        val privateNext = next.filter { it.privateNote }
+        if (privateNext.isNotEmpty() && session == null) {
+            coroutineScope.launch { snackbarHostState.showSnackbar("Unlock Private Vault before saving private notes.") }
+            return false
+        }
+        // Preserve not-yet-migrated private records in the legacy encrypted blob while locked.
+        val generalNext = if (session == null) publicNext + legacyPrivateNotes else publicNext
+        val oldPrivate = notes.filter { it.privateNote }
+        val privateSaved = if (session == null) true else privateNoteStore.save(session, privateNext)
+        if (!privateSaved) {
+            coroutineScope.launch { snackbarHostState.showSnackbar("Private note encryption failed. No plaintext fallback was used.") }
+            return false
+        }
+        val saved = store.save(generalNext)
+        if (!saved && session != null) {
+            // SharedPreferences cannot transact across namespaces; restore the previous encrypted
+            // private snapshot if the public-store commit fails.
+            if (!privateNoteStore.save(session, oldPrivate)) {
+                storageRecoveryRequired = true
+                coroutineScope.launch { snackbarHostState.showSnackbar("Storage recovery is required after a failed private-note save.") }
+            }
+        }
         if (saved) {
             val previousIds = notes.map { it.id }.toSet()
             val nextIds = next.map { it.id }.toSet()
@@ -323,7 +362,7 @@ internal fun NestNoteApp(
                 removedIds.forEach { ReminderScheduler.cancel(context, it) }
                 ReminderScheduler.rescheduleAll(context, notesForAlarms)
             }
-            notes = next
+            notes = if (session == null) publicNext else next
             if (allowRecovery) storageRecoveryRequired = false
         } else {
             coroutineScope.launch { snackbarHostState.showSnackbar("Save failed. Your previous notes are still available.") }
@@ -599,7 +638,7 @@ internal fun NestNoteApp(
                     },
                     navigationIcon = {
                         if (selectedView == "Private") {
-                            IconButton(onClick = { privateVaultUnlocked = false; selectedView = "Home" }) {
+                            IconButton(onClick = { lockPrivateVault() }) {
                                 Icon(Icons.Default.LockOpen, contentDescription = "Lock Private Vault")
                             }
                         } else if (selectedView in moreSubViews) {
@@ -818,7 +857,13 @@ internal fun NestNoteApp(
                         onSetUpPassword = { requestPrivateVault() },
                         onOpenVault = { requestPrivateVault() },
                         onChangePassword = { current, new, confirmation ->
-                            val accepted = PrivateVaultSecurity.changePassword(context, current, new, confirmation)
+                            val accepted = new.length >= PrivateVaultSecurity.MIN_PASSWORD_LENGTH &&
+                                new == confirmation && PrivateVaultSecurity.verify(context, current) &&
+                                !PrivateVaultSecurity.isLockedOut(context) &&
+                                (if (privateNoteCrypto.isInitialized()) {
+                                    privateNoteCrypto.changePassword(current.toCharArray(), new.toCharArray())
+                                } else true) &&
+                                PrivateVaultSecurity.changePassword(context, current, new, confirmation)
                             if (accepted) coroutineScope.launch { snackbarHostState.showSnackbar("Private Vault password updated") }
                             accepted
                         }
@@ -1335,11 +1380,13 @@ internal fun NestNoteApp(
         if (showPrivateVaultGate) {
             PrivateVaultGateDialog(
                 passwordConfigured = PrivateVaultSecurity.isConfigured(context),
-                biometricEnabled = privateVaultBiometricEnabled,
+                // Biometric UI authentication is not yet cryptographically bound to the isolated
+                // vault key. Disable it rather than granting a UI-only unlock.
+                biometricEnabled = false,
                 onDismiss = { showPrivateVaultGate = false },
                 onSubmit = { password, confirmation ->
                     val configured = PrivateVaultSecurity.isConfigured(context)
-                    val accepted = if (configured) {
+                    val passwordAccepted = if (configured) {
                         when {
                             PrivateVaultSecurity.isLockedOut(context) -> false
                             PrivateVaultSecurity.verify(context, password) -> {
@@ -1355,6 +1402,25 @@ internal fun NestNoteApp(
                         password.length >= PrivateVaultSecurity.MIN_PASSWORD_LENGTH &&
                             password == confirmation && PrivateVaultSecurity.configure(context, password)
                     }
+                    val session = if (passwordAccepted) {
+                        val keyReady = if (privateNoteCrypto.isInitialized()) true
+                            else privateNoteCrypto.initialize(password.toCharArray())
+                        if (keyReady) privateNoteCrypto.unlock(password.toCharArray()) else null
+                    } else null
+                    val accepted = if (session == null) false else runCatching {
+                        val encryptedExisting = if (privateNoteStore.hasStoredRecords()) {
+                            privateNoteStore.load(session)
+                        } else emptyList()
+                        val migrated = NoteStore.merge(encryptedExisting, legacyPrivateNotes).notes
+                        // Commit encrypted private records first. Only then remove legacy private
+                        // records from the general store. Any failure leaves the vault locked.
+                        check(privateNoteStore.save(session, migrated)) { "Private vault encryption failed" }
+                        check(store.save(notes.filterNot { it.privateNote })) { "Public note store commit failed" }
+                        legacyPrivateNotes = emptyList()
+                        privateVaultSession = session
+                        notes = notes.filterNot { it.privateNote } + migrated
+                        true
+                    }.getOrDefault(false)
                     if (accepted) {
                         privateVaultUnlocked = true
                         selectedView = "Private"
@@ -1362,18 +1428,14 @@ internal fun NestNoteApp(
                         searchVisible = false
                         selectedNoteIds = emptySet()
                         showPrivateVaultGate = false
+                    } else if (passwordAccepted) {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Vault could not be safely unlocked or migrated. Existing data was preserved; try again.")
+                        }
                     }
                     accepted
                 },
-                onBiometricUnlock = {
-                    PrivateVaultSecurity.clearFailedAttempts(context)
-                    privateVaultUnlocked = true
-                    selectedView = "Private"
-                    search = ""
-                    searchVisible = false
-                    selectedNoteIds = emptySet()
-                    showPrivateVaultGate = false
-                }
+                onBiometricUnlock = { /* Disabled until a biometric-bound crypto key is implemented. */ }
             )
         }
 
