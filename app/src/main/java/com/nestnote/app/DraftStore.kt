@@ -73,8 +73,19 @@ class DraftStore internal constructor(rootOverride: File, private val privateKey
         if (!root.isDirectory) return@synchronized emptyList<Draft>()
         (root.listFiles() ?: emptyArray())
             .filter { it.isFile && it.name.endsWith(".json") }
+            .filter { file ->
+                if (includePrivate) true else {
+                    val prefix = runCatching {
+                        file.bufferedReader(Charsets.UTF_8).use { it.readLine().orEmpty() }
+                    }.getOrDefault("")
+                    when {
+                        prefix.startsWith(PRIVATE_PREFIX) -> false
+                        prefix.startsWith(PUBLIC_PREFIX) -> true
+                        else -> { file.delete(); false } // legacy plaintext: fail closed and discard
+                    }
+                }
+            }
             .mapNotNull { readFile(it) }
-            .filter { includePrivate || !it.privateNote }
     }
 
     fun clearAll(): Int = synchronized(LOCK) {
