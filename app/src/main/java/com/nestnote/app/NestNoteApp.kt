@@ -255,9 +255,10 @@ internal fun NestNoteApp(
     val editorNote = notes.firstOrNull { it.id == editorNoteId }
     // Protect private content even when a private note is opened from Home and
     // the selected destination is not the dedicated Private Vault screen.
-    DisposableEffect(context, selectedView, editorNote?.privateNote) {
+    DisposableEffect(context, selectedView, editorVisible, editorNote?.privateNote) {
         val window = context.findActivityForSecureWindow()?.window
-        val protectPrivateContent = selectedView == "Private" || editorNote?.privateNote == true
+        val protectPrivateContent = selectedView == "Private" ||
+            (editorVisible && editorNote?.privateNote == true)
         val wasAlreadySecure = (window?.attributes?.flags ?: 0) and WindowManager.LayoutParams.FLAG_SECURE != 0
         if (protectPrivateContent) {
             window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -271,17 +272,18 @@ internal fun NestNoteApp(
     // Relock and tear down editor UI when backgrounding while either the vault or
     // a private note editor is visible. Editor state is saveable independently of
     // the vault route, so changing selectedView alone is not a sufficient boundary.
-    DisposableEffect(context, selectedView, editorNote?.privateNote) {
+    DisposableEffect(context, selectedView, editorVisible, editorNote?.privateNote) {
         val lifecycle = (context as? ComponentActivity)?.lifecycle
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP &&
-                (selectedView == "Private" || editorNote?.privateNote == true)
+                (selectedView == "Private" || (editorVisible && editorNote?.privateNote == true))
             ) {
                 privateVaultUnlocked = false
-                selectedView = "Home"
+                if (selectedView == "Private") selectedView = "Home"
+                // Hide the editor without clearing its saveable IDs or dirty state.
+                // NoteEditor autosaves drafts, and retaining state avoids discarding
+                // a recent edit while still preventing the private UI from reappearing.
                 editorVisible = false
-                editorNoteId = null
-                editorHasUnsavedChanges = false
             }
         }
         lifecycle?.addObserver(observer)
