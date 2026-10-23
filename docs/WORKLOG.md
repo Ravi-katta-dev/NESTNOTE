@@ -850,3 +850,10 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Added regression coverage for lockout escalation through the 15-minute cap, active-cooldown boundary behavior, mixed public/private backup round trips, and exclusion of private notes from ordinary note views/search.
 - **Not yet validated:** exact-head Android CI, activity/process recreation, biometric outcomes on emulator/device, FLAG_SECURE/Recents behavior, and wall-clock manipulation behavior. Keep release blocked until automated checks and device-dependent checks are separately recorded.
 - **Threat-model limitation remains:** vault password gates UI access; it is not a separate content-encryption key. Exported JSON backups may contain readable private-note content.
+
+
+## 2026-10-23 — Document Private Vault UI lock vs cryptographic isolation
+- Added `docs/SECURITY.md` to distinguish Android Keystore-backed local-storage encryption from the vault's password/biometric UI gate.
+- Added `docs/THREAT_MODEL.md` describing assets, trust boundaries, threats, residual risks, and requirements for any future independent vault encryption.
+- Updated README to state explicitly that the vault password does not derive/unlock a separate encryption key and that exported JSON backups may contain readable private-note content.
+- Documentation boundary: these edits clarify the existing design; they do not add cryptographic isolation. Exact-head CI and all device-dependent vault checks remain pending.
