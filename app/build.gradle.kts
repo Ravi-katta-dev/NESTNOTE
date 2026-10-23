@@ -49,6 +49,7 @@ dependencies {
     // biometric:1.1.0 can otherwise resolve an old FragmentActivity implementation that rejects
     // ActivityResultRegistry request codes when launching CreateDocument/OpenMultipleDocuments.
     implementation("androidx.fragment:fragment-ktx:1.8.7")
+    implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
