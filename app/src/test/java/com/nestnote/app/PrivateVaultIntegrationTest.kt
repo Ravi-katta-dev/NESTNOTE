@@ -107,4 +107,29 @@ class PrivateVaultIntegrationTest {
         assertEquals(listOf(private), PrivateNoteStore(context).load(PrivateNoteCrypto(context).unlock("right password".toCharArray())!!))
     }
 
+
+    @Test fun aesGcmCiphertextBitFlipIsRejected() {
+        assertTrue(crypto.initialize("correct password".toCharArray()))
+        val session = crypto.unlock("correct password".toCharArray())!!
+        val envelope = session.encrypt("authenticated private payload".toByteArray(), 61L)
+        val prefix = "NESTNOTE_PRIVATE_RECORD_V1:"
+        val payload = android.util.Base64.decode(envelope.removePrefix(prefix), android.util.Base64.NO_WRAP)
+        payload[payload.lastIndex] = (payload[payload.lastIndex].toInt() xor 0x01).toByte()
+        val tampered = prefix + android.util.Base64.encodeToString(payload, android.util.Base64.NO_WRAP)
+        var rejected = false
+        try {
+            session.decrypt(tampered, 61L)
+        } catch (_: Exception) {
+            rejected = true
+        }
+        assertTrue("AES-GCM must reject altered ciphertext", rejected)
+        var wrongRecordRejected = false
+        try {
+            session.decrypt(envelope, 62L)
+        } catch (_: Exception) {
+            wrongRecordRejected = true
+        }
+        assertTrue("record ID must be authenticated as AAD", wrongRecordRejected)
+    }
+
 }
