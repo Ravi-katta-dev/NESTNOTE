@@ -842,3 +842,11 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - The appearance rail now snapshots the imported wallpaper URI when opened and restores it on Cancel/outside-tap/system Back, matching the existing colour/background draft contract.
 - Extended NoteStore round-trip coverage so an imported content URI is asserted to survive save/load.
 - Validation boundary: repository source and test edits were committed to the feature branch; Android CI and real-device picker/permission behavior have not yet been run for this branch.
+
+
+## 2026-10-23 — Private Vault lifecycle remediation (PR candidate)
+- Created `fix/private-vault-lifecycle-hardening` from current `main` after confirming PR #88 was already merged.
+- Updated the lifecycle stop handler so backgrounding while the Private view or a private-note editor is visible relocks the vault, navigates away, and closes the editor UI. This addresses the identified mismatch between vault route state and independently saveable editor visibility state.
+- Added regression coverage for lockout escalation through the 15-minute cap, active-cooldown boundary behavior, mixed public/private backup round trips, and exclusion of private notes from ordinary note views/search.
+- **Not yet validated:** exact-head Android CI, activity/process recreation, biometric outcomes on emulator/device, FLAG_SECURE/Recents behavior, and wall-clock manipulation behavior. Keep release blocked until automated checks and device-dependent checks are separately recorded.
+- **Threat-model limitation remains:** vault password gates UI access; it is not a separate content-encryption key. Exported JSON backups may contain readable private-note content.
