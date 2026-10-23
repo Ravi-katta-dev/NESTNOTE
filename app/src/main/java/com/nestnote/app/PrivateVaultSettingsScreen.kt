@@ -112,9 +112,10 @@ internal fun PrivateVaultSettingsScreen(
                         Text("Fingerprint / biometric unlock", style = MaterialTheme.typography.titleMedium)
                         Text(
                             when {
-                                !passwordConfigured -> "Set a vault password first"
-                                !biometricAvailable -> "Disabled until cryptographic unlock and device validation are complete"
-                                else -> "Disabled until cryptographic unlock and device validation are complete"
+                                !passwordConfigured -> "Create a vault password, then authenticate to enroll this device"
+                                !biometricAvailable -> "This device has no available strong biometric. Password unlock remains available"
+                                biometricEnabled -> "Enabled on this device. Your vault password remains the recovery method"
+                                else -> "Enable to authenticate and securely enroll this device"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = colors.onSurfaceVariant
