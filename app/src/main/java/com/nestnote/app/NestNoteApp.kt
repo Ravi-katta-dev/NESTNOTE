@@ -674,6 +674,30 @@ internal fun NestNoteApp(
                             }
                         }
                     },
+                    actions = {
+                        if (selectedView == "Home" || selectedView == "All notes") {
+                            IconButton(
+                                onClick = {
+                                    searchVisible = !searchVisible
+                                    if (!searchVisible) search = ""
+                                },
+                                modifier = Modifier
+                                    .padding(end = 8.dp)
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (searchVisible) colors.primaryContainer else colors.surfaceContainerHigh
+                                    )
+                                    .testTag("home_search_icon")
+                            ) {
+                                Icon(
+                                    if (searchVisible) Icons.Default.Close else Icons.Default.Search,
+                                    contentDescription = if (searchVisible) "Close search" else "Search notes",
+                                    tint = if (searchVisible) colors.onPrimaryContainer else colors.onSurface
+                                )
+                            }
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.surface)
                 )
             },
@@ -748,23 +772,29 @@ internal fun NestNoteApp(
                         }
                     }
                 }
-                if (selectedView == "Home" || selectedView == "All notes" || searchVisible) {
+                if (searchVisible) {
                     OutlinedTextField(
                         value = search, onValueChange = { search = it },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp).testTag("note_search_field"),
                         placeholder = { Text("Search · is:pinned · has:voice · after:YYYY-MM-DD") },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
-                            if (search.isNotBlank()) IconButton(
-                                onClick = {
-                                    val query = search.trim()
-                                    if (query !in savedSearches && savedSearches.size < 12) {
-                                        savedSearches = savedSearches + query
-                                        preferences.edit().putStringSet(PREF_SAVED_SEARCHES, savedSearches.toMutableSet()).apply()
-                                    }
-                                },
-                                enabled = search.trim() in savedSearches || savedSearches.size < 12
-                            ) { Icon(Icons.Default.BookmarkAdd, contentDescription = "Save search") }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (search.isNotBlank()) IconButton(
+                                    onClick = {
+                                        val query = search.trim()
+                                        if (query !in savedSearches && savedSearches.size < 12) {
+                                            savedSearches = savedSearches + query
+                                            preferences.edit().putStringSet(PREF_SAVED_SEARCHES, savedSearches.toMutableSet()).apply()
+                                        }
+                                    },
+                                    enabled = search.trim() in savedSearches || savedSearches.size < 12
+                                ) { Icon(Icons.Default.BookmarkAdd, contentDescription = "Save search") }
+                                IconButton(onClick = {
+                                    searchVisible = false
+                                    search = ""
+                                }) { Icon(Icons.Default.Close, contentDescription = "Close search field") }
+                            }
                         },
                         singleLine = true,
                         shape = RoundedCornerShape(18.dp),
