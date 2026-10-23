@@ -34,11 +34,12 @@ Use this checklist for every candidate. A successful build is necessary but does
 - [ ] Record exact-head CI and device/emulator results; do not mark unchecked items complete without evidence.
 
 ## Private Vault release gate
+- [ ] **Release blocker:** private editor drafts must not be persisted as plaintext. `DraftStore` currently writes UTF-8/Properties draft files without `NoteStore` encryption and does not preserve a private/public classification. Implement encrypted private drafts with a dedicated classification-aware path (or safely disable disk persistence for private drafts), plus orphan-recovery tests proving private content never reappears outside the authenticated vault. Do not mark this gate complete until exact-head CI passes.
 - [ ] Background the app while the vault list is open; verify return requires authentication.
 - [ ] Background the app while a private note editor is visible; verify no editor content reappears before reauthentication.
 - [ ] Recreate the activity/process during vault/editor use; verify private content is not restored into a visible editor while locked.
 - [ ] Verify biometric success, cancellation, failure, unavailable hardware, enrollment changes, and disabled-biometric password fallback; only explicit success unlocks.
-- [ ] Round-trip mixed public/private backup data; verify private notes stay excluded from ordinary views/search/insights and from user-facing plaintext export.
+- [ ] Round-trip mixed public/private backup data; verify private notes stay excluded from ordinary views/search/insights and from user-facing plaintext export. Also verify direct serializer callers are documented as unsafe for private records and private drafts are not written/read as plaintext.
 - [ ] Verify lockout escalation, cooldown boundary, persistence after restart, 15-minute cap, monotonic behavior under forward/backward wall-clock changes, and bounded behavior after device reboot. Automated regression coverage exists; device verification remains required.
 - [ ] Verify FLAG_SECURE on vault and private editor through Recents snapshots, rapid navigation, and lifecycle transitions on supported Android versions.
 - [ ] Confirm security copy says the vault password is a UI gate, not a separate encryption key, and exported JSON is plaintext; verify private notes are excluded from user-facing export.
