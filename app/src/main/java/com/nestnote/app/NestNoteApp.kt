@@ -155,7 +155,7 @@ internal fun NestNoteApp(
     var showStorageRecoveryDialog by remember { mutableStateOf(false) }
     var openedExternalMarkdownTitle by remember { mutableStateOf("") }
     var openedExternalMarkdownContent by remember { mutableStateOf("") }
-    var defaultMarkdownZoomPercent by remember { mutableIntStateOf(preferences.getInt(PREF_MARKDOWN_ZOOM, 100).coerceIn(50, 200)) }
+    var defaultMarkdownZoomPercent by remember { mutableIntStateOf(preferences.getLong(PREF_MARKDOWN_ZOOM, 100L).toInt().coerceIn(50, 200)) }
     var externalMarkdownZoomPercent by remember { mutableIntStateOf(defaultMarkdownZoomPercent) }
     var showExternalMarkdownZoomControls by remember { mutableStateOf(false) }
     var externalMarkdownMoreMenuExpanded by remember { mutableStateOf(false) }
