@@ -239,7 +239,9 @@ internal fun NestNoteApp(
         notes = notes.filterNot { it.privateNote }
         if (selectedView == "Private") selectedView = "Home"
     }
-    var privateVaultBiometricEnabled by remember { mutableStateOf(false) }
+    var privateVaultBiometricEnabled by remember { mutableStateOf(preferences.getBoolean("private_vault_biometric_enabled", false)) }
+    var pendingBiometricEnrollment by remember { mutableStateOf(false) }
+    var showBiometricEnrollment by remember { mutableStateOf(false) }
     val privateVaultBiometricAvailable = remember(context) {
         BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS
     }
@@ -831,12 +833,22 @@ internal fun NestNoteApp(
                 } else if (selectedView == "PrivateVaultSettings") {
                     PrivateVaultSettingsScreen(
                         passwordConfigured = PrivateVaultSecurity.isConfigured(context),
-                        biometricAvailable = false, // Keep opt-in disabled until device/emulator validation and enrollment UX are complete.
-                        biometricEnabled = false, // Do not surface a stale preference as an enabled security feature.
+                        biometricAvailable = privateVaultBiometricAvailable,
+                        biometricEnabled = privateVaultBiometricEnabled && PrivateVaultBiometricKey(context).isEnrolled(),
                         privateNoteCount = notes.count { it.privateNote },
                         onBiometricEnabledChange = { enabled ->
-                            privateVaultBiometricEnabled = enabled
-                            preferences.edit().putBoolean(PREF_PRIVATE_VAULT_BIOMETRIC_ENABLED, enabled).apply()
+                            if (enabled) {
+                                if (!PrivateVaultSecurity.isConfigured(context)) {
+                                    requestPrivateVault()
+                                } else {
+                                    pendingBiometricEnrollment = true
+                                    requestPrivateVault()
+                                }
+                            } else {
+                                PrivateVaultBiometricKey(context).deleteEnrollment()
+                                privateVaultBiometricEnabled = false
+                                preferences.edit().putBoolean("private_vault_biometric_enabled", false).commit()
+                            }
                         },
                         onSetUpPassword = { requestPrivateVault() },
                         onOpenVault = { requestPrivateVault() },
@@ -1389,10 +1401,11 @@ internal fun NestNoteApp(
         if (showPrivateVaultGate) {
             PrivateVaultGateDialog(
                 passwordConfigured = PrivateVaultSecurity.isConfigured(context),
-                // CryptoObject/key-binding primitives now exist, but enrollment, recovery and
-                // device validation are not complete. Never expose biometric unlock yet.
-                biometricEnabled = false,
-                onDismiss = { showPrivateVaultGate = false },
+                biometricEnabled = privateVaultBiometricEnabled && PrivateVaultBiometricKey(context).isEnrolled(),
+                onDismiss = {
+                    showPrivateVaultGate = false
+                    pendingBiometricEnrollment = false
+                },
                 onSubmit = { password, confirmation ->
                     val configured = PrivateVaultSecurity.isConfigured(context)
                     val passwordAccepted = if (configured) {
@@ -1437,6 +1450,10 @@ internal fun NestNoteApp(
                         searchVisible = false
                         selectedNoteIds = emptySet()
                         showPrivateVaultGate = false
+                        if (pendingBiometricEnrollment) {
+                            pendingBiometricEnrollment = false
+                            showBiometricEnrollment = true
+                        }
                     } else if (passwordAccepted) {
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar("Vault could not be safely unlocked or migrated. Existing data was preserved; try again.")
@@ -1444,8 +1461,55 @@ internal fun NestNoteApp(
                     }
                     accepted
                 },
-                onBiometricUnlock = { _ -> /* Intentionally disabled until enrollment/recovery validation is complete. */ }
+                onBiometricUnlock = { authenticatedCipher ->
+                    val session = PrivateVaultBiometricKey(context).unlock(authenticatedCipher)
+                    val accepted = session != null && runCatching {
+                        val encryptedExisting = if (privateNoteStore.hasStoredRecords()) privateNoteStore.load(session) else emptyList()
+                        val migrated = NoteStore.merge(encryptedExisting, legacyPrivateNotes).notes
+                        check(privateNoteStore.save(session, migrated)) { "Private vault encryption failed" }
+                        check(store.save(notes.filterNot { it.privateNote })) { "Public note store commit failed" }
+                        legacyPrivateNotes = emptyList()
+                        privateVaultSession = session
+                        notes = notes.filterNot { it.privateNote } + migrated
+                        true
+                    }.getOrDefault(false)
+                    if (accepted) {
+                        privateVaultUnlocked = true
+                        selectedView = "Private"
+                        search = ""
+                        searchVisible = false
+                        selectedNoteIds = emptySet()
+                        showPrivateVaultGate = false
+                    } else {
+                        coroutineScope.launch { snackbarHostState.showSnackbar("Biometric unlock failed safely. Use your vault password.") }
+                    }
+                }
             )
+        }
+
+        if (showBiometricEnrollment) {
+            val session = privateVaultSession
+            if (session == null) {
+                showBiometricEnrollment = false
+            } else {
+                PrivateVaultBiometricEnrollmentDialog(
+                    session = session,
+                    onComplete = { enrolled ->
+                        if (enrolled) {
+                            privateVaultBiometricEnabled = true
+                            preferences.edit().putBoolean("private_vault_biometric_enabled", true).commit()
+                            coroutineScope.launch { snackbarHostState.showSnackbar("Biometric unlock enabled. Your password remains available as recovery.") }
+                        }
+                        showBiometricEnrollment = false
+                    },
+                    onDismiss = {
+                        PrivateVaultBiometricKey(context).deleteEnrollment()
+                        privateVaultBiometricEnabled = false
+                        preferences.edit().putBoolean("private_vault_biometric_enabled", false).commit()
+                        showBiometricEnrollment = false
+                    }
+                )
+            }
         }
 
         if (showStorageRecoveryDialog) {
