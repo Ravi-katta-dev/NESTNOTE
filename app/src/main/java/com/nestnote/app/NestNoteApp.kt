@@ -1,5 +1,9 @@
 package com.nestnote.app
 
+import java.io.ByteArrayOutputStream
+
+private const val MAX_BACKUP_BYTES = 16 * 1024 * 1024
+
 import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.ClipData
@@ -549,8 +553,20 @@ internal fun NestNoteApp(
             // Validate every selected file before opening the restore preview; never apply a partial batch.
             val batches = uris.map { uri ->
                 runCatching {
-                    context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
-                        ?.let { NoteStore.decodeBackup(it) }
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        // Bound memory use for untrusted document-provider input.
+                        val output = ByteArrayOutputStream()
+                        val buffer = ByteArray(8 * 1024)
+                        var total = 0
+                        while (true) {
+                            val count = input.read(buffer)
+                            if (count < 0) break
+                            total += count
+                            require(total <= MAX_BACKUP_BYTES) { "Backup file is too large" }
+                            output.write(buffer, 0, count)
+                        }
+                        NoteStore.decodeBackup(output.toByteArray().toString(Charsets.UTF_8))
+                    }
                 }.getOrNull()
             }
             val incoming = if (batches.all { it != null }) {
@@ -1621,6 +1637,8 @@ internal fun NestNoteApp(
                         if (it.id == existing.id) updated.copy(id = existing.id) else it
                     }
                     if (persist(next)) {
+                        // Clear the recovery snapshot only after durable note persistence.
+                        runCatching { DraftStore(context).clear(savedId) }
                         commitVoiceChanges()
                         closeEditor()
                         coroutineScope.launch { snackbarHostState.showSnackbar("Note saved") }
