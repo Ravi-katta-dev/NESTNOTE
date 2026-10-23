@@ -838,12 +838,8 @@ internal fun NestNoteApp(
                         privateNoteCount = notes.count { it.privateNote },
                         onBiometricEnabledChange = { enabled ->
                             if (enabled) {
-                                if (!PrivateVaultSecurity.isConfigured(context)) {
-                                    requestPrivateVault()
-                                } else {
-                                    pendingBiometricEnrollment = true
-                                    requestPrivateVault()
-                                }
+                                pendingBiometricEnrollment = true
+                                requestPrivateVault()
                             } else {
                                 PrivateVaultBiometricKey(context).deleteEnrollment()
                                 privateVaultBiometricEnabled = false
