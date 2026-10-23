@@ -115,7 +115,16 @@ class DraftStore internal constructor(rootOverride: File, private val privateKey
     }
 
     private fun readFile(file: File): Draft? = runCatching {
-        if (file.length() > MAX_BYTES) null else decodeEnvelope(file.readText(Charsets.UTF_8))
+        if (file.length() > MAX_BYTES) return@runCatching null
+        val raw = file.readText(Charsets.UTF_8)
+        if (!raw.startsWith(PUBLIC_PREFIX) && !raw.startsWith(PRIVATE_PREFIX)) {
+            // Old schema-1 files were plaintext. Do not parse/reclassify them; remove the
+            // legacy file on discovery so recovery cannot surface it as an ordinary draft.
+            file.delete()
+            null
+        } else {
+            decodeEnvelope(raw)
+        }
     }.getOrNull()
 
     private fun fileFor(noteId: Long): File = File(root, "note-$noteId.json")
