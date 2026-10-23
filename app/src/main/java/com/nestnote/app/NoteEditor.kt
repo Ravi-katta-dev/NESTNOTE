@@ -161,6 +161,9 @@ internal fun NoteEditorContent(
     val customTextSizeSp = remember(original?.id) {
         editorPreferences.getInt(PREF_TEXT_SIZE_SP, textSize.bodySp).coerceIn(12, 32)
     }
+    var editorZoomPercent by rememberSaveable(original?.id, draftNoteId) { mutableIntStateOf(100) }
+    var showEditorZoomControls by rememberSaveable(original?.id, draftNoteId) { mutableStateOf(false) }
+    val effectiveBodyTextSp = (customTextSizeSp * editorZoomPercent / 100).coerceIn(10, 48)
     val editorFontStyle = remember(original?.id) {
         runCatching { EditorFontFamily.valueOf(editorPreferences.getString(PREF_EDITOR_FONT, "SANS") ?: "SANS") }
             .getOrDefault(EditorFontFamily.SANS)
@@ -703,6 +706,44 @@ internal fun NoteEditorContent(
 
                     if (pinned) {
                         EditorPinnedChip(accent, editable) { pinned = false }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        androidx.compose.material3.TextButton(onClick = { showEditorZoomControls = !showEditorZoomControls }) {
+                            androidx.compose.material3.Icon(
+                                androidx.compose.material.icons.Icons.Default.FormatSize,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            androidx.compose.material3.Text("  Text size · ${editorZoomPercent}%")
+                        }
+                    }
+                    androidx.compose.animation.AnimatedVisibility(visible = showEditorZoomControls) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                androidx.compose.material3.Text("A", style = MaterialTheme.typography.labelSmall)
+                                androidx.compose.material3.Slider(
+                                    value = editorZoomPercent.toFloat(),
+                                    onValueChange = { editorZoomPercent = (it / 5f).roundToInt() * 5 },
+                                    valueRange = 50f..200f,
+                                    steps = 29,
+                                    modifier = Modifier.weight(1f).testTag("note_editor_zoom_slider")
+                                )
+                                androidx.compose.material3.Text("A", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
+                            androidx.compose.material3.Text(
+                                "Adjust text for editing and reading",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = muted
+                            )
+                        }
                     }
 
                     val checklistItems = remember(bodyValue.text) {
