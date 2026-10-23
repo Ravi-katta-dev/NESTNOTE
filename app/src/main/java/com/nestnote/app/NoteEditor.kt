@@ -59,6 +59,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -433,11 +436,10 @@ internal fun NoteEditorContent(
 
     // ---- Autosave ----
     val currentHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
-    suspend fun writeDraftNow() {
-        if (!currentHasUnsavedChanges) return
-        if (original == null && title.isBlank() && bodyValue.text.isBlank()) return
-        // Read Compose state here (main thread), then do file I/O off the main thread.
-        val draft = DraftStore.Draft(
+    fun currentDraftSnapshot(): DraftStore.Draft? {
+        if (!currentHasUnsavedChanges) return null
+        if (original == null && title.isBlank() && bodyValue.text.isBlank()) return null
+        return DraftStore.Draft(
             noteId = voiceNoteId,
             title = title,
             body = bodyValue.text,
@@ -450,7 +452,29 @@ internal fun NoteEditorContent(
             savedAtMillis = System.currentTimeMillis(),
             format = noteFormat
         )
+    }
+    // Flush the latest Compose snapshot before lifecycle hiding/removal.
+    val flushLatestDraft by rememberUpdatedState {
+        currentDraftSnapshot()?.let { draft ->
+            runCatching { DraftStore(context).write(draft) }.getOrDefault(false)
+        } ?: true
+    }
+    suspend fun writeDraftNow() {
+        val draft = currentDraftSnapshot() ?: return
         withContext(Dispatchers.IO) { runCatching { DraftStore(context).write(draft) } }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) flushLatestDraft()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            // A synchronous final flush closes the debounce gap on route/sheet removal.
+            flushLatestDraft()
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     LaunchedEffect(
