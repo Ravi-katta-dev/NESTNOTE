@@ -155,6 +155,7 @@ internal fun NestNoteApp(
     var showStorageRecoveryDialog by remember { mutableStateOf(false) }
     var openedExternalMarkdownTitle by remember { mutableStateOf("") }
     var openedExternalMarkdownContent by remember { mutableStateOf("") }
+    var externalMarkdownZoomPercent by remember { mutableIntStateOf(100) }
     var showExternalMarkdownDialog by remember { mutableStateOf(false) }
     LaunchedEffect(store) {
         val result = withContext(Dispatchers.IO) { store.loadSafely() }
@@ -1105,27 +1106,66 @@ internal fun NestNoteApp(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(max = 560.dp)
-                            .verticalScroll(rememberScrollState())
                     ) {
-                        AndroidView(
-                            factory = { viewContext ->
-                                TextView(viewContext).apply {
-                                    movementMethod = LinkMovementMethod.getInstance()
-                                    setTextColor(colors.onSurface.toArgb())
-                                    textSize = 16f
-                                    setPadding(4, 4, 4, 4)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            TextButton(
+                                enabled = externalMarkdownZoomPercent > 50,
+                                onClick = {
+                                    externalMarkdownZoomPercent =
+                                        (externalMarkdownZoomPercent - 5).coerceAtLeast(50)
                                 }
-                            },
-                            update = { textView ->
-                                textView.text = MarkdownPreview.toSpanned(
-                                    context,
-                                    openedExternalMarkdownContent,
-                                    colors.onSurface.toArgb()
-                                )
-                                textView.movementMethod = LinkMovementMethod.getInstance()
-                            },
-                            modifier = Modifier.fillMaxWidth().wrapContentHeight()
-                        )
+                            ) { Text("−") }
+                            Slider(
+                                value = externalMarkdownZoomPercent.toFloat(),
+                                onValueChange = { externalMarkdownZoomPercent = it.toInt().coerceIn(50, 200) },
+                                valueRange = 50f..200f,
+                                steps = 29,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = "$externalMarkdownZoomPercent%",
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.widthIn(min = 42.dp)
+                            )
+                            TextButton(
+                                enabled = externalMarkdownZoomPercent < 200,
+                                onClick = {
+                                    externalMarkdownZoomPercent =
+                                        (externalMarkdownZoomPercent + 5).coerceAtMost(200)
+                                }
+                            ) { Text("+") }
+                        }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f, fill = false)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            AndroidView(
+                                factory = { viewContext ->
+                                    TextView(viewContext).apply {
+                                        movementMethod = LinkMovementMethod.getInstance()
+                                        setTextColor(colors.onSurface.toArgb())
+                                        textSize = 16f * externalMarkdownZoomPercent / 100f
+                                        setPadding(4, 4, 4, 4)
+                                    }
+                                },
+                                update = { textView ->
+                                    textView.text = MarkdownPreview.toSpanned(
+                                        context,
+                                        openedExternalMarkdownContent,
+                                        colors.onSurface.toArgb()
+                                    )
+                                    textView.textSize = 16f * externalMarkdownZoomPercent / 100f
+                                    textView.movementMethod = LinkMovementMethod.getInstance()
+                                },
+                                modifier = Modifier.fillMaxWidth().wrapContentHeight()
+                            )
+                        }
                     }
                 },
                 confirmButton = {
