@@ -960,3 +960,12 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Vault unlock now exposes strong-biometric authentication only when the setting is enabled and a valid enrollment exists. Unlock consumes only the cipher returned by the successful BiometricPrompt.CryptoObject callback, unwraps the same vault data key, and uses the existing encrypted-store migration path. Password remains the fallback and recovery route.
 - Disabling biometric unlock deletes the stored wrapped-key enrollment and Android Keystore alias. Enrollment/prompt failures leave password access available and do not enable biometric unlock.
 - **Still required before release:** exact-head CI success and physical-device/emulator verification of enrollment, successful unlock, cancellation/failure, biometric-enrollment invalidation, and password fallback. The implementation is wired; these platform-specific checks must not be inferred from Robolectric tests.
+
+
+## 2026-10-23 — Private Vault UI polish
+
+- Refined the Privacy settings vault entry into a clearer hero card with consistent rounded icon containers, setup/protection state, private-note count, and a single primary action.
+- Added short fade/slide entrances, animated content-size changes, and animated biometric/password validation feedback. Motion uses Compose animation APIs so Android's system animation scale remains respected.
+- Improved the biometric status messaging and recovery-method hierarchy; made the backup warning easier to scan while retaining the important plain-text-export warning.
+- Refined password and enrollment dialogs with icon-led titles, consistent field shapes, better spacing, and animated inline errors. No security policy, key derivation, or vault data flow was changed by the visual pass.
+- Exact-head Android CI is pending; verify on small and large screens, dark/light themes, and with system animations reduced before release.
