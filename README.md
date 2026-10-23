@@ -13,7 +13,8 @@ NESTNOTE is a local-first note-taking app built with Kotlin, Jetpack Compose, an
 - Full-screen and quick editors, checklist and bullet tools, list continuation, and optional writing statistics.
 - Editor text-size options plus an in-editor zoom slider (50%–200%) for editing and reading saved notes, reminder metadata, and copy/share actions.
 - JSON backup and restore through Android's system file picker.
-- Open external Markdown (`.md`) files directly in a read-only viewer without importing them as saved notes; adjust viewer zoom from 50% to 200% and configure the default in Settings.\n- Offline Text Toolbox under More → Power tools: live word/character/line counts, estimated reading time, case conversion, whitespace cleanup, copy, and clear.
+- Open external Markdown (`.md`) files directly in a read-only viewer without importing them as saved notes; adjust viewer zoom from 50% to 200% and configure the default in Settings.
+- Offline Text Toolbox under More → Power tools: live word/character/line counts, estimated reading time, case conversion, whitespace cleanup, copy, and clear.
 - Local-data recovery safeguards and validated, versioned backups.
 - Private Vault: open the dedicated Vault page from More or Settings → Privacy, authenticate with the vault password, and manage privacy controls. Authentication-bound biometric enrollment/unlock is implemented behind explicit opt-in; physical-device validation remains a release gate. Exported JSON backups remain plaintext and may include private notes.
 
