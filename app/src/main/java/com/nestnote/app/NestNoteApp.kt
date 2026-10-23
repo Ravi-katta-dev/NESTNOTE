@@ -244,17 +244,6 @@ internal fun NestNoteApp(
             }
         }
     }
-    DisposableEffect(context, selectedView) {
-        val lifecycle = (context as? ComponentActivity)?.lifecycle
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP && selectedView == "Private") {
-                privateVaultUnlocked = false
-                selectedView = "Home"
-            }
-        }
-        lifecycle?.addObserver(observer)
-        onDispose { lifecycle?.removeObserver(observer) }
-    }
     LaunchedEffect(selectedView) {
         if (selectedView != "Private") privateVaultUnlocked = false
         if (selectedView == "Backup") {
@@ -278,6 +267,25 @@ internal fun NestNoteApp(
     var commitVoiceChanges by remember { mutableStateOf<() -> Unit>({}) }
     var confirmSystemDiscard by remember { mutableStateOf(false) }
     val editorNote = notes.firstOrNull { it.id == editorNoteId }
+    // Relock and tear down editor UI when backgrounding while either the vault or
+    // a private note editor is visible. Editor state is saveable independently of
+    // the vault route, so changing selectedView alone is not a sufficient boundary.
+    DisposableEffect(context, selectedView, editorNote?.privateNote) {
+        val lifecycle = (context as? ComponentActivity)?.lifecycle
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP &&
+                (selectedView == "Private" || editorNote?.privateNote == true)
+            ) {
+                privateVaultUnlocked = false
+                selectedView = "Home"
+                editorVisible = false
+                editorNoteId = null
+                editorHasUnsavedChanges = false
+            }
+        }
+        lifecycle?.addObserver(observer)
+        onDispose { lifecycle?.removeObserver(observer) }
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
