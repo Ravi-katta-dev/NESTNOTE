@@ -942,3 +942,12 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Maintainer reports the PR CI run succeeded. Treat CI as cleared for that run, while requiring checks on any subsequent commits.
 - Security review remains open: biometric authentication is still deliberately disabled because authentication-bound Keystore key access has not been implemented. Do not merge solely on the basis of green CI.
 - Private draft storage is separately AES-GCM encrypted with an Android Keystore key and excluded from ordinary orphan-draft listing; regression tests already cover at-rest secrecy, wrong-key rejection, tampering, and privacy-classification mismatch.
+
+
+## 2026-10-23 — Private Vault security follow-up: biometric binding and recovery tests
+
+- Added `PrivateVaultBiometricKey`: an Android Keystore AES-GCM key requires per-use authentication, invalidates on biometric enrollment changes, and wraps the existing vault data key. Enrollment and unlock require an authenticated `Cipher`; the prompt callback's authenticated `CryptoObject.cipher` is the only accepted input to unwrap.
+- Changed the gate's biometric prompt path to use `BiometricPrompt.CryptoObject` and strong biometrics. The feature remains **disabled** in both settings and the vault gate; enrollment UX, invalidation recovery, and real-device verification are not complete. Do not enable the preference manually or treat this primitive as release-ready.
+- Extracted cross-store password change compensation into `PrivateVaultPasswordChange` and added tests for key-rewrap failure, verifier-update failure with rollback, rollback failure requiring lock/recovery, and success. Added integration tests for real crypto rewrap preserving records and rejecting the old password after success.
+- Existing migration tests cover the boundary after isolated-store commit and before legacy-store cleanup by creating fresh store/crypto objects. Existing draft tests cover encrypted-at-rest recovery through a fresh store instance; backup tests cover private-note exclusion and restore round trips.
+- **Not yet verified:** a true Android process kill between migration phases, an Android device/emulator biometric prompt and key invalidation, process/activity recreation on device, restore followed by private-draft recovery, or exact-head CI. Robolectric object recreation is not a substitute for actual OS process termination. Keep PR #93 draft until CI and device/emulator evidence are available.
