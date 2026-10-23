@@ -483,7 +483,7 @@ internal fun NestNoteApp(
     var exportArchivedNotes by remember { mutableStateOf(true) }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) {
-            val exportNotes = if (exportArchivedNotes) notes else notes.filterNot { it.archived }
+            val exportNotes = NoteStore.notesForBackup(notes, includeArchived = exportArchivedNotes)
             val saved = runCatching {
                 val payload = NoteStore.encodeBackup(exportNotes).toByteArray(Charsets.UTF_8)
                 context.contentResolver.openOutputStream(uri)?.use { it.write(payload) } != null
