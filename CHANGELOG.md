@@ -33,6 +33,13 @@ This is the current v1.3.11 release record on `main`, synchronized by merged PR 
 - Preserve the existing multi-file import flow; this feature is for direct open/view, not import.
 - Validation is pending: do not claim CI, build, or on-device verification until the exact PR head has a recorded successful result.
 
+### Current candidate additions — PR #94 (not yet a published release)
+- Add an offline Text Toolbox under More → Power tools with live word, character, and line counts; estimated reading time; uppercase, lowercase, and title-case conversion; whitespace cleanup; copy; and clear.
+- Refresh the Home dashboard with a themed quick-create hero and active/pinned note counts while preserving existing search, filters, sorting, grid/list modes, and note actions.
+- Add an editor/reader text-size control with an expandable slider from 50% to 200% in 5% increments. The control applies to the note body and preview; it does not change the saved note content.
+- Update app documentation to distinguish the current v1.3.11 repository candidate from the latest published stable v1.3.10 release.
+- Status: these changes are in an open pull request. They are not a published release; exact-head CI and physical-device validation remain outstanding.
+
 ### Tests and engineering
 - Added regression coverage for Markdown rendering, formatting toggles, list/checklist transitions, link escaping and cursor placement, line-ending preservation, and safe-link handling.
 - Added draft persistence/isolation and undo/redo regression coverage.
