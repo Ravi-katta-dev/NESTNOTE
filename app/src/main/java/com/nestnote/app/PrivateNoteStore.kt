@@ -22,7 +22,9 @@ internal class PrivateNoteStore(context: Context) {
             val id = item.getLong("id")
             val envelope = item.getString("ciphertext")
             val plaintext = session.decrypt(envelope, id).toString(Charsets.UTF_8)
-            val note = JSONObject(plaintext).toNestNote()
+            val decoded = NoteStore.decode(plaintext) ?: throw IllegalArgumentException("Private note payload is malformed")
+            require(decoded.size == 1)
+            val note = decoded.single()
             require(note.id == id && note.privateNote) { "Private record classification mismatch" }
             result += note
         }
@@ -45,13 +47,6 @@ internal class PrivateNoteStore(context: Context) {
         !prefs.getString(RECORDS, null).isNullOrBlank()
 
     fun clear(): Boolean = prefs.edit().remove(RECORDS).remove(VERSION).commit()
-
-    private fun JSONObject.toNestNote(): NestNote {
-        val parsed = NoteStore.decode(optJSONArray("notes")?.toString() ?: "[]")
-            ?: throw IllegalArgumentException("Private note payload is malformed")
-        require(parsed.size == 1)
-        return parsed.single()
-    }
 
     companion object {
         private const val PREFS = "nestnote_private_note_records"
