@@ -848,7 +848,7 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Created `fix/private-vault-lifecycle-hardening` from current `main` after confirming PR #88 was already merged.
 - Updated the lifecycle stop handler so backgrounding while the Private view or a private-note editor is visible relocks the vault, navigates away, and closes the editor UI. This addresses the identified mismatch between vault route state and independently saveable editor visibility state.
 - Added regression coverage for lockout escalation through the 15-minute cap, active-cooldown boundary behavior, mixed public/private backup round trips, and exclusion of private notes from ordinary note views/search.
-- **Not yet validated:** exact-head Android CI, activity/process recreation, biometric outcomes on emulator/device, FLAG_SECURE/Recents behavior, and wall-clock manipulation behavior. Keep release blocked until automated checks and device-dependent checks are separately recorded.
+- **Validation:** Android CI passed for the earlier head `d1ddff8b97fd88cc311c71d0c5c0a58ec2320828` (run [#873](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/39909930289)). A subsequent FLAG_SECURE ownership fix and documentation alignment were committed afterward; exact-head CI for the latest commit must pass before merge. Activity/process recreation, biometric outcomes, FLAG_SECURE/Recents behavior, wall-clock manipulation, and full ordinary-surface filtering still require emulator/device validation. Keep release blocked until evidence is recorded.
 - **Threat-model limitation remains:** vault password gates UI access; it is not a separate content-encryption key. Exported JSON backups may contain readable private-note content.
 
 
