@@ -17,6 +17,7 @@ Use this checklist for every candidate. A successful build is necessary but does
 ## 2. Core notes and editor
 - [ ] Create, edit, save, cancel, pin, archive, restore, search, sort, and delete/undo work.
 - [ ] Unsaved changes remain protected through Back, Cancel, rotation, activity recreation, and sheet dismissal.
+- [ ] Verify lifecycle `ON_STOP` and editor disposal synchronously flush the latest draft before the editor is hidden; test immediate backgrounding/removal during the debounce interval. This reduces lifecycle-loss risk but cannot guarantee writes when the process is killed without callbacks.
 - [ ] Stale editor drafts cannot overwrite a newer saved note.
 - [ ] Checklist toggling, list continuation, cursor/selection, and trailing newlines behave correctly.
 - [ ] Settings and appearance choices persist after restart.
