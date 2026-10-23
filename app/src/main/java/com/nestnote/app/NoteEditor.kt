@@ -450,7 +450,8 @@ internal fun NoteEditorContent(
             reminder = reminder,
             wallpaperUri = customWallpaperUri,
             savedAtMillis = System.currentTimeMillis(),
-            format = noteFormat
+            format = noteFormat,
+            privateNote = privateNote
         )
     }
     // Flush the latest Compose snapshot before lifecycle hiding/removal.
@@ -479,7 +480,7 @@ internal fun NoteEditorContent(
 
     LaunchedEffect(
         title, bodyValue.text, category, colorIndex, backgroundIndex,
-        pinned, reminder, customWallpaperUri, noteFormat
+        pinned, reminder, customWallpaperUri, noteFormat, privateNote
     ) {
         delay(2_000L)
         writeDraftNow()
@@ -502,7 +503,7 @@ internal fun NoteEditorContent(
     LaunchedEffect(voiceNoteId) {
         val existing = original ?: return@LaunchedEffect
         val draft = withContext(Dispatchers.IO) { DraftStore(context).read(existing.id) }
-        if (draft != null && draft.savedAtMillis > existing.updated) {
+        if (draft != null && draft.privateNote == existing.privateNote && draft.savedAtMillis > existing.updated) {
             pendingDraft = draft
             showDraftRecoveryDialog = true
         }
