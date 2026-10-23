@@ -14,18 +14,6 @@ internal object PrivateVaultPasswordChange {
     internal enum class Failure { KEY_REWRAP, VERIFIER_UPDATE, ROLLBACK }
 
     fun execute(
-        rewrapKey: (from: String, to: String) -> Boolean,
-        updateVerifier: () -> Boolean,
-        markRecoveryRequired: () -> Unit
-    ): Result {
-        if (!rewrapKey(/* from */ "", /* to */ "")) {
-            // This overload is not used; kept unreachable to prevent accidental no-credential calls.
-            return Result(false, failure = Failure.KEY_REWRAP)
-        }
-        return Result(false, failure = Failure.KEY_REWRAP)
-    }
-
-    fun execute(
         current: String,
         replacement: String,
         rewrapKey: (from: String, to: String) -> Boolean,
