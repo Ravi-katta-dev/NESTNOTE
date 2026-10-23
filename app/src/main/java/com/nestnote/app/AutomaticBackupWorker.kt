@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 /**
  * Periodic local backup. Android may defer this work under Doze, battery restrictions,
@@ -35,8 +38,18 @@ class AutomaticBackupWorker(
             val target = File(backupDir, "latest.json")
             val temp = File(backupDir, "latest.json.tmp")
             temp.writeText(NoteStore.encodeBackup(loaded.notes), Charsets.UTF_8)
-            if (target.exists() && !target.delete()) error("Cannot replace previous backup")
-            if (!temp.renameTo(target)) error("Cannot finalize backup")
+            // Never delete the last good backup before the replacement is ready. Prefer an
+            // atomic same-directory replacement and fall back only when atomic moves are unsupported.
+            try {
+                Files.move(
+                    temp.toPath(),
+                    target.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE
+                )
+            } catch (_: AtomicMoveNotSupportedException) {
+                Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
             prefs.edit()
                 .putLong(PREF_BACKUP_AUTOMATIC_LAST_RUN, System.currentTimeMillis())
                 .putString(PREF_BACKUP_AUTOMATIC_STATUS, "Success")
