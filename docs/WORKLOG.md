@@ -1,3 +1,11 @@
+## 2026-10-23 — Private-note metadata leak fixes
+
+- Fixed the Settings screen's archived-note count so archived private notes are excluded from ordinary Settings totals.
+- Added defense-in-depth filtering inside `NoteInsightsScreen`, not just at its current caller, so private titles/bodies cannot affect insight counts, word totals, deepest/rediscovery note selection, or category summaries if a future caller passes the full collection.
+- These are UI metadata/content-exposure fixes; they do not change the documented cryptographic boundary. Latest-head Android CI must pass, and device-only lifecycle/biometric/screenshot checks remain required.
+
+---
+
 ## 2026-10-23 — PR #90 follow-up: monotonic lockout and regression coverage
 
 - Replaced wall-clock-based password cooldown deadlines with Android elapsed-realtime deadlines so manual clock/time-zone changes do not bypass or extend an active cooldown.
