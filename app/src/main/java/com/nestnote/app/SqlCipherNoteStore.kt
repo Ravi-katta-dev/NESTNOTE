@@ -27,10 +27,16 @@ internal class SqlCipherNoteStore(context: Context) {
         val file = appContext.getDatabasePath(DATABASE_NAME)
         if (!file.exists() || file.length() == 0L || !prefs.contains(WRAPPED_PASSPHRASE)) return false
         return runCatching {
-            openHelper().use { helper ->
-                helper.readableDatabase.rawQuery(
+            val encoded = prefs.getString(WRAPPED_PASSPHRASE, null) ?: return false
+            val passphrase = unwrapPassphrase(encoded)
+            val helper = openHelper()
+            try {
+                helper.getReadableDatabase(passphrase).rawQuery(
                     "SELECT 1 FROM notes_payload WHERE id = 1 LIMIT 1", null
                 ).use { it.moveToFirst() }
+            } finally {
+                helper.close()
+                passphrase.toCharArray().fill('\\u0000')
             }
         }.getOrDefault(false)
     }
@@ -41,13 +47,13 @@ internal class SqlCipherNoteStore(context: Context) {
             val encoded = prefs.getString(WRAPPED_PASSPHRASE, null)
                 ?: return if (appContext.getDatabasePath(DATABASE_NAME).exists()) {
                     NoteLoadResult(emptyList(), true)
-                } else NoteLoadResult(NoteStore.sampleNotes(), false)
+                } else NoteLoadResult(emptyList(), false)
             val passphrase = unwrapPassphrase(encoded)
             val helper = openHelper()
             val database = helper.getReadableDatabase(passphrase)
             try {
                 database.rawQuery("SELECT payload FROM notes_payload WHERE id = 1", null).use { cursor ->
-                    if (!cursor.moveToFirst()) NoteLoadResult(NoteStore.sampleNotes(), false)
+                    if (!cursor.moveToFirst()) NoteLoadResult(emptyList(), false)
                     else {
                         val notes = NoteStore.decode(cursor.getString(0))
                         if (notes == null) NoteLoadResult(emptyList(), true)
