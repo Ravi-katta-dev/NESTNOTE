@@ -1459,7 +1459,7 @@ internal fun NestNoteApp(
                 },
                 onBiometricUnlock = { authenticatedCipher ->
                     val session = PrivateVaultBiometricKey(context).unlock(authenticatedCipher)
-                    val accepted = session != null && runCatching {
+                    val accepted = if (session == null) false else runCatching {
                         val encryptedExisting = if (privateNoteStore.hasStoredRecords()) privateNoteStore.load(session) else emptyList()
                         val migrated = NoteStore.merge(encryptedExisting, legacyPrivateNotes).notes
                         check(privateNoteStore.save(session, migrated)) { "Private vault encryption failed" }
