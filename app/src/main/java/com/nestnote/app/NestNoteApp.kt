@@ -863,11 +863,57 @@ internal fun NestNoteApp(
                             if (enabled) AutomaticBackupScheduler.schedule(context)
                             else AutomaticBackupScheduler.cancel(context)
                         },
+                        backupFolderConfigured = backupFolderConfigured,
+                        onChooseBackupFolder = { backupFolderLauncher.launch(null) },
                         onExportNotes = { includeArchived ->
                             exportArchivedNotes = includeArchived
-                            exportLauncher.launch("nestnote-backup.json")
+                            val exportNotes = NoteStore.notesForBackup(notes, includeArchived = includeArchived)
+                            val payload = runCatching { NoteStore.encodeBackup(exportNotes) }.getOrNull()
+                            if (payload == null) {
+                                coroutineScope.launch { snackbarHostState.showSnackbar("Backup could not be created. Your notes were not changed.") }
+                            } else {
+                                val savedTree = BackupDirectory.configuredTreeUri(context)
+                                if (savedTree != null) {
+                                    val saved = BackupDirectory.writeLatest(context, savedTree, payload.toByteArray(Charsets.UTF_8))
+                                    if (saved) {
+                                        lastBackupAt = System.currentTimeMillis()
+                                        backupStatus = "Success"
+                                        preferences.edit()
+                                            .putLong(PREF_BACKUP_LAST_SUCCESS_AT, lastBackupAt)
+                                            .putString(PREF_BACKUP_LAST_STATUS, backupStatus)
+                                            .apply()
+                                    } else {
+                                        backupStatus = "Failed"
+                                        saveString(PREF_BACKUP_LAST_STATUS, backupStatus)
+                                    }
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            if (saved) "Backup saved to Documents/NESTNOTE (" + exportNotes.size + " notes). Voice recordings are not included."
+                                            else "Backup could not be saved. Your notes were not changed."
+                                        )
+                                    }
+                                } else {
+                                    pendingFolderExportPayload = payload
+                                    backupFolderLauncher.launch(null)
+                                }
+                            }
                         },
-                        onImportNotes = { importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) }
+                        onImportNotes = {
+                            val savedTree = BackupDirectory.configuredTreeUri(context)
+                            if (savedTree != null) {
+                                val raw = BackupDirectory.readLatest(context, savedTree)?.toString(Charsets.UTF_8)
+                                val incoming = raw?.let(NoteStore::decodeBackup)
+                                if (incoming != null && incoming.isNotEmpty()) {
+                                    pendingRestore = incoming
+                                    coroutineScope.launch { snackbarHostState.showSnackbar("Backup loaded from Documents/NESTNOTE. Review the restore before applying it.") }
+                                } else {
+                                    coroutineScope.launch { snackbarHostState.showSnackbar("No valid NESTNOTE-backup.json found in Documents/NESTNOTE.") }
+                                }
+                            } else {
+                                pendingFolderImport = true
+                                backupFolderLauncher.launch(null)
+                            }
+                        }
                     )
                 } else if (selectedView == "PrivateVaultSettings") {
                     PrivateVaultSettingsScreen(
