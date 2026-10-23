@@ -351,6 +351,21 @@ internal fun NoteEditorContent(
     }
 
     fun onBodyChange(next: TextFieldValue) {
+        // A multi-character insertion containing a Markdown table is treated as a paste.
+        // Normalize only valid table blocks; normal character-by-character typing is untouched.
+        val insertedLength = next.text.length - bodyValue.text.length
+        if (insertedLength >= 8) {
+            val (formatted, cursor) = MarkdownTableFormatter.formatPasted(next.text, next.selection.start)
+            if (formatted != next.text) {
+                noteFormat = "markdown"
+                previewVisible = false
+                setBody(TextFieldValue(formatted, TextRange(cursor)))
+                android.widget.Toast.makeText(
+                    context, "Markdown table aligned", android.widget.Toast.LENGTH_SHORT
+                ).show()
+                return
+            }
+        }
         val continued = if (next.selection.collapsed) {
             NoteText.continueList(bodyValue.text, next.text, next.selection.start)
         } else null
