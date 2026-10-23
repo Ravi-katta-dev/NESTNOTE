@@ -1,3 +1,13 @@
+## 2026-10-23 — Editor draft flush on lifecycle stop/removal
+
+- Added a latest-state draft snapshot helper and a synchronous final `DraftStore.write` flush on Activity `ON_STOP` and editor composable disposal. This closes the debounce window where the editor could be hidden before the 2-second autosave timer fired.
+- Kept the 2-second debounced and 15-second periodic writes as background safety nets; lifecycle/disposal flush uses the existing atomic temp-file, fsync, and rename behavior.
+- Added a regression test modelling a latest draft flushed immediately before editor removal and verifying recovery returns the final title/body.
+- This addresses lifecycle-time draft preservation, not the separate confidentiality blocker: `DraftStore` still stores draft contents as plaintext and lacks a private/public classification. A process kill that bypasses lifecycle callbacks can still lose edits newer than the last completed write; this is not a transactional guarantee for every crash scenario.
+- Exact-head CI is pending after these changes; do not claim validation until it passes.
+
+---
+
 ## 2026-10-23 — Private-data leakage audit follow-up
 
 - Rechecked `NoteFilters.visibleNotes`: Home, All notes, Pinned, Reminders, category views, Archived, and query terms/operators apply the private-note exclusion for ordinary views; Private view is the only intended list view that includes active private notes.
