@@ -849,7 +849,7 @@ internal fun NestNoteApp(
                     PrivateVaultSettingsScreen(
                         passwordConfigured = PrivateVaultSecurity.isConfigured(context),
                         biometricAvailable = false, // Keep opt-in disabled until device/emulator validation and enrollment UX are complete.
-                        biometricEnabled = privateVaultBiometricEnabled,
+                        biometricEnabled = false, // Do not surface a stale preference as an enabled security feature.
                         privateNoteCount = notes.count { it.privateNote },
                         onBiometricEnabledChange = { enabled ->
                             privateVaultBiometricEnabled = enabled
