@@ -132,4 +132,29 @@ class PrivateVaultIntegrationTest {
         assertTrue("record ID must be authenticated as AAD", wrongRecordRejected)
     }
 
+
+    @Test fun passwordRewrapFailureLeavesOriginalPasswordUsable() {
+        assertTrue(crypto.initialize("original password".toCharArray()))
+        assertFalse(crypto.changePassword("wrong password".toCharArray(), "replacement password".toCharArray()))
+        assertTrue(crypto.unlock("original password".toCharArray()) != null)
+        assertEquals(null, crypto.unlock("replacement password".toCharArray()))
+    }
+
+    @Test fun successfulPasswordRewrapKeepsPrivateRecordsReadableOnlyWithNewPassword() {
+        val note = NestNote(id = 91L, title = "Rewrap test", body = "must survive", privateNote = true)
+        assertTrue(crypto.initialize("original password".toCharArray()))
+        assertTrue(privateStore.save(crypto.unlock("original password".toCharArray())!!, listOf(note)))
+        assertTrue(crypto.changePassword("original password".toCharArray(), "replacement password".toCharArray()))
+        assertEquals(null, crypto.unlock("original password".toCharArray()))
+        val newSession = crypto.unlock("replacement password".toCharArray())!!
+        assertEquals(listOf(note), PrivateNoteStore(context).load(newSession))
+    }
+
+    @Test fun biometricEnrollmentCannotBeTreatedAsEnabledWithoutStoredAuthBoundKey() {
+        val biometric = PrivateVaultBiometricKey(context)
+        biometric.deleteEnrollment()
+        assertFalse(biometric.isEnrolled())
+        assertEquals(null, biometric.createUnlockCipher())
+        assertEquals(null, biometric.unlock(null))
+    }
 }
