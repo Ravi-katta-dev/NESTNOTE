@@ -1,6 +1,5 @@
 package com.nestnote.app
 
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
 import org.junit.Test
@@ -21,7 +20,7 @@ class PasswordBackupArchiveTest {
         val archive = PasswordBackupArchive.encryptBackup(json, "correct horse battery".toCharArray())
 
         assertNotNull(PasswordBackupArchive.decryptBackup(archive, "correct horse battery".toCharArray()))
-        assertEquals(json, PasswordBackupArchive.decryptBackup(archive, "wrong password!".toCharArray()))
+        assertNull(PasswordBackupArchive.decryptBackup(archive, "wrong password!".toCharArray()))
     }
 
     @Test
