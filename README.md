@@ -1,64 +1,43 @@
-# NESTNOTE — Native Android Notes
+# NESTNOTE
 
-NESTNOTE is a local-first note-taking app built with Kotlin, Jetpack Compose, and Material 3.
+NESTNOTE is a local-first Android notes app built with Kotlin, Jetpack Compose, and Material 3. It focuses on quick note capture, flexible editing and reading, offline use, and user-controlled backups.
 
-- **Target SDK:** Android 16 / API 36
-- **Minimum SDK:** API 26
-- **Storage:** encrypted local note payloads using AES-GCM and Android Keystore
-- **Sync:** no account or cloud sync
+## Current release: 1.4.5
+
+Version **1.4.5** is the current release baseline. Consult [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for authoritative release assets. CI artifacts are for testing unless explicitly attached to a versioned production release and verified.
+
+## Platform
+- Minimum Android: API 26; compile/target SDK: API 36.
+- Kotlin, Jetpack Compose, Material 3; Java 17 build environment.
+- Local-first storage with no account or cloud sync.
+- Local note payload encryption uses AES-GCM and Android Keystore-managed key material.
 
 ## Features
-- Create, edit, pin, archive, restore, search, sort, and delete notes (with undo).
-- Categories, pastel note colours, editor wallpapers, light/dark themes, and configurable dashboard layout.
-- Full-screen and quick editors, checklist and bullet tools, list continuation, and optional writing statistics.
-- Editor text-size options plus an in-editor zoom slider (50%–200%) for editing and reading saved notes, reminder metadata, and copy/share actions.
-- JSON backup and restore through Android's system file picker.
-- Open external Markdown (`.md`) files directly in a read-only viewer without importing them as saved notes; adjust viewer zoom from 50% to 200% and configure the default in Settings.
-- Offline Text Toolbox under More → Power tools: live word/character/line counts, estimated reading time, case conversion, whitespace cleanup, copy, and clear.
-- Local-data recovery safeguards and validated, versioned backups.
-- Private Vault: open the dedicated Vault page from More or Settings → Privacy, authenticate with the vault password, and manage privacy controls. Authentication-bound biometric enrollment/unlock is implemented behind explicit opt-in; physical-device validation remains a release gate. Exported JSON backups remain plaintext and may include private notes.
+### Notes and writing
+- Create, edit, pin, archive, restore, search, sort, and delete notes with undo.
+- Categories, note colours, editor backgrounds, light/dark themes, and configurable Home layout.
+- Quick and full-screen editors, checklist and bullet tools, list continuation, and writing statistics.
+- Editor and saved-note reader text zoom from 50% to 200% in 5% steps. Zoom changes presentation, not saved content.
+- Reminder date/time metadata and copy/share actions. Reminder metadata does not schedule notifications.
 
-## License
+### Markdown and Power tools
+- Open external Markdown files in a transient read-only viewer without importing them into saved notes.
+- External Markdown viewer zoom from 50% to 200%, with a configurable default.
+- Offline Text Toolbox under More → Power tools: word/character/line counts, estimated reading time, case conversion, whitespace cleanup, copy, and clear.
 
-NESTNOTE is intended to be distributed under the GNU General Public License v3.0 only (GPL-3.0-only). See [`LICENSE`](LICENSE) and the [canonical license text](https://www.gnu.org/licenses/gpl-3.0.txt). Confirm contributor/copyright-holder rights before distribution.
+### Backup and privacy
+- Validated JSON backup and restore through Android's system file picker.
+- Private Vault access from More or Settings → Privacy, with password protection and optional biometric unlock subject to platform and security validation.
+- Private Vault is an app-level access gate, not a guarantee of independent cryptographic isolation.
+- Exported JSON backups are plaintext and may contain private-note titles and bodies. Voice-note audio attachments are excluded from backup and restore.
 
-## Current version and release downloads
-The latest published stable release is **v1.3.10**. **v1.3.11 is the current repository candidate, not a published release**; its release record is maintained in [`CHANGELOG.md`](CHANGELOG.md) and [`docs/release-notes/v1.3.11.md`](docs/release-notes/v1.3.11.md). PR [#87](https://github.com/Ravi-katta-dev/NESTNOTE/pull/87) added direct external Markdown viewing and adjustable zoom. PR [#94](https://github.com/Ravi-katta-dev/NESTNOTE/pull/94) adds the Private Vault biometric flow, UI refinements, Text Toolbox, improved Home dashboard, and editor/reader zoom controls. These PR #94 changes are not a published release until the PR is merged, required validation is complete, and a versioned stable tag/release workflow succeeds.
+## Security boundaries
+Local encryption at rest does not protect content on a compromised device while the app is running, through clipboard sharing, or in plaintext exports. Private-note classification is metadata, not encryption. Keystore loss may prevent local decryption; keep a secure export before uninstalling or clearing app data if recovery matters.
 
-Visit [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases). Only download an APK attached to a versioned production release and verify its signature before installing. Historical “latest” or “CI-SIGNED” artifacts, if present, are not proof of production signing.
-
-Production APKs are created from tags matching v*.*.* (for example, v1.2.0). The release workflow builds the minified release variant, signs it with the permanent production keystore supplied through GitHub Actions secrets, verifies the signature, and attaches the APK to the matching GitHub Release. A successful CI build alone does not establish release readiness.
-
-### Production release steps
-1. Confirm the candidate commit has passing Android CI and release checklist sign-off, including required device/recovery checks.
-2. Confirm these repository Actions secrets exist without exposing their values: KEYSTORE_BASE64 (base64-encoded keystore), KEY_ALIAS, KEYSTORE_PASSWORD, and KEY_PASSWORD.
-3. Create and push an approved version tag, e.g. git tag v1.2.0 && git push origin v1.2.0.
-4. Wait for [Android Release](https://github.com/Ravi-katta-dev/NESTNOTE/actions/workflows/android-release.yml) to finish.
-5. Independently compare the APK certificate fingerprint with the recorded production certificate, install the exact published APK, and record the result before distribution.
-
-A manually dispatched/non-tag release workflow run is for unsigned inspection output only; it must not be distributed as a production APK. Never commit keystores, passwords, signing keys, or other secret values.
-
-**Security boundary:** Private Vault is a password/optional-biometric **UI access gate**, not a separately encrypted vault. Private notes use the same general Android Keystore-backed local-storage encryption as ordinary notes; the vault password does not derive or unlock a separate encryption key. Exported JSON backups are plaintext and may contain readable private-note titles and bodies. See [Security Model](docs/SECURITY.md) and [Threat Model](docs/THREAT_MODEL.md) before making security or privacy claims.
-
-## Private Vault security boundary
-
-**Private Vault is a UI access gate, not a separately encrypted vault.** The vault password is verified through a salted password hash and does not derive or unlock an independent encryption key for private notes. Private notes use NESTNOTE's general Android Keystore-backed local note-storage encryption, like other notes. This helps restrict access through the app's intended UI flow but is not cryptographic isolation against UI bypass or a compromised runtime.
-
-User-exported JSON backups are **plaintext** and may contain readable private-note titles and bodies. The private-note flag is preserved as metadata; it is not encryption. Treat exported backups as sensitive files.
-
-See [Security Model](docs/SECURITY.md) and [Threat Model](docs/THREAT_MODEL.md) for the precise guarantees, residual risks, and required validation. Do not describe the current vault as independently encrypted.
-
-## Data, backups, and recovery
-Local notes use AES-256-GCM with a 96-bit random nonce and 128-bit authentication tag; the key is generated and held by Android Keystore. The current v2 storage format authenticates the app/storage purpose as additional authenticated data and uses a dedicated v2 key alias. Existing v1 encrypted records and legacy plaintext SharedPreferences records are migrated to v2 only after the new ciphertext is committed; the old record is removed in that same successful preferences commit. Failed decryption or authentication preserves the stored bytes and requires recovery rather than silently replacing notes. If stored content cannot be read or decrypted, NESTNOTE preserves the original data and exposes a recovery path rather than silently replacing it with starter notes.
-
-Backups exported by the user are **plaintext JSON** and should be stored securely. **Voice-note audio attachments are intentionally excluded from backup and restore**; a restored note will not contain its recordings. This is the v1 policy, not a temporary claim that audio is protected by the JSON export. Do not copy local attachment ciphertext into backups: it is tied to this installation's key and attachment identity. Automatic Android app-data backup is disabled. Restore validates the entire file before changing notes, supports the current versioned backup envelope and legacy JSON-array backups, merges by note ID, keeps the newer edited copy when timestamps differ, and does not delete notes absent from the backup.
-
-Encryption protects data at rest; it is not a guarantee against a compromised device while the app is running, screenshots, clipboard sharing, or exported backups. Losing/resetting the Android Keystore key may prevent decryption. Do not clear app data or uninstall before exporting a secure backup if key/device recovery is a concern. Verify key-loss recovery on a test device before release.
+Biometric authentication must authorize the actual cryptographic operation through an authenticated BiometricPrompt CryptoObject. Missing, invalidated, or corrupt biometric key material must fail closed while password recovery remains available. See [Security Model](docs/SECURITY.md) and [Threat Model](docs/THREAT_MODEL.md).
 
 ## Build and test
-Open the repository in a recent stable Android Studio, allow Gradle sync, and install Android SDK Platform 36 if prompted.
-
-With Java 17, Gradle 8.13, and Android SDK API 36 installed:
+Install Android SDK Platform 36 and use Java 17.
 
 ```bash
 gradle --no-daemon testDebugUnitTest
@@ -67,33 +46,30 @@ gradle --no-daemon assembleRelease
 gradle --no-daemon assembleDebugAndroidTest
 ```
 
-The [Android CI workflow](https://github.com/Ravi-katta-dev/NESTNOTE/blob/main/.github/workflows/android-ci.yml) runs unit tests, builds debug and minified release APKs, and compiles instrumentation tests. Emulator execution is intentionally excluded from required CI to avoid hosted-emulator subscription/usage costs. Run `gradle --no-daemon connectedDebugAndroidTest` locally on an available emulator/device when possible. Do not claim instrumentation execution, physical-device, TalkBack, large-font, keyboard/insets, upgrade, migration, or visual-regression checks unless they were actually run and recorded.
+The Android CI workflow builds APK variants and runs configured checks. Compiling instrumentation tests is not proof they ran on a device; use connectedDebugAndroidTest on an available emulator/device and record results for the exact commit.
+
+### Downloading builds
+Use [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for versioned production APKs. The nestnote-debug-apk Actions artifact, when available, is for testing and is not a production release. Verify the production signing certificate before distribution. Never commit signing keys or secrets.
 
 ## Repository guide
-- app/src/main/java/com/nestnote/app/NestNoteApp.kt — top-level navigation, Home dashboard, and app-level interactions.\n- app/src/main/java/com/nestnote/app/NoteEditor.kt and NoteEditorSections.kt — note editor, reader, preview, and text-size controls.\n- app/src/main/java/com/nestnote/app/TextToolboxScreen.kt — offline text utility tools.
-- app/src/main/java/com/nestnote/app/NoteStore.kt — note model, persistence, encryption, backup validation, and merge.
-- app/src/main/java/com/nestnote/app/NoteText.kt — list/checklist helpers and text counters.
-- app/src/test/ — JVM/unit tests.
-- app/src/androidTest/ — Android instrumentation tests.
-- .github/workflows/ — CI, release, and manual UI-test workflows.
+- app/src/main/java/com/nestnote/app/ — Compose screens, navigation, editor, vault, and tools.
+- NoteStore.kt — persistence, encryption, migration, and backup/restore.
+- NoteText.kt — text/list helpers and writing statistics.
+- app/src/test/ — JVM tests; app/src/androidTest/ — Android instrumentation tests.
+- .github/workflows/ — CI, release, and UI-test workflows.
 - [DEVELOPMENT.md](DEVELOPMENT.md) — setup and contribution guide.
-- [ROADMAP.md](ROADMAP.md) — product phases and status.
-- [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) — validation and release gates.
-- [WORKLOG.md](WORKLOG.md) — implementation/CI history.
+- [CHANGELOG.md](CHANGELOG.md) — version history.
+- [ROADMAP.md](ROADMAP.md) — planned work and status.
+- [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) — release gates.
 - [DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md) — engineering decisions.
+- [WORKLOG.md](WORKLOG.md) — implementation and validation history.
+- [UI_UX_RULES.md](UI_UX_RULES.md) — UI and accessibility principles.
 
-## Current limitations
-- Reminder dates/times are metadata only; alarm scheduling and notification delivery are not implemented.
-- Checklist items can be toggled in the editor; rich-text formatting is not implemented.
-- No account, remote sync, or server-side note storage is included.
-- Android instrumentation tests are compiled in CI but are not automatically executed on a hosted emulator; device execution and manual accessibility/visual checks remain separate release gates.
+## Known limitations
+- Reminder fields are metadata only; scheduling and notifications are not implemented.
+- Rich-text editing and cloud sync are not included.
+- JSON exports are plaintext; audio attachments are excluded.
+- Device migration/key-loss recovery, biometric edge cases, TalkBack, large-font/narrow-screen, and keyboard/insets checks must be recorded separately from automated builds.
 
-
-## Mandatory UI/UX direction
-NESTNOTE follows [UI_UX_RULES.md](UI_UX_RULES.md). The immediate P0 is a polished note editor with an animated right-side Appearance panel (replacing the bottom appearance picker), shared by create/edit flows. App-wide consistency and accessibility auditing follow before backend/new-feature expansion. See [ROADMAP.md](ROADMAP.md) for phases and [WORKLOG.md](WORKLOG.md) for evidence and implementation status.
-
-
-## Private Vault
-The Private Vault settings page is available from More and Settings → Privacy. It shows the private-note count, provides a direct authenticated shortcut to the vault, and supports changing the vault password after verification. Biometric unlock remains disabled until the authentication-bound key-unwrapping flow passes device validation. Exported JSON backups may contain readable private-note content; store them securely. The vault also hides its contents from screenshots and Recents previews, and password attempts are rate-limited with a persisted, escalating cooldown after repeated failures. See [third-party notices](THIRD_PARTY_NOTICES.md) for reused open-source security patterns.
-
-**Security boundary:** Private Vault is a password/optional-biometric **UI access gate**, not a separately encrypted vault. Private notes use the same general Android Keystore-backed local-storage encryption as ordinary notes; the vault password does not derive or unlock a separate encryption key. Exported JSON backups are plaintext and may contain readable private-note titles and bodies. See [Security Model](docs/SECURITY.md) and [Threat Model](docs/THREAT_MODEL.md) before making security or privacy claims.
+## License
+Intended license: GPL-3.0-only. See [LICENSE](LICENSE) and the [canonical license text](https://www.gnu.org/licenses/gpl-3.0.txt). Confirm contributor and copyright-holder rights before distribution.
