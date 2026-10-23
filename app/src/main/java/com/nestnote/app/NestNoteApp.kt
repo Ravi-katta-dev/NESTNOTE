@@ -230,20 +230,6 @@ internal fun NestNoteApp(
         BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
     }
     fun requestPrivateVault() { showPrivateVaultGate = true }
-    // Private content is excluded from screenshots and Recents previews while the
-    // vault is open. Preserve a FLAG_SECURE already owned by another app feature.
-    DisposableEffect(context, selectedView) {
-        val window = context.findActivityForSecureWindow()?.window
-        val wasAlreadySecure = (window?.attributes?.flags ?: 0) and WindowManager.LayoutParams.FLAG_SECURE != 0
-        if (selectedView == "Private") {
-            window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        }
-        onDispose {
-            if (selectedView == "Private" && !wasAlreadySecure) {
-                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-            }
-        }
-    }
     LaunchedEffect(selectedView) {
         if (selectedView != "Private") privateVaultUnlocked = false
         if (selectedView == "Backup") {
@@ -267,6 +253,21 @@ internal fun NestNoteApp(
     var commitVoiceChanges by remember { mutableStateOf<() -> Unit>({}) }
     var confirmSystemDiscard by remember { mutableStateOf(false) }
     val editorNote = notes.firstOrNull { it.id == editorNoteId }
+    // Protect private content even when a private note is opened from Home and
+    // the selected destination is not the dedicated Private Vault screen.
+    DisposableEffect(context, selectedView, editorNote?.privateNote) {
+        val window = context.findActivityForSecureWindow()?.window
+        val protectPrivateContent = selectedView == "Private" || editorNote?.privateNote == true
+        val wasAlreadySecure = (window?.attributes?.flags ?: 0) and WindowManager.LayoutParams.FLAG_SECURE != 0
+        if (protectPrivateContent) {
+            window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        onDispose {
+            if (protectPrivateContent && !wasAlreadySecure) {
+                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
+        }
+    }
     // Relock and tear down editor UI when backgrounding while either the vault or
     // a private note editor is visible. Editor state is saveable independently of
     // the vault route, so changing selectedView alone is not a sufficient boundary.
