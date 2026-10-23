@@ -2157,6 +2157,8 @@ internal fun BackupRestoreScreen(
     automaticBackupLastRun: Long,
     automaticBackupStatus: String,
     onAutomaticBackupChange: (Boolean) -> Unit,
+    onChooseBackupFolder: () -> Unit,
+    backupFolderConfigured: Boolean,
     onExportNotes: (Boolean) -> Unit,
     onImportNotes: () -> Unit,
     modifier: Modifier = Modifier
@@ -2245,6 +2247,32 @@ internal fun BackupRestoreScreen(
                 color = colors.onSurfaceVariant,
                 modifier = Modifier.padding(start = 2.dp)
             )
+        }
+
+        // Documents backup folder: the system grants persistent access once.
+        SettingsSection(
+            title = "Backup folder",
+            subtitle = "Keep backups in Documents/NESTNOTE",
+            icon = Icons.Default.FolderOpen
+        ) {
+            Text(
+                if (backupFolderConfigured) {
+                    "Folder access is saved. Backup and restore can use NESTNOTE-backup.json there without asking you to pick a location each time."
+                } else {
+                    "Choose Documents once. NESTNOTE will create a NESTNOTE folder there and remember the permission for future backups."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurfaceVariant
+            )
+            OutlinedButton(
+                onClick = onChooseBackupFolder,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(if (backupFolderConfigured) "Change backup folder" else "Choose Documents folder")
+            }
         }
 
         // Backup Status Card
