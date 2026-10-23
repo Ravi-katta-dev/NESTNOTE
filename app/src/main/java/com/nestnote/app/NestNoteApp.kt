@@ -653,11 +653,28 @@ internal fun NestNoteApp(
                         Column(
                             modifier = Modifier
                         ) {
-                            Text(
-                                when (selectedView) { "Private" -> "Private Vault"; "PrivateVaultSettings" -> "Private Vault settings"; "Settings" -> "Settings"; "Backup" -> "Backup & restore"; "About" -> "About & help"; "Templates" -> "Note templates"; "Insights" -> "Note insights"; "Shortcuts" -> "Keyboard shortcuts"; "More" -> "More"; "Pinned" -> "Pinned notes"; "Archived" -> "Archived notes"; "Categories" -> "Categories"; else -> "NestNote" },
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.2.sp
-                            )
+                            AnimatedContent(
+                                targetState = when (selectedView) { "Private" -> "Private Vault"; "PrivateVaultSettings" -> "Private Vault settings"; "Settings" -> "Settings"; "Backup" -> "Backup & restore"; "About" -> "About & help"; "Templates" -> "Note templates"; "Insights" -> "Note insights"; "Shortcuts" -> "Keyboard shortcuts"; "More" -> "More"; "Pinned" -> "Pinned notes"; "Archived" -> "Archived notes"; "Categories" -> "Categories"; else -> "NestNote" },
+                                transitionSpec = {
+                                    (fadeIn(animationSpec = androidx.compose.animation.core.tween(180)) +
+                                        slideInVertically(
+                                            animationSpec = androidx.compose.animation.core.tween(180),
+                                            initialOffsetY = { it / 8 }
+                                        )) togetherWith
+                                        (fadeOut(animationSpec = androidx.compose.animation.core.tween(100)) +
+                                            slideOutVertically(
+                                                animationSpec = androidx.compose.animation.core.tween(100),
+                                                targetOffsetY = { -it / 10 }
+                                            ))
+                                },
+                                label = "tab-title-transition"
+                            ) { title ->
+                                Text(
+                                    title,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.2.sp
+                                )
+                            }
                             Text(
                                 when (selectedView) { "Private" -> "Hidden notes · unlocked"; "PrivateVaultSettings" -> "Authentication and privacy controls"; "Settings" -> "Make your notes feel like yours"; "Backup" -> "Protect and manage your notes"; "About" -> "Version, licence and how NESTNOTE works"; "Templates" -> "A faster start for your next note"; "Insights" -> "Private patterns from your own notes"; "Shortcuts" -> "Hardware keyboard controls"; "More" -> "More ways to organize your notes"; else -> "Your thoughts, organized." },
                                 style = MaterialTheme.typography.bodySmall,
