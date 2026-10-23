@@ -39,7 +39,7 @@ internal object BackupDirectory {
         val folder = nestNoteFolder(context, treeUri, create = true) ?: error("Cannot access Documents/NESTNOTE")
         val existing = folder.findFile(BACKUP_NAME)
         val target = existing ?: folder.createFile(MIME_JSON, BACKUP_NAME) ?: error("Cannot create backup file")
-        context.contentResolver.openOutputStream(target.uri, "wt")?.use { output ->
+        context.contentResolver.openOutputStream(target.uri, "rwt")?.use { output ->
             output.write(bytes)
             output.flush()
         } ?: error("Cannot open backup destination")
