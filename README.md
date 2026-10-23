@@ -11,6 +11,8 @@ Version **1.4.5** is the current release baseline. Consult [GitHub Releases](htt
 - Kotlin, Jetpack Compose, Material 3; Java 17 build environment.
 - Local-first storage with no account or cloud sync.
 - Local note payload encryption uses AES-GCM and Android Keystore-managed key material.
+- Settings offers two independently selectable local stores: the existing Keystore-backed encrypted payload and a SQLCipher-encrypted database in app-private storage. The SQLCipher passphrase is wrapped by a non-exportable Android Keystore key.
+- Switching storage preserves both stores. The SQLCipher store is initialized from the currently loaded notes only when first created; later switches reopen each backend's own saved data. A storage/key failure blocks the switch rather than falling back to plaintext.
 
 ## Features
 ### Notes and writing
@@ -27,6 +29,7 @@ Version **1.4.5** is the current release baseline. Consult [GitHub Releases](htt
 
 ### Backup and privacy
 - Validated JSON backup and restore through Android's system file picker.
+- Password-protected `.nestnote` backup archives use authenticated AES-GCM encryption and are saved under `Documents/NESTNOTE` after the user grants folder access.
 - Private Vault access from More or Settings → Privacy, with password protection and optional biometric unlock subject to platform and security validation.
 - Private Vault is an app-level access gate, not a guarantee of independent cryptographic isolation.
 - Exported JSON backups are plaintext and may contain private-note titles and bodies. Voice-note audio attachments are excluded from backup and restore.
@@ -53,7 +56,8 @@ Use [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for v
 
 ## Repository guide
 - app/src/main/java/com/nestnote/app/ — Compose screens, navigation, editor, vault, and tools.
-- NoteStore.kt — persistence, encryption, migration, and backup/restore.
+- NoteStore.kt and SqlCipherNoteStore.kt — selectable encrypted persistence backends, encryption, and recovery.
+- PasswordBackupArchive.kt — password-protected encrypted backup archives.
 - NoteText.kt — text/list helpers and writing statistics.
 - app/src/test/ — JVM tests; app/src/androidTest/ — Android instrumentation tests.
 - .github/workflows/ — CI, release, and UI-test workflows.
