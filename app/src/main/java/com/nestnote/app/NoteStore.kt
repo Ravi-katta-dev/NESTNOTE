@@ -203,12 +203,16 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         /** Encodes a versioned user-facing backup envelope. Local storage keeps the legacy array format. */
         fun encodeBackup(notes: List<NestNote>): String {
             require(isValidNoteCollection(notes)) { "invalid note records" }
-            return JSONObject()
+            val backup = JSONObject()
                 .put("format", "com.nestnote.backup")
                 .put("schemaVersion", CURRENT_BACKUP_SCHEMA_VERSION)
                 .put("createdAt", System.currentTimeMillis())
                 .put("notes", JSONArray(encode(notes)))
                 .toString()
+            require(backup.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) {
+                "Backup exceeds the supported ${MAX_BACKUP_BYTES / (1024 * 1024)} MiB limit"
+            }
+            return backup
         }
 
         /** Accepts versioned backups and legacy JSON-array backups for backward compatibility. */
