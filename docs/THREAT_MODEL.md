@@ -30,7 +30,7 @@ The vault password does not derive, wrap, or unlock an independent key for priva
 - **Screenshot protection:** `FLAG_SECURE` requests capture protection for the protected window. It does not guarantee protection against external cameras, a compromised OS, every OEM path, or content already exported.
 - **Lifecycle:** backgrounding should relock and hide private editor UI. Activity/process recreation and saveable editor state require dedicated tests.
 - **Backups:** user-exported JSON may contain readable private-note titles and bodies. The flag is not encryption; anyone who obtains the file can read it.
-- **Lockout:** persisted backoff uses Android elapsed-realtime deadlines to resist wall-clock adjustments. An observed reboot re-establishes a bounded cooldown because elapsed time has a new time base. Boundary, restart, reboot, and maximum-delay behavior require automated and device verification.
+- **Lockout:** persisted cooldown/backoff slows repeated attempts through the app flow. Restart, boundary, maximum delay, and clock-change behavior require tests.
 - **Biometrics:** cancellation, failure, unavailable hardware, enrollment changes, and fallback must never grant access except after explicit successful authentication.
 - **Key loss:** invalidation or loss of the local-storage key may make encrypted data unrecoverable. Recovery behavior must preserve original bytes and be tested.
 
