@@ -438,14 +438,11 @@ internal fun NoteEditorContent(
         if (activeVoicePlayerId == attachmentId) activeVoicePlayerId = null
     }
 
-    fun performSave(note: NestNote) {
-        onSave(note)
-    }
-
     // ---- Autosave ----
+    var draftAutosaveEnabled by remember(voiceNoteId) { mutableStateOf(true) }
     val currentHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
     fun currentDraftSnapshot(): DraftStore.Draft? {
-        if (!currentHasUnsavedChanges) return null
+        if (!draftAutosaveEnabled || !currentHasUnsavedChanges) return null
         if (original == null && title.isBlank() && bodyValue.text.isBlank()) return null
         return DraftStore.Draft(
             noteId = voiceNoteId,
@@ -462,6 +459,17 @@ internal fun NoteEditorContent(
             privateNote = privateNote
         )
     }
+
+    fun performSave(note: NestNote) {
+        // Flush the latest edits first so a failed save still leaves recoverable work.
+        currentDraftSnapshot()?.let { draft ->
+            runCatching { DraftStore(context).write(draft) }
+        }
+        // Prevent ON_STOP/onDispose from recreating the draft after a successful save.
+        draftAutosaveEnabled = false
+        onSave(note)
+    }
+
     // Flush the latest Compose snapshot before lifecycle hiding/removal.
     val flushLatestDraft by rememberUpdatedState {
         currentDraftSnapshot()?.let { draft ->
@@ -490,6 +498,8 @@ internal fun NoteEditorContent(
         title, bodyValue.text, category, colorIndex, backgroundIndex,
         pinned, reminder, customWallpaperUri, noteFormat, privateNote
     ) {
+        // A later edit re-enables draft persistence if the parent rejected the save.
+        draftAutosaveEnabled = true
         delay(2_000L)
         writeDraftNow()
     }
@@ -508,10 +518,27 @@ internal fun NoteEditorContent(
         SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
     }
 
-    LaunchedEffect(voiceNoteId) {
+    LaunchedEffect(voiceNoteId, original?.updated) {
         val existing = original ?: return@LaunchedEffect
-        val draft = withContext(Dispatchers.IO) { DraftStore(context).read(existing.id) }
-        if (draft != null && draft.privateNote == existing.privateNote && draft.savedAtMillis > existing.updated) {
+        val store = DraftStore(context)
+        val draft = withContext(Dispatchers.IO) { store.read(existing.id) } ?: return@LaunchedEffect
+        if (draft.privateNote != existing.privateNote) return@LaunchedEffect
+
+        // Lifecycle flushes can race with a save. A matching snapshot is already
+        // persisted content, not recoverable work, and must not trigger a popup.
+        val matchesSavedNote = draft.title == existing.title &&
+            draft.body == existing.body &&
+            draft.category == existing.category &&
+            draft.color == existing.color &&
+            draft.background == existing.background &&
+            draft.pinned == existing.pinned &&
+            draft.reminder == existing.reminder &&
+            draft.wallpaperUri == existing.wallpaperUri &&
+            draft.format == existing.format
+
+        if (matchesSavedNote || draft.savedAtMillis <= existing.updated) {
+            withContext(Dispatchers.IO) { store.clear(existing.id) }
+        } else {
             pendingDraft = draft
             showDraftRecoveryDialog = true
         }
