@@ -55,7 +55,9 @@ internal class PrivateNoteCrypto(context: Context) {
         require(password.size >= MIN_PASSWORD_LENGTH)
         synchronized(LOCK) {
             if (prefs.contains(WRAPPED_KEY)) {
-                false
+                // Retrying a partially completed first unlock is safe only when the supplied
+                // password actually unwraps the existing key. Never replace existing material.
+                unlock(password) != null
             } else {
                 val vaultKey = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
                 val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
