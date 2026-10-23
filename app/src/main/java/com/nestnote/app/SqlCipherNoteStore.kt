@@ -22,6 +22,8 @@ internal class SqlCipherNoteStore(context: Context) {
     private val appContext = context.applicationContext
     private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    init { SQLiteDatabase.loadLibs(appContext) }
+
     @Synchronized
     fun hasStoredNotes(): Boolean {
         val file = appContext.getDatabasePath(DATABASE_NAME)
@@ -36,7 +38,6 @@ internal class SqlCipherNoteStore(context: Context) {
                 ).use { it.moveToFirst() }
             } finally {
                 helper.close()
-                passphrase.toCharArray().fill('\\u0000')
             }
         }.getOrDefault(false)
     }
@@ -45,15 +46,13 @@ internal class SqlCipherNoteStore(context: Context) {
     fun loadSafely(): NoteLoadResult {
         return try {
             val encoded = prefs.getString(WRAPPED_PASSPHRASE, null)
-                ?: return if (appContext.getDatabasePath(DATABASE_NAME).exists()) {
-                    NoteLoadResult(emptyList(), true)
-                } else NoteLoadResult(emptyList(), false)
+                ?: return NoteLoadResult(emptyList(), true)
             val passphrase = unwrapPassphrase(encoded)
             val helper = openHelper()
             val database = helper.getReadableDatabase(passphrase)
             try {
                 database.rawQuery("SELECT payload FROM notes_payload WHERE id = 1", null).use { cursor ->
-                    if (!cursor.moveToFirst()) NoteLoadResult(emptyList(), false)
+                    if (!cursor.moveToFirst()) NoteLoadResult(emptyList(), true)
                     else {
                         val notes = NoteStore.decode(cursor.getString(0))
                         if (notes == null) NoteLoadResult(emptyList(), true)
@@ -63,7 +62,6 @@ internal class SqlCipherNoteStore(context: Context) {
             } finally {
                 database.close()
                 helper.close()
-                passphrase.fill('\\u0000')
             }
         } catch (_: Throwable) {
             NoteLoadResult(emptyList(), true)
