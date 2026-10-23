@@ -975,3 +975,10 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Provides live word/character/line counts, estimated reading time, uppercase/lowercase/title-case transforms, whitespace cleanup, copy, and clear actions.
 - Uses the existing Material 3 card and rounded-control styling. Text is transient screen state and is not persisted by the tool.
 - Validation: Android CI must compile and test the updated branch before this addition is considered verified.
+
+## 2026-10-23 — Home UX, editor zoom, and documentation refresh
+- Refreshed Home with a Material 3 quick-create hero, active-note and pinned-note counts, and a direct new-note action. Existing filters, sorting, search, layout toggle, and note-card actions remain in place.
+- Added an expandable editor/reader text-size slider from 50% to 200% in 5% increments. It scales the displayed note body and preview only; saved note content is unchanged.
+- Documented the new zoom control, Home layout, and Text Toolbox in README, changelog, development guide, and roadmap.
+- Clarified version status: v1.3.10 remains the latest published stable release; v1.3.11 is the current repository candidate and is not published yet. The app Gradle defaults remain versionName 1.3.11/versionCode 1; release automation must set an increasing version code.
+- Validation not yet complete: wait for exact-head Android CI and manually check compact/expanded screens, light/dark themes, large text/accessibility, slider behavior in edit and read modes, and confirm zoom does not alter saved content.
