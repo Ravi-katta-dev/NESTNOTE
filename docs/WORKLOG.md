@@ -3,7 +3,8 @@
 - Replaced wall-clock-based password cooldown deadlines with Android elapsed-realtime deadlines so manual clock/time-zone changes do not bypass or extend an active cooldown.
 - Persisted Android boot count alongside active cooldowns. If a reboot changes the monotonic clock's time base, the first read re-establishes a bounded 15-minute cooldown; lockout attempt escalation remains persisted.
 - Added regression coverage for reboot/time-base changes and expanded private-note exclusion checks across ordinary views, archived queries, search terms, and supported query operators.
-- Exact-head CI is required after these changes. Emulator/device checks for process/activity recreation, biometric outcomes, screenshot/Recents, and hardware-specific behavior remain unverified and are not marked complete.
+- Follow-up code/test changes are on branch `fix/private-vault-lifecycle-hardening`; current head at this log update: `a411087cbd74355f6715a4b867a95c27a1b377cc`. Android CI run [#885](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/39938507715) was pending at the last check; re-check the exact final head before merge.
+- Emulator/device checks for process/activity recreation, biometric outcomes, screenshot/Recents, and hardware-specific behavior remain unverified and are not marked complete.
 
 ---
 
