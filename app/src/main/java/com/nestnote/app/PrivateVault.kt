@@ -291,3 +291,86 @@ private tailrec fun Context.findFragmentActivity(): FragmentActivity? = when (th
     is ContextWrapper -> baseContext.findFragmentActivity()
     else -> null
 }
+
+
+/**
+ * Explicit enrollment flow. The vault must already be unlocked with the password before this
+ * dialog is shown; only the authenticated CryptoObject cipher can wrap the vault data key.
+ */
+@Composable
+internal fun PrivateVaultBiometricEnrollmentDialog(
+    session: PrivateNoteCrypto.Session,
+    onComplete: (Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val activity = context.findFragmentActivity()
+    var message by remember { mutableStateOf("") }
+    var promptLaunched by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Enable biometric unlock") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Confirm your fingerprint or strong device biometric to protect the vault key. Your vault password will remain available as a recovery method.")
+                if (message.isNotBlank()) Text(message, color = MaterialTheme.colorScheme.error)
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = activity != null && !promptLaunched,
+                onClick = {
+                    val host = activity ?: return@TextButton
+                    val biometric = PrivateVaultBiometricKey(context)
+                    val cipher = biometric.createEnrollmentCipher()
+                    if (cipher == null) {
+                        message = "Couldn't prepare a secure biometric key. Your vault remains password-protected."
+                        return@TextButton
+                    }
+                    promptLaunched = true
+                    val prompt = BiometricPrompt(
+                        host,
+                        ContextCompat.getMainExecutor(host),
+                        object : BiometricPrompt.AuthenticationCallback() {
+                            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                                val authenticatedCipher = result.cryptoObject?.cipher
+                                val enrolled = authenticatedCipher != null &&
+                                    biometric.completeEnrollment(session, authenticatedCipher)
+                                if (enrolled) onComplete(true) else {
+                                    biometric.deleteEnrollment()
+                                    promptLaunched = false
+                                    message = "Enrollment failed. Biometric unlock was not enabled; use your vault password."
+                                }
+                            }
+
+                            override fun onAuthenticationFailed() {
+                                message = "Biometric not recognized. Try again."
+                            }
+
+                            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                                promptLaunched = false
+                                message = if (
+                                    errorCode == BiometricPrompt.ERROR_USER_CANCELED ||
+                                    errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON ||
+                                    errorCode == BiometricPrompt.ERROR_CANCELED
+                                ) "Enrollment cancelled. Your vault remains password-protected."
+                                else errString.toString()
+                            }
+                        }
+                    )
+                    val info = BiometricPrompt.PromptInfo.Builder()
+                        .setTitle("Enable Private Vault biometric unlock")
+                        .setSubtitle("Authenticate to securely wrap the vault key")
+                        .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                        .setNegativeButtonText("Cancel")
+                        .build()
+                    prompt.authenticate(info, BiometricPrompt.CryptoObject(cipher))
+                }
+            ) { Text("Authenticate and enable") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Not now") }
+        }
+    )
+}
