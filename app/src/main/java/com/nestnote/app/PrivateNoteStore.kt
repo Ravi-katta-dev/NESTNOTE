@@ -33,13 +33,17 @@ internal class PrivateNoteStore(context: Context) {
             require(note.id == id && note.privateNote) { "Private record classification mismatch" }
             result += note
         }
+        require(result.size <= NoteStore.MAX_NOTES)
+        require(result.map { it.id }.distinct().size == result.size) { "Duplicate private record IDs" }
+        require(NoteStore.isValidNoteCollection(result)) { "Private note collection is invalid" }
         return result
     }
 
     /** Atomic preference commit; refuses public records rather than silently reclassifying them. */
     fun save(session: PrivateNoteCrypto.Session, notes: List<NestNote>): Boolean = runCatching {
-        require(notes.size <= NoteStore.MAX_NOTES)
+        require(NoteStore.isValidNoteCollection(notes))
         require(notes.all { it.privateNote && it.id > 0L })
+        require(notes.map { it.id }.distinct().size == notes.size)
         val array = JSONArray()
         notes.forEach { note ->
             val envelope = session.encrypt(NoteStore.encode(listOf(note)).toByteArray(Charsets.UTF_8), note.id)
