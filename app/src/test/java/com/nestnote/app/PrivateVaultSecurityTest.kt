@@ -123,6 +123,25 @@ class PrivateVaultSecurityTest {
         assertEquals(listOf(private), NoteFilters.visibleNotes(notes, "Private", "", false, false))
     }
 
+
+    @Test
+    fun lockoutUsesMonotonicTimeAndRebootCannotBypassCooldown() {
+        assertTrue(PrivateVaultSecurity.configure(context, "correct horse"))
+        val beforeReboot = 50_000L
+        repeat(4) { PrivateVaultSecurity.recordFailedAttempt(context, beforeReboot, 10) }
+        val deadline = PrivateVaultSecurity.recordFailedAttempt(context, beforeReboot, 10)
+        assertEquals(beforeReboot + 30_000L, deadline)
+        assertTrue(PrivateVaultSecurity.isLockedOut(context, beforeReboot + 1L, 10))
+
+        // A wall-clock adjustment cannot affect elapsed-realtime deadlines. After a
+        // reboot, replace the old boot's time-base with a bounded cooldown.
+        val afterReboot = 1_000L
+        val rebootDeadline = PrivateVaultSecurity.retryAtMillis(context, afterReboot, 11)
+        assertEquals(afterReboot + 15 * 60_000L, rebootDeadline)
+        assertTrue(PrivateVaultSecurity.isLockedOut(context, afterReboot, 11))
+        assertFalse(PrivateVaultSecurity.isLockedOut(context, rebootDeadline, 11))
+    }
+
     @Test
     fun passwordSetupRejectsShortPasswords() {
         assertFalse(PrivateVaultSecurity.configure(context, "12345"))
