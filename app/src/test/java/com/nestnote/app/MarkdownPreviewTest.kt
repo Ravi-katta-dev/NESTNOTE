@@ -186,4 +186,16 @@ class MarkdownPreviewTest {
         assertTrue("first body token must not be lost", result.toString().contains("jklloikkk"))
         assertTrue("second body token must not be lost", result.toString().contains("uuiii_iiio9"))
     }
+
+    @Test
+    fun markdownPipeTablesRenderAsReadableTableCells() {
+        val markdown = "| Name | Count |\\n| --- | ---: |\\n| Apples | 3 |"
+        val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), markdown).toString()
+
+        assertTrue(result.contains("Name"))
+        assertTrue(result.contains("Count"))
+        assertTrue(result.contains("Apples"))
+        assertTrue(result.contains("3"))
+        assertFalse("pipe delimiters should be rendered as a table, not shown literally", result.contains("|"))
+    }
 }
