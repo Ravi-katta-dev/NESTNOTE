@@ -241,7 +241,7 @@ internal fun NestNoteApp(
     }
     var privateVaultBiometricEnabled by remember { mutableStateOf(false) }
     val privateVaultBiometricAvailable = remember(context) {
-        BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
+        BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS
     }
     fun requestPrivateVault() { showPrivateVaultGate = true }
     LaunchedEffect(selectedView) {
