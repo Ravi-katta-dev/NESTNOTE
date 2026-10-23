@@ -72,7 +72,11 @@ Before release, verify lifecycle and activity/process recreation, biometric outc
 5. Are backups explicitly encrypted, or clearly disclosed as plaintext?
 6. Which automated and device tests demonstrate each security claim?
 
-Until a separately reviewed design is implemented and verified, Private Vault must be described as a UI privacy boundary layered over the app's general local-storage encryption.
+The isolated-store integration is now wired into the app's password unlock, load, save, migration, and lock paths on branch `feat/private-vault-crypto-isolation`. While locked, the app's active note list contains only public notes; existing private records remain in the old general encrypted blob until a successful password unlock migrates them. Migration commits the isolated encrypted private store before replacing the general store with public notes only. If either step fails, unlock is denied and the legacy encrypted blob is retained where possible.
+
+Private records use a separate random vault data key wrapped by a PBKDF2-HMAC-SHA256-derived AES key, and record ciphertext is authenticated with record-ID-bound AES-GCM AAD. The general NoteStore key cannot directly decrypt the isolated record payloads. This is cryptographic isolation at the record-store layer, not a claim that every app pathway has been fully audited. Backup/restore, linked-note flows, cross-store crash recovery, password-change failure atomicity, and device testing still require review.
+
+Biometric unlock is deliberately disabled in the gate until an authentication-bound Android Keystore key and CryptoObject flow are implemented. A successful biometric UI callback must never be treated as cryptographic authorization. Do not merge/release until exact-head CI and security review pass.
 
 
 ## Draft confidentiality boundary
