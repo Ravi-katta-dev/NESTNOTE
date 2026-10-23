@@ -107,3 +107,14 @@ Release workflow: https://github.com/Ravi-katta-dev/NESTNOTE/actions/workflows/a
 - Owner approval and date:
 
 Do not publish or merge automatically because a checklist is filled out. Unrun manual checks must be marked Not run. An unsigned inspection artifact or historical CI-signed APK is not a production release.
+
+
+## Private draft confidentiality release gate
+
+- [ ] Private draft files use AES-GCM with the dedicated Android Keystore draft key; inspect on-disk bytes to verify title/body are absent.
+- [ ] Missing/unavailable keys, wrong keys, tampered ciphertext, malformed envelopes, and unsupported schemas fail closed without plaintext fallback.
+- [ ] Draft schema persists `privateNote`; missing classification and both public/private envelope mismatches are rejected.
+- [ ] Ordinary orphan recovery excludes private drafts while the vault is locked; private-draft recovery is only reachable through the authenticated vault editor flow.
+- [ ] Legacy plaintext draft files are never silently migrated as public and are rejected/removed when discovered. Do not claim forensic secure erase.
+- [ ] Automated tests cover ciphertext-at-rest, wrong key, tampering, missing classification, classification mismatches, legacy plaintext rejection, and ordinary orphan filtering.
+- [ ] Exact-head CI passes and the diff has been reviewed. Do not merge with any of these checks unverified.
