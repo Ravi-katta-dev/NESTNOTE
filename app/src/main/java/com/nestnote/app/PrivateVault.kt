@@ -2,6 +2,8 @@ package com.nestnote.app
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.os.SystemClock
+import android.provider.Settings
 import android.util.Base64
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
@@ -37,6 +39,7 @@ internal object PrivateVaultSecurity {
     private const val KEY_BITS = 256
     private const val PREF_FAILED_ATTEMPTS = "private_vault_failed_attempts"
     private const val PREF_RETRY_AT_MILLIS = "private_vault_retry_at_millis"
+    private const val PREF_RETRY_BOOT_COUNT = "private_vault_retry_boot_count"
     private const val LOCKOUT_THRESHOLD = 5
     private const val INITIAL_LOCKOUT_MILLIS = 30_000L
     private const val MAX_LOCKOUT_MILLIS = 15 * 60_000L
@@ -57,6 +60,7 @@ internal object PrivateVaultSecurity {
                 .putString(PREF_PRIVATE_VAULT_HASH, Base64.encodeToString(hash, Base64.NO_WRAP))
                 .remove(PREF_FAILED_ATTEMPTS)
                 .remove(PREF_RETRY_AT_MILLIS)
+                .remove(PREF_RETRY_BOOT_COUNT)
                 .commit()
         }.getOrDefault(false)
     }
@@ -64,22 +68,51 @@ internal object PrivateVaultSecurity {
     // Adapted security patterns: Markleaf's locked-notes screen applies FLAG_SECURE
     // to private content, and its passcode gate persists exponential retry backoff.
     // Source is Apache-2.0 licensed; attribution and license are in THIRD_PARTY_NOTICES.md.
-    /** Persisted brute-force backoff so closing/restarting the app cannot reset it. */
-    fun retryAtMillis(context: Context): Long =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getLong(PREF_RETRY_AT_MILLIS, 0L)
+    private fun currentBootCount(context: Context): Int =
+        runCatching { Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT) }
+            .getOrDefault(-1)
 
-    fun isLockedOut(context: Context, nowMillis: Long = System.currentTimeMillis()): Boolean =
-        retryAtMillis(context) > nowMillis
+    /**
+     * Lockout deadlines use monotonic elapsed time, not the user-adjustable wall clock.
+     * If Android reports a reboot while a cooldown is active, require a fresh bounded
+     * cooldown rather than trusting a deadline from the previous boot's time base.
+     */
+    fun retryAtMillis(
+        context: Context,
+        nowMillis: Long = SystemClock.elapsedRealtime(),
+        bootCount: Int = currentBootCount(context)
+    ): Long {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val deadline = prefs.getLong(PREF_RETRY_AT_MILLIS, 0L)
+        if (deadline <= 0L) return 0L
+        val savedBootCount = prefs.getInt(PREF_RETRY_BOOT_COUNT, bootCount)
+        if (bootCount >= 0 && savedBootCount >= 0 && savedBootCount != bootCount) {
+            val rebootDeadline = nowMillis + MAX_LOCKOUT_MILLIS
+            prefs.edit().putLong(PREF_RETRY_AT_MILLIS, rebootDeadline)
+                .putInt(PREF_RETRY_BOOT_COUNT, bootCount).commit()
+            return rebootDeadline
+        }
+        return deadline
+    }
+
+    fun isLockedOut(
+        context: Context,
+        nowMillis: Long = SystemClock.elapsedRealtime(),
+        bootCount: Int = currentBootCount(context)
+    ): Boolean = retryAtMillis(context, nowMillis, bootCount) > nowMillis
 
     /**
      * Record a failed password attempt. After five failures, wait 30 seconds;
      * subsequent failures increase the wait exponentially, capped at 15 minutes.
-     * Returns the retry deadline (0 when no delay is active).
+     * Returns the monotonic retry deadline (0 when no delay is active).
      */
-    fun recordFailedAttempt(context: Context, nowMillis: Long = System.currentTimeMillis()): Long {
+    fun recordFailedAttempt(
+        context: Context,
+        nowMillis: Long = SystemClock.elapsedRealtime(),
+        bootCount: Int = currentBootCount(context)
+    ): Long {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val currentDeadline = prefs.getLong(PREF_RETRY_AT_MILLIS, 0L)
+        val currentDeadline = retryAtMillis(context, nowMillis, bootCount)
         if (currentDeadline > nowMillis) return currentDeadline
         val attempts = prefs.getInt(PREF_FAILED_ATTEMPTS, 0) + 1
         val exponent = (attempts - LOCKOUT_THRESHOLD).coerceAtLeast(0).coerceAtMost(5)
@@ -87,7 +120,8 @@ internal object PrivateVaultSecurity {
             else (INITIAL_LOCKOUT_MILLIS * (1L shl exponent)).coerceAtMost(MAX_LOCKOUT_MILLIS)
         val deadline = if (delayMillis == 0L) 0L else nowMillis + delayMillis
         prefs.edit().putInt(PREF_FAILED_ATTEMPTS, attempts)
-            .putLong(PREF_RETRY_AT_MILLIS, deadline).commit()
+            .putLong(PREF_RETRY_AT_MILLIS, deadline)
+            .putInt(PREF_RETRY_BOOT_COUNT, bootCount).commit()
         return deadline
     }
 
@@ -95,6 +129,7 @@ internal object PrivateVaultSecurity {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .remove(PREF_FAILED_ATTEMPTS)
             .remove(PREF_RETRY_AT_MILLIS)
+            .remove(PREF_RETRY_BOOT_COUNT)
             .commit()
     }
 
@@ -217,8 +252,8 @@ internal fun PrivateVaultGateDialog(
                 if (!onSubmit(password, confirmation)) {
                     val retryAt = PrivateVaultSecurity.retryAtMillis(context)
                     error = when {
-                        passwordConfigured && retryAt > System.currentTimeMillis() -> {
-                            val seconds = ((retryAt - System.currentTimeMillis() + 999L) / 1_000L)
+                        passwordConfigured && retryAt > SystemClock.elapsedRealtime() -> {
+                            val seconds = ((retryAt - SystemClock.elapsedRealtime() + 999L) / 1_000L)
                             "Too many attempts. Try again in $seconds seconds."
                         }
                         passwordConfigured -> "Incorrect password."
