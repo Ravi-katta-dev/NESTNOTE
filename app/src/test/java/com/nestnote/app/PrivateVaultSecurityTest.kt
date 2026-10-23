@@ -98,7 +98,7 @@ class PrivateVaultSecurityTest {
         val deadline = PrivateVaultSecurity.recordFailedAttempt(context, now)
 
         assertEquals(deadline, PrivateVaultSecurity.recordFailedAttempt(context, now + 1L))
-        assertEquals(deadline, PrivateVaultSecurity.retryAtMillis(context))
+        assertEquals(deadline, PrivateVaultSecurity.retryAtMillis(context, now))
         assertTrue(PrivateVaultSecurity.isLockedOut(context, now))
         assertFalse(PrivateVaultSecurity.isLockedOut(context, deadline))
     }
@@ -107,7 +107,7 @@ class PrivateVaultSecurityTest {
     fun mixedBackupRoundTripPreservesPrivateFlagAndOrdinaryViewsExcludePrivateNotes() {
         val public = NestNote(id = 101L, title = "Public", body = "visible", pinned = true)
         val private = NestNote(id = 102L, title = "Secret", body = "hidden searchable text",
-            pinned = true, archived = false, privateNote = true)
+            pinned = true, archived = false, privateNote = true, reminder = "2030-01-01")
         val archivedPrivate = NestNote(id = 103L, title = "Archived secret", body = "hidden",
             archived = true, privateNote = true)
         val restored = NoteStore.decodeBackup(NoteStore.encodeBackup(listOf(public, private, archivedPrivate)))
