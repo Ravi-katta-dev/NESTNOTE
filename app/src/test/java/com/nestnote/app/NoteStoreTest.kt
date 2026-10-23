@@ -433,4 +433,30 @@ class NoteStoreTest {
         assertEquals(null, prefs.getString("notes", null))
     }
 
+
+    @Test
+    fun userFacingPlaintextBackupPayloadContainsNoPrivateTitlesOrBodies() {
+        val public = NestNote(id = 11L, title = "Public title", body = "Public body")
+        val secret = NestNote(
+            id = 12L, title = "UNIQUE_PRIVATE_TITLE_12", body = "UNIQUE_PRIVATE_BODY_12",
+            privateNote = true
+        )
+        val archivedSecret = secret.copy(
+            id = 13L, title = "UNIQUE_ARCHIVED_PRIVATE_TITLE_13",
+            body = "UNIQUE_ARCHIVED_PRIVATE_BODY_13", archived = true
+        )
+
+        listOf(false, true).forEach { includeArchived ->
+            val selected = NoteStore.notesForBackup(
+                listOf(public, secret, archivedSecret), includeArchived
+            )
+            val payload = NoteStore.encodeBackup(selected)
+            assertTrue(payload.contains("Public title"))
+            assertFalse(payload.contains("UNIQUE_PRIVATE_TITLE_12"))
+            assertFalse(payload.contains("UNIQUE_PRIVATE_BODY_12"))
+            assertFalse(payload.contains("UNIQUE_ARCHIVED_PRIVATE_TITLE_13"))
+            assertFalse(payload.contains("UNIQUE_ARCHIVED_PRIVATE_BODY_13"))
+        }
+    }
+
 }
