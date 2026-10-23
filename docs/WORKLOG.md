@@ -906,3 +906,14 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Added `docs/THREAT_MODEL.md` describing assets, trust boundaries, threats, residual risks, and requirements for any future independent vault encryption.
 - Updated README to state explicitly that the vault password does not derive/unlock a separate encryption key and that exported JSON backups may contain readable private-note content.
 - Documentation boundary: these edits clarify the existing design; they do not add cryptographic isolation. Exact-head CI and all device-dependent vault checks remain pending.
+
+
+## 2026-10-23 — Private draft confidentiality hardening
+
+- Draft schema v2 persists `privateNote`; missing classification is rejected.
+- Private draft payloads use AES-GCM with a dedicated Android Keystore key and purpose-bound AAD. Key failure, authentication failure, malformed ciphertext, and envelope/classification mismatch do not fall back to plaintext.
+- Ordinary `listAll()` orphan discovery excludes private drafts. Existing-note recovery also requires the draft privacy classification to match the saved note.
+- Legacy unversioned/schema-v1 plaintext files are not interpreted or reclassified; they are rejected and deleted when discovered. Flash-storage deletion is not represented as forensic secure erasure.
+- Added regression coverage for ciphertext-at-rest, wrong key, tampering, missing classification, both envelope/classification mismatch directions, legacy plaintext rejection, and private-draft exclusion from ordinary orphan listing.
+- Updated threat model and release checklist. This is draft confidentiality, not independent cryptographic isolation of the Private Vault itself.
+- Validation status: automated CI for the final commit still needs confirmation; do not merge until the exact head is green and code review confirms the authenticated recovery path.
