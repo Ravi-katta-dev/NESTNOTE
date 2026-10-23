@@ -993,7 +993,7 @@ internal fun NestNoteApp(
                                         shape = RoundedCornerShape(16.dp),
                                         color = colors.surface.copy(alpha = 0.72f)
                                     ) {
-                                        Icon(androidx.compose.material.icons.filled.Palette, contentDescription = null,
+                                        Icon(Icons.Default.Edit, contentDescription = null,
                                             modifier = Modifier.padding(12.dp).size(26.dp), tint = colors.primary)
                                     }
                                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
