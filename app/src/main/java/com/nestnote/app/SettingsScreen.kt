@@ -105,7 +105,7 @@ private val SettingsItemKeys = listOf(
     "settings_layout",
     "settings_behavior",
     "settings_editor",
-    "settings_voice_player",
+    "settings_voice_player_section_v2",
     "settings_privacy",
     "settings_backup",
     "settings_reset"
@@ -849,7 +849,7 @@ internal fun SettingsScreen(
 
         // ---- 5. Voice Player Section (Inline Interactive Preview) ----
         if (matchesSearch("voice")) {
-            item(key = "settings_voice_player") {
+            item(key = "settings_voice_player_section_v2") {
                 val playerPrefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 var compactVoicePlayer by remember {
                     mutableStateOf(playerPrefs.getBoolean(PREF_VOICE_PLAYER_COMPACT, true))
