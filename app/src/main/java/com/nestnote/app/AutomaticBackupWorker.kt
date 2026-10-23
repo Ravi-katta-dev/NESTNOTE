@@ -33,11 +33,20 @@ class AutomaticBackupWorker(
                     .apply()
                 return Result.failure()
             }
+            val backupPayload = try {
+                NoteStore.encodeBackup(loaded.notes)
+            } catch (_: IllegalArgumentException) {
+                prefs.edit()
+                    .putLong(PREF_BACKUP_AUTOMATIC_LAST_RUN, System.currentTimeMillis())
+                    .putString(PREF_BACKUP_AUTOMATIC_STATUS, "Failed: backup exceeds supported size or contains invalid notes")
+                    .apply()
+                return Result.failure()
+            }
             val backupDir = File(applicationContext.filesDir, "automatic-backups")
             if (!backupDir.exists() && !backupDir.mkdirs()) error("Cannot create backup directory")
             val target = File(backupDir, "latest.json")
             val temp = File(backupDir, "latest.json.tmp")
-            temp.writeText(NoteStore.encodeBackup(loaded.notes), Charsets.UTF_8)
+            temp.writeText(backupPayload, Charsets.UTF_8)
             // Never delete the last good backup before the replacement is ready. Prefer an
             // atomic same-directory replacement and fall back only when atomic moves are unsupported.
             try {
