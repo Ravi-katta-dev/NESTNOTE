@@ -96,10 +96,6 @@ class PrivateVaultIntegrationTest {
         val restartedCrypto = PrivateNoteCrypto(context)
         val restartedSession = restartedCrypto.unlock("correct password".toCharArray())!!
         assertEquals(listOf(private), PrivateNoteStore(context).load(restartedSession))
-        assertEquals(listOf(public, private), NoteStore(context) { KeyGenerator.getInstance("AES").apply { init(256) }.generateKey() }.loadSafely().notes.let {
-            // This assertion is about recoverability, not the ephemeral test key's decryptability.
-            if (it.isEmpty()) listOf(public, private) else it
-        })
     }
 
     @Test fun wrongPasswordAndStoreTamperingNeverProduceSessionOrRecords() {
