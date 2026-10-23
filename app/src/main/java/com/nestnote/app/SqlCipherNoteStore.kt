@@ -87,7 +87,6 @@ internal class SqlCipherNoteStore(context: Context) {
                 if (database.inTransaction()) database.endTransaction()
                 database.close()
                 helper.close()
-                passphrase.fill('\\u0000')
             }
         } catch (_: Throwable) {
             false
