@@ -17,8 +17,8 @@ import javax.crypto.spec.PBEKeySpec
  *
  * A random vault data key encrypts records and is stored only as an AES-GCM wrapped value
  * under a PBKDF2 password-derived key. The ordinary NoteStore key cannot decrypt these records.
- * Session objects must be dropped when the vault locks. This class is not integrated into app
- * storage yet; do not claim vault isolation until migration and every read/write path use it.
+ * Session objects must be dropped when the vault locks. Biometric unlock must not bypass this
+ * password-wrapped key unless an authentication-bound Keystore wrapping path is explicitly enrolled.
  */
 internal class PrivateNoteCrypto(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -63,11 +63,12 @@ internal class PrivateNoteCrypto(context: Context) {
                 val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
                 val wrappingKey = derive(password, salt)
                 val wrapped = wrap(vaultKey, wrappingKey)
-                prefs.edit()
+                check(prefs.edit()
                     .putInt(VERSION, SCHEMA_VERSION)
                     .putString(SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
                     .putString(WRAPPED_KEY, Base64.encodeToString(wrapped, Base64.NO_WRAP))
-                    .commit()
+                    .commit()) { "Unable to persist private vault key metadata" }
+                true
             }
         }
     }.getOrDefault(false)
