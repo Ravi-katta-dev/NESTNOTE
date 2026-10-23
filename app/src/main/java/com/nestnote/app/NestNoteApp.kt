@@ -867,25 +867,28 @@ internal fun NestNoteApp(
                             } else if (!cryptoInitialized) {
                                 PrivateVaultSecurity.changePassword(context, current, new, confirmation)
                             } else {
-                                // These two preference namespaces cannot share one atomic commit.
-                                // Rewrap the data key first, then update the verifier; if the second
-                                // phase fails, roll the crypto key back before reporting failure.
-                                val rewrapped = privateNoteCrypto.changePassword(current.toCharArray(), new.toCharArray())
-                                if (!rewrapped) {
-                                    false
-                                } else if (PrivateVaultSecurity.changePassword(context, current, new, confirmation)) {
-                                    true
-                                } else {
-                                    val rolledBack = privateNoteCrypto.changePassword(new.toCharArray(), current.toCharArray())
-                                    if (!rolledBack) {
+                                // These preference namespaces cannot share an atomic commit.
+                                // Keep the compensating rollback explicit and testable.
+                                val result = PrivateVaultPasswordChange.execute(
+                                    current = current,
+                                    replacement = new,
+                                    rewrapKey = { from, to ->
+                                        privateNoteCrypto.changePassword(from.toCharArray(), to.toCharArray())
+                                    },
+                                    updateVerifier = {
+                                        PrivateVaultSecurity.changePassword(context, current, new, confirmation)
+                                    },
+                                    markRecoveryRequired = {
                                         storageRecoveryRequired = true
                                         lockPrivateVault()
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar("Password change recovery is required. Private Vault was locked to protect your notes.")
-                                        }
                                     }
-                                    false
+                                )
+                                if (result.recoveryRequired) {
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Password change recovery is required. Private Vault was locked to protect your notes.")
+                                    }
                                 }
+                                result.accepted
                             }
                             if (accepted) coroutineScope.launch { snackbarHostState.showSnackbar("Private Vault password updated") }
                             accepted
