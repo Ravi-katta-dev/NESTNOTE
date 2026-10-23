@@ -84,6 +84,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -2162,12 +2163,15 @@ internal fun BackupRestoreScreen(
     backupFolderConfigured: Boolean,
     onExportNotes: (Boolean) -> Unit,
     onImportNotes: () -> Unit,
+    onExportEncryptedArchive: (Boolean, String) -> Unit,
+    onImportEncryptedArchive: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
     val reducedMotion = rememberSystemReducedMotion()
     var showBackupDetails by rememberSaveable { mutableStateOf(false) }
     var includeArchivedInBackup by rememberSaveable { mutableStateOf(true) }
+    var archivePassword by rememberSaveable { mutableStateOf("") }
 
     Column(
         modifier
@@ -2349,6 +2353,61 @@ internal fun BackupRestoreScreen(
                 Icon(Icons.Default.Archive, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Create backup", fontWeight = FontWeight.SemiBold)
+            }
+        }
+
+        SettingsSection(
+            title = "Password-protected archive",
+            subtitle = "Optional encrypted export for safer sharing",
+            icon = Icons.Default.Lock
+        ) {
+            Text(
+                "Creates a .nestnote archive encrypted with AES-GCM. Use a strong password of at least 10 characters and keep it separately; NESTNOTE cannot recover a forgotten archive password. This is separate from the regular JSON backup.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant
+            )
+            OutlinedTextField(
+                value = archivePassword,
+                onValueChange = { archivePassword = it.take(256) },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Archive password (10+ characters)") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation()
+            )
+            OutlinedButton(
+                onClick = {
+                    val password = archivePassword
+                    archivePassword = ""
+                    onExportEncryptedArchive(includeArchivedInBackup, password)
+                },
+                enabled = backupFolderConfigured && archivePassword.length >= 10,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Export encrypted .nestnote archive")
+            }
+            OutlinedButton(
+                onClick = {
+                    val password = archivePassword
+                    archivePassword = ""
+                    onImportEncryptedArchive(password)
+                },
+                enabled = backupFolderConfigured && archivePassword.length >= 10,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.FileOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Import encrypted archive")
+            }
+            if (!backupFolderConfigured) {
+                Text(
+                    "Choose the Documents folder above before using encrypted archives.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant
+                )
             }
         }
 
