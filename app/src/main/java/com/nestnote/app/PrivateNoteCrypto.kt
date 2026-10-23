@@ -54,16 +54,19 @@ internal class PrivateNoteCrypto(context: Context) {
     fun initialize(password: CharArray): Boolean = runCatching {
         require(password.size >= MIN_PASSWORD_LENGTH)
         synchronized(LOCK) {
-            if (prefs.contains(WRAPPED_KEY)) false else run
-            val vaultKey = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
-            val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
-            val wrappingKey = derive(password, salt)
-            val wrapped = wrap(vaultKey, wrappingKey)
-            check(prefs.edit()
-                .putInt(VERSION, SCHEMA_VERSION)
-                .putString(SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
-                .putString(WRAPPED_KEY, Base64.encodeToString(wrapped, Base64.NO_WRAP))
-                .commit())
+            if (prefs.contains(WRAPPED_KEY)) {
+                false
+            } else {
+                val vaultKey = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
+                val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
+                val wrappingKey = derive(password, salt)
+                val wrapped = wrap(vaultKey, wrappingKey)
+                prefs.edit()
+                    .putInt(VERSION, SCHEMA_VERSION)
+                    .putString(SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
+                    .putString(WRAPPED_KEY, Base64.encodeToString(wrapped, Base64.NO_WRAP))
+                    .commit()
+            }
         }
     }.getOrDefault(false)
 
