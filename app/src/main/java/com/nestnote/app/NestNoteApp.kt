@@ -1460,7 +1460,12 @@ internal fun NestNoteApp(
                 }
             }
             val openLinkedNote: (NestNote, NestNote) -> Unit = { current, target ->
-                if (current != editorNote) {
+                // A link embedded in an ordinary note must not bypass the vault gate.
+                // Private notes are intentionally excluded from ordinary lists/search,
+                // but linked-note navigation receives the full note collection.
+                if (target.privateNote && !privateVaultUnlocked) {
+                    requestPrivateVault()
+                } else if (current != editorNote) {
                     saveNote(current)
                     if (!editorVisible) {
                         editorNoteId = target.id
