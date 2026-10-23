@@ -52,7 +52,7 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.8.7")
     implementation("androidx.documentfile:documentfile:1.0.1")
     // SQLCipher encrypts the entire database; the passphrase is wrapped by Android Keystore.
-    implementation("net.zetetic:android-database-sqlcipher:4.6.1")
+    implementation("net.zetetic:android-database-sqlcipher:4.5.4")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
