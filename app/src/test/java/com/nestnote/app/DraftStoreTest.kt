@@ -118,16 +118,13 @@ class DraftStoreTest {
     }
 
     @Test
-    fun `unsupported schema version returns null`() {
-        val draft = sampleDraft()
-        store.write(draft)
-        val file = File(root, "note-${draft.noteId}.json")
-        // Properties format writes each entry on its own line as key=value.
-        file.writeText(
-            file.readText().replace("schemaVersion=1", "schemaVersion=999"),
+    fun `legacy plaintext draft files are rejected fail closed`() {
+        File(root, "note-1.json").writeText(
+            "schemaVersion=1\\nnoteId=1\\ntitle=Legacy secret\\nbody=legacy body\\n",
             Charsets.UTF_8
         )
-        assertNull(store.read(draft.noteId))
+        assertNull(store.read(1L))
+        assertTrue(store.listAll().isEmpty())
     }
 
     @Test
@@ -183,4 +180,67 @@ class DraftStoreTest {
         assertEquals("final keystrokes", recovered?.body)
         assertEquals(1001L, recovered?.savedAtMillis)
     }
+
+    private val testKey = SecretKeySpec(ByteArray(32) { (it + 1).toByte() }, "AES")
+    private fun encryptedStore(key: SecretKeySpec = testKey) = DraftStore(root) { key }
+
+    @Test
+    fun `private draft contents are encrypted at rest and classification round trips`() {
+        val draft = sampleDraft(77L).copy(title = "VAULT TITLE SECRET", body = "VAULT BODY SECRET", privateNote = true)
+        val secureStore = encryptedStore()
+        assertTrue(secureStore.write(draft))
+        val disk = File(root, "note-77.json").readText(Charsets.UTF_8)
+        assertTrue(disk.startsWith("NESTNOTE_DRAFT_PRIVATE_V2:"))
+        assertFalse(disk.contains(draft.title))
+        assertFalse(disk.contains(draft.body))
+        assertEquals(draft, secureStore.read(77L))
+        assertTrue(secureStore.listAll().isEmpty())
+        assertEquals(listOf(draft), secureStore.listAll(includePrivate = true))
+    }
+
+    @Test
+    fun `private draft wrong key and tampering are rejected`() {
+        val draft = sampleDraft(78L).copy(title = "Secret", privateNote = true)
+        assertTrue(encryptedStore().write(draft))
+        assertNull(encryptedStore(SecretKeySpec(ByteArray(32) { (it + 9).toByte() }, "AES")).read(78L))
+        val file = File(root, "note-78.json")
+        val payload = Base64.getDecoder().decode(file.readText(Charsets.UTF_8).removePrefix("NESTNOTE_DRAFT_PRIVATE_V2:"))
+        payload[payload.lastIndex] = (payload.last().toInt() xor 1).toByte()
+        file.writeText("NESTNOTE_DRAFT_PRIVATE_V2:" + Base64.getEncoder().withoutPadding().encodeToString(payload), Charsets.UTF_8)
+        assertNull(encryptedStore().read(78L))
+    }
+
+    @Test
+    fun `missing privacy classification is rejected`() {
+        val props = Properties().apply {
+            setProperty("schemaVersion", "2"); setProperty("noteId", "79")
+            setProperty("title", "Unclassified"); setProperty("body", "must not recover")
+        }
+        val raw = StringWriter().also { props.store(it, null) }.toString()
+        val envelope = "NESTNOTE_DRAFT_PUBLIC_V2:" + Base64.getEncoder().withoutPadding().encodeToString(raw.toByteArray(Charsets.UTF_8))
+        File(root, "note-79.json").writeText(envelope, Charsets.UTF_8)
+        assertNull(store.read(79L))
+    }
+
+    @Test
+    fun `private classification inside public envelope is rejected`() {
+        val props = Properties().apply {
+            setProperty("schemaVersion", "2"); setProperty("noteId", "80")
+            setProperty("title", "Secret"); setProperty("body", "private"); setProperty("privateNote", "true")
+        }
+        val raw = StringWriter().also { props.store(it, null) }.toString()
+        val envelope = "NESTNOTE_DRAFT_PUBLIC_V2:" + Base64.getEncoder().withoutPadding().encodeToString(raw.toByteArray(Charsets.UTF_8))
+        File(root, "note-80.json").writeText(envelope, Charsets.UTF_8)
+        assertNull(store.read(80L))
+        assertTrue(store.listAll().isEmpty())
+    }
+
+    @Test
+    fun `private draft is excluded from ordinary orphan listing`() {
+        val draft = sampleDraft(82L).copy(privateNote = true)
+        assertTrue(encryptedStore().write(draft))
+        assertTrue(store.listAll().isEmpty())
+        assertEquals(draft, encryptedStore().listAll(includePrivate = true).single())
+    }
+
 }
