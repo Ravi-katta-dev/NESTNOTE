@@ -1,12 +1,19 @@
 # NESTNOTE Development Guide
 
-Last updated: 2026-10-12
+Last updated: 2026-10-23
 
 ## Stack and prerequisites
 - Kotlin, native Android, Jetpack Compose, Material 3.
 - Android target SDK 36; minimum SDK 26.
 - Java 17 and Gradle 8.13 (the CI workflow uses these versions).
 - Android SDK Platform 36 and Build Tools 36.0.0.
+
+## Current UI and feature implementation notes
+- The current repository candidate uses Gradle defaults `versionName=1.3.11` and `versionCode=1`; release/source-build automation must supply a monotonically increasing version code. Do not infer publication from these defaults.
+- The Home dashboard includes note search, saved-search chips, category filters, sort and grid/list controls, plus a quick-create summary card.
+- The note editor and saved-note reading mode expose a text-size button and a slider from 50% to 200% in 5% increments. The zoom affects display only and must not mutate stored note text.
+- More → Power tools includes an offline Text Toolbox. Its text input is transient UI state and should not be persisted to the notes store.
+- External Markdown files opened through Android sharing use a separate read-only viewer with its own zoom preference.
 
 ## Set up and build
 1. Clone the repository and open it in a recent stable Android Studio.
