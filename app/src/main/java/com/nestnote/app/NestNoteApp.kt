@@ -1,9 +1,6 @@
 package com.nestnote.app
 
 import java.io.ByteArrayOutputStream
-
-private const val MAX_BACKUP_BYTES = 16 * 1024 * 1024
-
 import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.ClipData
@@ -142,6 +139,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+
+private const val MAX_BACKUP_BYTES = 16 * 1024 * 1024
+
 @Composable
 internal fun NestNoteApp(
     store: NoteStore,
