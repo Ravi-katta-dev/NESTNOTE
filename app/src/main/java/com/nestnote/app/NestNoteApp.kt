@@ -29,6 +29,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
@@ -108,6 +109,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -233,6 +235,21 @@ internal fun NestNoteApp(
     var editorTextSize by remember { mutableStateOf(EditorTextSize.values().firstOrNull { it.name == preferences.getString(PREF_TEXT_SIZE, "MEDIUM") } ?: EditorTextSize.MEDIUM) }
     var showEditorCounts by remember { mutableStateOf(preferences.getBoolean(PREF_EDITOR_COUNTS, true)) }
     var selectedView by remember { mutableStateOf("Home") }
+    val tabContentAlpha = remember { Animatable(1f) }
+    val tabContentOffsetY = remember { Animatable(0f) }
+    var hasShownInitialTab by remember { mutableStateOf(false) }
+    LaunchedEffect(selectedView) {
+        if (hasShownInitialTab) {
+            tabContentAlpha.snapTo(0.88f)
+            tabContentOffsetY.snapTo(7f)
+            launch {
+                tabContentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 190))
+            }
+            tabContentOffsetY.animateTo(0f, animationSpec = tween(durationMillis = 190))
+        } else {
+            hasShownInitialTab = true
+        }
+    }
     var showPrivateVaultGate by remember { mutableStateOf(false) }
     var privateVaultUnlocked by remember { mutableStateOf(false) }
     fun lockPrivateVault() {
@@ -767,6 +784,10 @@ internal fun NestNoteApp(
                 Column(
                     (if (isExpandedWidth) Modifier.widthIn(max = 840.dp) else Modifier)
                         .fillMaxSize()
+                        .graphicsLayer {
+                            alpha = tabContentAlpha.value
+                            translationY = tabContentOffsetY.value
+                        }
                         .animateContentSize(animationSpec = tween(durationMillis = 200))
                 ) {
                 if (storageRecoveryRequired) {
