@@ -521,27 +521,52 @@ internal fun NestNoteApp(
         }
     }
     var exportArchivedNotes by remember { mutableStateOf(true) }
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if (uri != null) {
-            val exportNotes = NoteStore.notesForBackup(notes, includeArchived = exportArchivedNotes)
-            val saved = runCatching {
-                val payload = NoteStore.encodeBackup(exportNotes).toByteArray(Charsets.UTF_8)
-                context.contentResolver.openOutputStream(uri)?.use { it.write(payload) } != null
-            }.getOrDefault(false)
-            if (saved) {
-                lastBackupAt = System.currentTimeMillis()
-                backupStatus = "Success"
-                preferences.edit()
-                    .putLong(PREF_BACKUP_LAST_SUCCESS_AT, lastBackupAt)
-                    .putString(PREF_BACKUP_LAST_STATUS, backupStatus)
-                    .apply()
-            } else {
-                backupStatus = "Failed"
-                saveString(PREF_BACKUP_LAST_STATUS, backupStatus)
+    var backupFolderConfigured by remember { mutableStateOf(BackupDirectory.configuredTreeUri(context) != null) }
+    var pendingFolderExportPayload by remember { mutableStateOf<String?>(null) }
+    var pendingFolderImport by remember { mutableStateOf(false) }
+    val backupFolderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { treeUri ->
+        if (treeUri != null && BackupDirectory.persistTreeGrant(context, treeUri)) {
+            backupFolderConfigured = true
+            val savedTree = BackupDirectory.configuredTreeUri(context)
+            if (savedTree != null) {
+                pendingFolderExportPayload?.let { payload ->
+                    val exportNotes = NoteStore.decodeBackup(payload).orEmpty()
+                    val saved = BackupDirectory.writeLatest(context, savedTree, payload.toByteArray(Charsets.UTF_8))
+                    if (saved) {
+                        lastBackupAt = System.currentTimeMillis()
+                        backupStatus = "Success"
+                        preferences.edit()
+                            .putLong(PREF_BACKUP_LAST_SUCCESS_AT, lastBackupAt)
+                            .putString(PREF_BACKUP_LAST_STATUS, backupStatus)
+                            .apply()
+                    } else {
+                        backupStatus = "Failed"
+                        saveString(PREF_BACKUP_LAST_STATUS, backupStatus)
+                    }
+                    pendingFolderExportPayload = null
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            if (saved) "Backup saved to Documents/NESTNOTE (" + exportNotes.size + " notes). Voice recordings are not included."
+                            else "Backup could not be saved. Your notes were not changed."
+                        )
+                    }
+                }
+                if (pendingFolderImport) {
+                    val raw = BackupDirectory.readLatest(context, savedTree)?.toString(Charsets.UTF_8)
+                    val incoming = raw?.let(NoteStore::decodeBackup)
+                    if (incoming != null && incoming.isNotEmpty()) {
+                        pendingRestore = incoming
+                        coroutineScope.launch { snackbarHostState.showSnackbar("Backup loaded from Documents/NESTNOTE. Review the restore before applying it.") }
+                    } else {
+                        coroutineScope.launch { snackbarHostState.showSnackbar("No valid NESTNOTE-backup.json found in Documents/NESTNOTE.") }
+                    }
+                    pendingFolderImport = false
+                }
             }
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar(if (saved) "Backup saved (" + exportNotes.size + " notes). Voice recordings are not included." else "Backup could not be saved. Your notes were not changed.")
-            }
+        } else if (treeUri != null) {
+            pendingFolderExportPayload = null
+            pendingFolderImport = false
+            coroutineScope.launch { snackbarHostState.showSnackbar("Folder access could not be saved. Choose Documents again.") }
         }
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
