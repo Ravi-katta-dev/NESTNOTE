@@ -1,3 +1,12 @@
+## 2026-10-23 — Private Vault security-critical path follow-up
+
+- Hardened `PrivateNoteCrypto.initialize` to fail if wrapped-key metadata cannot be committed.
+- Hardened `PrivateNoteStore` load/save validation for duplicate IDs, collection bounds, note validity, and private classification.
+- Filtered linked-note chips and backlinks by the current note's privacy class to prevent public-note metadata from revealing private titles while the vault is unlocked.
+- Confirmed plaintext backup selection excludes private notes; added regression coverage for backup title/body exclusion, AES-GCM ciphertext tampering, record-ID AAD, wrong-password rejection, migration second-phase failure preserving the legacy copy, and isolated-store reload after creating new crypto/store objects.
+- Biometric unlock remains intentionally disabled. The current password-derived vault key does not have an authentication-bound Android Keystore wrapping key and `BiometricPrompt.CryptoObject` unwrap path. Do not re-enable until that implementation and device tests land.
+- Still required before merge: run exact-head CI; test password-change failure atomicity; audit every restore/draft/link pathway on-device; exercise process death and force-stop migration recovery; verify backup/restore behavior with legacy and malformed stores.
+
 ## 2026-10-23 — Independent Private Vault store integration
 
 - Wired the isolated private-record store into app password unlock, note loading/saving, legacy migration, and lifecycle/route locking on `feat/private-vault-crypto-isolation`.
