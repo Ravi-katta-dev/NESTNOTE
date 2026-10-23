@@ -15,7 +15,7 @@ NESTNOTE is a local-first note-taking app built with Kotlin, Jetpack Compose, an
 - JSON backup and restore through Android's system file picker.
 - Open external Markdown (`.md`) files directly in a read-only viewer without importing them as saved notes; adjust viewer zoom from 50% to 200% and configure the default in Settings.
 - Local-data recovery safeguards and validated, versioned backups.
-- Private Vault: swipe down on the Home title area to unlock; also open the dedicated Vault page from More or Settings → Privacy. Configure fingerprint/biometric unlock, change the vault password after verifying the current one, and review access/security guidance. Vault passwords are stored as salted hashes; exported JSON backups remain plaintext and may include private notes.
+- Private Vault: open the dedicated Vault page from More or Settings → Privacy, authenticate with the vault password, and manage privacy guidance. Biometric unlock remains disabled pending device validation; exported JSON backups remain plaintext and may include private notes.
 
 ## License
 
@@ -93,6 +93,6 @@ NESTNOTE follows [UI_UX_RULES.md](UI_UX_RULES.md). The immediate P0 is a polishe
 
 
 ## Private Vault
-The Private Vault settings page is available from More and Settings → Privacy. It shows the private-note count, provides a direct authenticated shortcut to the vault, manages biometric unlock, and supports changing the vault password after verification. Exported JSON backups may contain readable private-note content; store them securely. The vault also hides its contents from screenshots and Recents previews, and password attempts are rate-limited with a persisted, escalating cooldown after repeated failures. See [third-party notices](THIRD_PARTY_NOTICES.md) for reused open-source security patterns.
+The Private Vault settings page is available from More and Settings → Privacy. It shows the private-note count, provides a direct authenticated shortcut to the vault, and supports changing the vault password after verification. Biometric unlock remains disabled until the authentication-bound key-unwrapping flow passes device validation. Exported JSON backups may contain readable private-note content; store them securely. The vault also hides its contents from screenshots and Recents previews, and password attempts are rate-limited with a persisted, escalating cooldown after repeated failures. See [third-party notices](THIRD_PARTY_NOTICES.md) for reused open-source security patterns.
 
 **Security boundary:** Private Vault is a password/optional-biometric **UI access gate**, not a separately encrypted vault. Private notes use the same general Android Keystore-backed local-storage encryption as ordinary notes; the vault password does not derive or unlock a separate encryption key. Exported JSON backups are plaintext and may contain readable private-note titles and bodies. See [Security Model](docs/SECURITY.md) and [Threat Model](docs/THREAT_MODEL.md) before making security or privacy claims.
