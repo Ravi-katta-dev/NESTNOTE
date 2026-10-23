@@ -7,6 +7,7 @@ All notable changes to NESTNOTE are documented here. The current release baselin
 Version 1.4.5 is the current release version supplied by the project maintainer. Consult [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for the authoritative release asset and publication metadata.
 
 ### Product capabilities
+- Markdown pipe tables render as tables in note preview; pasted Markdown tables are automatically column-aligned, while fenced code and ordinary pipe text remain unchanged.
 - Local-first note creation, editing, search, categories, pinning, archive/restore, sorting, and configurable Home layout.
 - Editor and saved-note reader zoom from 50% to 200% in 5% steps; zoom is presentation-only.
 - Transient read-only external Markdown viewer with separate configurable zoom.
