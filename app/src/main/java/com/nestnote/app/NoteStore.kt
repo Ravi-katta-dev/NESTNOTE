@@ -34,16 +34,53 @@ data class MergeResult(val notes: List<NestNote>, val added: Int, val updated: I
 data class NoteLoadResult(val notes: List<NestNote>, val recoveryRequired: Boolean)
 class NoteStorageException(message: String, cause: Throwable? = null) : IllegalStateException(message, cause)
 
+enum class NoteStorageBackend { KEYSTORE, SQLCIPHER }
+
 class NoteStore internal constructor(context: Context, private val testKeyProvider: (() -> SecretKey)? = null) {
+    private val appContext = context.applicationContext
     private val prefs = context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
 
+    fun currentBackend(): NoteStorageBackend = runCatching {
+        NoteStorageBackend.valueOf(prefs.getString(STORAGE_BACKEND_KEY, NoteStorageBackend.KEYSTORE.name)!!)
+    }.getOrDefault(NoteStorageBackend.KEYSTORE)
+
+    /** Switches backends without deleting either store. SQLCipher is seeded only when it has no data. */
+    @Synchronized
+    fun switchBackend(target: NoteStorageBackend, currentNotes: List<NestNote>): NoteLoadResult {
+        if (target == currentBackend()) return loadSafely()
+        if (testKeyProvider != null && target == NoteStorageBackend.SQLCIPHER) {
+            throw NoteStorageException("SQLCipher backend is unavailable in injected-key test mode")
+        }
+        val targetStore = if (target == NoteStorageBackend.SQLCIPHER) SqlCipherNoteStore(appContext) else null
+        val result = if (targetStore == null) loadKeyStoreSafely() else {
+            if (targetStore.hasStoredNotes()) targetStore.loadSafely()
+            else {
+                if (!isValidNoteCollection(currentNotes) || !targetStore.save(currentNotes)) {
+                    throw NoteStorageException("Could not initialize the encrypted SQL database; the active store was not changed")
+                }
+                targetStore.loadSafely()
+            }
+        }
+        if (result.recoveryRequired) throw NoteStorageException("The selected storage is unreadable; the active store was not changed")
+        check(prefs.edit().putString(STORAGE_BACKEND_KEY, target.name).commit()) {
+            "Could not save storage selection"
+        }
+        return result
+    }
+
     fun load(): List<NestNote> = loadSafely().notes
+
+    fun loadSafely(): NoteLoadResult = when (currentBackend()) {
+        NoteStorageBackend.KEYSTORE -> loadKeyStoreSafely()
+        NoteStorageBackend.SQLCIPHER -> if (testKeyProvider != null) NoteLoadResult(emptyList(), true)
+            else SqlCipherNoteStore(appContext).loadSafely()
+    }
 
     /**
      * Distinguishes a genuinely new install from unreadable stored data.
      * On corruption, return no editable notes and leave the original bytes untouched.
      */
-    fun loadSafely(): NoteLoadResult {
+    private fun loadKeyStoreSafely(): NoteLoadResult {
         val encryptedV2 = prefs.getString(ENCRYPTED_NOTES_V2_KEY, null)
         if (encryptedV2 != null) {
             val decoded = runCatching { decode(decryptV2(encryptedV2)) }.getOrNull()
@@ -57,7 +94,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         if (encryptedV1 != null) {
             val decoded = runCatching { decode(decryptV1(encryptedV1)) }.getOrNull()
                 ?: return NoteLoadResult(emptyList(), true)
-            return if (save(decoded)) NoteLoadResult(decoded, false)
+            return if (saveKeyStore(decoded)) NoteLoadResult(decoded, false)
             else NoteLoadResult(emptyList(), true)
         }
 
@@ -68,12 +105,20 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
 
         // Commit the encrypted payload before removing the plaintext key. If encryption or
         // the preferences commit fails, preserve the legacy bytes and block normal writes.
-        return if (save(decoded)) NoteLoadResult(decoded, false)
+        return if (saveKeyStore(decoded)) NoteLoadResult(decoded, false)
         else NoteLoadResult(emptyList(), true)
     }
 
     /** Encrypts first and removes legacy plaintext only in the same successful preferences commit. */
     fun save(notes: List<NestNote>): Boolean {
+        if (!isValidNoteCollection(notes)) return false
+        return when (currentBackend()) {
+            NoteStorageBackend.KEYSTORE -> saveKeyStore(notes)
+            NoteStorageBackend.SQLCIPHER -> testKeyProvider == null && SqlCipherNoteStore(appContext).save(notes)
+        }
+    }
+
+    private fun saveKeyStore(notes: List<NestNote>): Boolean {
         if (!isValidNoteCollection(notes)) return false
         return runCatching {
             val encrypted = encryptV2(encode(notes))
@@ -156,6 +201,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
     }
 
     companion object {
+        private const val STORAGE_BACKEND_KEY = "storage_backend"
         private const val LEGACY_NOTES_KEY = "notes"
         private const val ENCRYPTED_NOTES_V1_KEY = "notes_encrypted_v1"
         private const val ENCRYPTED_NOTES_V2_KEY = "notes_encrypted_v2"
