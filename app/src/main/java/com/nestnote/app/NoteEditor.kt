@@ -780,7 +780,7 @@ internal fun NoteEditorContent(
                         onEditVoiceTextChange = { editVoiceText = it },
                         voiceNoteId = voiceNoteId,
                         textSize = textSize,
-                        bodyTextSp = customTextSizeSp,
+                        bodyTextSp = effectiveBodyTextSp,
                         fontFamily = editorFontFamily,
                         typeface = editorTypeface,
                         ink = ink,
