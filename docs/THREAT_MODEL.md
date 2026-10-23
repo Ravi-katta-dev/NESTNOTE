@@ -29,7 +29,7 @@ The vault password does not derive, wrap, or unlock an independent key for priva
 - **Filtering:** the private flag is application metadata. Ordinary-view filtering must cover Home, categories, pinned, archived, search, insights, counts, links, and restored data. Filtering is not cryptographic access control.
 - **Screenshot protection:** `FLAG_SECURE` requests capture protection for the protected window. It does not guarantee protection against external cameras, a compromised OS, every OEM path, or content already exported.
 - **Lifecycle:** backgrounding should relock and hide private editor UI. Activity/process recreation and saveable editor state require dedicated tests.
-- **Backups:** user-exported JSON may contain readable private-note titles and bodies. The flag is not encryption; anyone who obtains the file can read it.
+- **Backups:** the current user-facing export selection excludes private notes and is still plaintext for exported ordinary notes. The backup format itself does not encrypt records; callers that serialize private notes directly can still produce readable private content.
 - **Lockout:** persisted cooldown/backoff slows repeated attempts through the app flow. Restart, boundary, maximum delay, and clock-change behavior require tests.
 - **Biometrics:** cancellation, failure, unavailable hardware, enrollment changes, and fallback must never grant access except after explicit successful authentication.
 - **Key loss:** invalidation or loss of the local-storage key may make encrypted data unrecoverable. Recovery behavior must preserve original bytes and be tested.
@@ -38,7 +38,7 @@ The vault password does not derive, wrap, or unlock an independent key for priva
 
 - **App UI boundary:** authentication, navigation, editor visibility and filtering. It is not a cryptographic boundary.
 - **Local-storage boundary:** encrypted payloads protected by Android Keystore while the key remains protected.
-- **Export boundary:** JSON backups leave the encrypted-storage boundary as plaintext; subsequent copies and recipients are outside the app's control.
+- **Export boundary:** JSON backups leave the encrypted-storage boundary as plaintext. The user-facing export excludes private notes by default; any content included in a backup is readable to anyone who obtains that file.
 - **OS boundary:** Android lifecycle, biometric APIs, screenshot restrictions and Keystore are trusted platform services. A compromised OS is outside these controls' guarantees.
 
 ## Out of scope / not guaranteed
@@ -49,7 +49,7 @@ No claim is made to protect against a rooted or otherwise compromised device, pr
 
 Use this statement:
 
-> Private Vault adds a password/biometric gate to viewing private notes inside NESTNOTE. Private notes use NESTNOTE's general local-storage encryption, not a separate vault key. Exported JSON backups are plaintext and may include private notes.
+> Private Vault adds a password/biometric gate to viewing private notes inside NESTNOTE. Private notes use NESTNOTE's general local-storage encryption, not a separate vault key. The current user-facing plaintext JSON export excludes private notes; the backup serialization format itself is not encrypted.
 
 Do not claim a separately encrypted vault, vault-password-encrypted notes, or encrypted JSON backups.
 
