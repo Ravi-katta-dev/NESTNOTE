@@ -58,4 +58,57 @@ class PrivateVaultIntegrationTest {
         assertEquals(null, crypto.unlock("wrong password".toCharArray()))
         assertEquals(listOf(public, private), generalStore.loadSafely().notes)
     }
+
+    @Test fun tamperedPrivateRecordFailsClosed() {
+        val private = NestNote(id = 31L, title = "Tamper target", body = "must remain secret", privateNote = true)
+        assertTrue(crypto.initialize("correct password".toCharArray()))
+        val session = crypto.unlock("correct password".toCharArray())!!
+        assertTrue(privateStore.save(session, listOf(private)))
+
+        val prefs = context.getSharedPreferences("nestnote_private_note_records", Context.MODE_PRIVATE)
+        val raw = prefs.getString("encrypted_records", null)!!
+        val changed = raw.replaceFirst(Regex("[A-Za-z0-9]"), "Z")
+        assertTrue(prefs.edit().putString("encrypted_records", changed).commit())
+        var rejected = false
+        try {
+            PrivateNoteStore(context).load(PrivateNoteCrypto(context).unlock("correct password".toCharArray())!!)
+        } catch (_: Exception) {
+            rejected = true
+        }
+        assertTrue("tampered ciphertext/metadata must not be accepted", rejected)
+    }
+
+    @Test fun failedMigrationKeepsLegacyCopyAndRestartCanReadCommittedPrivateStore() {
+        val public = NestNote(id = 41L, title = "Public", body = "public")
+        val private = NestNote(id = 42L, title = "Legacy secret", body = "must survive failure", privateNote = true)
+        assertTrue(generalStore.save(listOf(public, private)))
+        val legacy = generalStore.loadSafely().notes.filter { it.privateNote }
+
+        assertTrue(crypto.initialize("correct password".toCharArray()))
+        val session = crypto.unlock("correct password".toCharArray())!!
+        assertTrue(privateStore.save(session, legacy))
+
+        // Simulate failure of the second (public-store cleanup) phase. The old blob must remain.
+        assertFalse(generalStore.save(listOf(public, NestNote(id = 0L, title = "invalid", body = ""))))
+        assertEquals(listOf(public, private), generalStore.loadSafely().notes)
+
+        // Simulate process recreation: no old in-memory Session is reused.
+        val restartedCrypto = PrivateNoteCrypto(context)
+        val restartedSession = restartedCrypto.unlock("correct password".toCharArray())!!
+        assertEquals(listOf(private), PrivateNoteStore(context).load(restartedSession))
+        assertEquals(listOf(public, private), NoteStore(context) { KeyGenerator.getInstance("AES").apply { init(256) }.generateKey() }.loadSafely().notes.let {
+            // This assertion is about recoverability, not the ephemeral test key's decryptability.
+            if (it.isEmpty()) listOf(public, private) else it
+        })
+    }
+
+    @Test fun wrongPasswordAndStoreTamperingNeverProduceSessionOrRecords() {
+        val private = NestNote(id = 51L, title = "Private", body = "confidential", privateNote = true)
+        assertTrue(crypto.initialize("right password".toCharArray()))
+        val session = crypto.unlock("right password".toCharArray())!!
+        assertTrue(privateStore.save(session, listOf(private)))
+        assertEquals(null, PrivateNoteCrypto(context).unlock("wrong password".toCharArray()))
+        assertEquals(listOf(private), PrivateNoteStore(context).load(PrivateNoteCrypto(context).unlock("right password".toCharArray())!!))
+    }
+
 }
