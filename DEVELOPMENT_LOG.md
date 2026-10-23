@@ -1,6 +1,6 @@
 # NESTNOTE Engineering Decisions
 
-Last updated: 2026-10-19
+Last updated: 2026-10-23
 
 This file records durable engineering decisions. Implementation and validation history belongs in WORKLOG.md; planned work belongs in ROADMAP.md.
 
@@ -46,3 +46,8 @@ This file records durable engineering decisions. Implementation and validation h
 - **Remaining gate:** validate the rail, editor and keyboard/insets behavior on a device, then measure cold startup and note editing before calling the redesign complete. The parity checklist is tracked in [docs/PROTOTYPE_PARITY_AUDIT.md](docs/PROTOTYPE_PARITY_AUDIT.md).
 - **Validation boundary:** require CI for the exact final commit and separately record manual/device visual, keyboard/insets, large-font, contrast and TalkBack checks. Never infer these from a successful compile.
 - Governing contract: [UI_UX_RULES.md](UI_UX_RULES.md).
+
+## Note reading and zoom behavior
+- Editor and saved-note reader share a body text-size slider; the scale is presentation-only and must never rewrite note content.
+- External Markdown viewer zoom remains a separate preference from the saved-note editor/reader zoom.
+- Release docs must distinguish the repository's v1.3.11 candidate from the latest published stable version until a stable tag and release workflow complete.
