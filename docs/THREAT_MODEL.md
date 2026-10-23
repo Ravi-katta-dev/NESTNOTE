@@ -84,3 +84,12 @@ Biometric unlock remains deliberately disabled in the gate: no authentication-bo
 Drafts are stored separately from encrypted note records. Schema-v2 draft envelopes persist an explicit `privateNote` classification. Private drafts use AES-GCM with a dedicated Android Keystore key and purpose-bound AAD; a missing key, invalid tag, malformed envelope, or classification/envelope mismatch rejects recovery without a plaintext fallback. Ordinary orphan discovery excludes private drafts. Legacy unversioned/schema-v1 plaintext draft files are not migrated or assumed public; they are rejected and deleted when discovered. Deletion on flash storage is not a guaranteed forensic secure erase, so this cleanup is risk reduction rather than a secure-erasure claim.
 
 A private draft is still protected by the app/device security boundary, not a separate vault password-derived key. Access to an existing private draft must occur only through the authenticated Private Vault editor path. Device-level compromise remains out of scope.
+
+
+## 2026-10-23 — Biometric key binding and remaining validation
+
+The optional biometric wrapping primitive now uses a dedicated Android Keystore AES-GCM key with per-use authentication required and invalidation on biometric enrollment changes. The existing random vault data key is wrapped only after an authenticated enrollment `Cipher` is supplied; unlocking requires the `Cipher` returned by a successful `BiometricPrompt.CryptoObject` result. A plain biometric-success callback cannot unwrap the vault key.
+
+Biometric unlock remains disabled in settings and in the vault gate. Enrollment UX, key invalidation recovery, and physical-device/emulator validation have not been completed. Do not claim the biometric feature is enabled or release-ready.
+
+Password-change recovery is explicitly coordinated and unit-tested for key-rewrap failure, verifier-update failure with successful rollback, and rollback failure that locks the vault and marks recovery required. Migration tests simulate the store-commit/legacy-cleanup boundary with new store instances, but do not yet kill and restart the Android process at that exact point. Draft tests simulate store recreation, not an OS process kill. True process termination, activity recreation, backup restoration plus private-draft recovery, and biometric hardware/key invalidation must be validated on an Android emulator/device before release.
