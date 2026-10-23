@@ -936,3 +936,9 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Added regression coverage for ciphertext-at-rest, wrong key, tampering, missing classification, both envelope/classification mismatch directions, legacy plaintext rejection, and private-draft exclusion from ordinary orphan listing.
 - Updated threat model and release checklist. This is draft confidentiality, not independent cryptographic isolation of the Private Vault itself.
 - Validation status: automated CI for the final commit still needs confirmation; do not merge until the exact head is green and code review confirms the authenticated recovery path.
+
+## CI follow-up — 2026-10-23
+
+- Maintainer reports the PR CI run succeeded. Treat CI as cleared for that run, while requiring checks on any subsequent commits.
+- Security review remains open: biometric authentication is still deliberately disabled because authentication-bound Keystore key access has not been implemented. Do not merge solely on the basis of green CI.
+- Private draft storage is separately AES-GCM encrypted with an Android Keystore key and excluded from ordinary orphan-draft listing; regression tests already cover at-rest secrecy, wrong-key rejection, tampering, and privacy-classification mismatch.
