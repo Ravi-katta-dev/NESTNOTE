@@ -153,6 +153,9 @@ internal fun NestNoteApp(
     var automaticBackupStatus by remember { mutableStateOf(preferences.getString(PREF_BACKUP_AUTOMATIC_STATUS, "Not run yet") ?: "Not run yet") }
     var storageRecoveryRequired by remember { mutableStateOf(false) }
     var showStorageRecoveryDialog by remember { mutableStateOf(false) }
+    var openedExternalMarkdownTitle by remember { mutableStateOf("") }
+    var openedExternalMarkdownContent by remember { mutableStateOf("") }
+    var showExternalMarkdownDialog by remember { mutableStateOf(false) }
     LaunchedEffect(store) {
         val result = withContext(Dispatchers.IO) { store.loadSafely() }
         notes = result.notes
@@ -378,7 +381,33 @@ internal fun NestNoteApp(
     LaunchedEffect(externalMarkdownUri, storageLoaded) {
         val uri = externalMarkdownUri
         if (storageLoaded && uri != null) {
-            importMarkdownUris(listOf(uri))
+            val openedDocument = withContext(Dispatchers.IO) {
+                runCatching {
+                    val markdown = context.contentResolver.openInputStream(uri)
+                        ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                        ?: error("Unable to read Markdown file")
+                    val displayName = context.contentResolver.query(
+                        uri,
+                        arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
+                        null,
+                        null,
+                        null
+                    )?.use { cursor ->
+                        if (cursor.moveToFirst()) cursor.getString(0).orEmpty() else ""
+                    }.orEmpty()
+                    val title = displayName.ifBlank {
+                        uri.lastPathSegment?.substringAfterLast('/') ?: "Markdown document"
+                    }
+                    title to markdown
+                }
+            }
+            openedDocument.onSuccess { (title, markdown) ->
+                openedExternalMarkdownTitle = title
+                openedExternalMarkdownContent = markdown
+                showExternalMarkdownDialog = true
+            }.onFailure {
+                snackbarHostState.showSnackbar("Couldn't open that Markdown file")
+            }
             onExternalMarkdownHandled()
         }
     }
@@ -1063,6 +1092,46 @@ internal fun NestNoteApp(
                 },
                 dismissButton = {
                     TextButton(onClick = { pendingRestore = null }) { Text("Cancel") }
+                }
+            )
+        }
+
+        if (showExternalMarkdownDialog) {
+            AlertDialog(
+                onDismissRequest = { showExternalMarkdownDialog = false },
+                title = { Text(openedExternalMarkdownTitle) },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 560.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        AndroidView(
+                            factory = { viewContext ->
+                                TextView(viewContext).apply {
+                                    movementMethod = LinkMovementMethod.getInstance()
+                                    setTextColor(colors.onSurface.toArgb())
+                                    textSize = 16f
+                                    setPadding(4, 4, 4, 4)
+                                }
+                            },
+                            update = { textView ->
+                                textView.text = MarkdownPreview.toSpanned(
+                                    context,
+                                    openedExternalMarkdownContent,
+                                    colors.onSurface.toArgb()
+                                )
+                                textView.movementMethod = LinkMovementMethod.getInstance()
+                            },
+                            modifier = Modifier.fillMaxWidth().wrapContentHeight()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showExternalMarkdownDialog = false }) {
+                        Text("Close")
+                    }
                 }
             )
         }
