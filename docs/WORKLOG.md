@@ -951,3 +951,12 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Extracted cross-store password change compensation into `PrivateVaultPasswordChange` and added tests for key-rewrap failure, verifier-update failure with rollback, rollback failure requiring lock/recovery, and success. Added integration tests for real crypto rewrap preserving records and rejecting the old password after success.
 - Existing migration tests cover the boundary after isolated-store commit and before legacy-store cleanup by creating fresh store/crypto objects. Existing draft tests cover encrypted-at-rest recovery through a fresh store instance; backup tests cover private-note exclusion and restore round trips.
 - **Not yet verified:** a true Android process kill between migration phases, an Android device/emulator biometric prompt and key invalidation, process/activity recreation on device, restore followed by private-draft recovery, or exact-head CI. Robolectric object recreation is not a substitute for actual OS process termination. Keep PR #93 draft until CI and device/emulator evidence are available.
+
+
+## 2026-10-23 — Private Vault biometric enrollment and unlock wired into UI
+
+- Reused the existing AndroidX BiometricPrompt dependency and PrivateVaultBiometricKey Android Keystore AES-GCM wrapping primitive rather than adding a second biometric stack.
+- Settings opt-in now requests password authentication, then presents an explicit biometric enrollment prompt. The preference is persisted as enabled only after the authenticated CryptoObject cipher successfully wraps the current vault data key.
+- Vault unlock now exposes strong-biometric authentication only when the setting is enabled and a valid enrollment exists. Unlock consumes only the cipher returned by the successful BiometricPrompt.CryptoObject callback, unwraps the same vault data key, and uses the existing encrypted-store migration path. Password remains the fallback and recovery route.
+- Disabling biometric unlock deletes the stored wrapped-key enrollment and Android Keystore alias. Enrollment/prompt failures leave password access available and do not enable biometric unlock.
+- **Still required before release:** exact-head CI success and physical-device/emulator verification of enrollment, successful unlock, cancellation/failure, biometric-enrollment invalidation, and password fallback. The implementation is wired; these platform-specific checks must not be inferred from Robolectric tests.
