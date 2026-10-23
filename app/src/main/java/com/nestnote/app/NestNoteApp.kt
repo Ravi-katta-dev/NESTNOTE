@@ -1072,7 +1072,30 @@ internal fun NestNoteApp(
                         totalNotes = notes.count { !it.privateNote },
                         archivedNotes = notes.count { it.archived && !it.privateNote },
                         onOpenBackupRestore = { selectedView = "Backup" },
-                        onOpenPrivateVaultSettings = { selectedView = "PrivateVaultSettings" }
+                        onOpenPrivateVaultSettings = { selectedView = "PrivateVaultSettings" },
+                        storageBackend = store.currentBackend(),
+                        onStorageBackendChange = { target ->
+                            if (!storageLoaded || storageRecoveryRequired) {
+                                coroutineScope.launch { snackbarHostState.showSnackbar("Resolve storage recovery before switching storage.") }
+                            } else {
+                                coroutineScope.launch {
+                                    val switchResult = runCatching {
+                                        withContext(Dispatchers.IO) { store.switchBackend(target, notes + legacyPrivateNotes) }
+                                    }
+                                    switchResult.onSuccess { result ->
+                                        notes = result.notes.filterNot { it.privateNote }
+                                        legacyPrivateNotes = result.notes.filter { it.privateNote }
+                                        storageRecoveryRequired = result.recoveryRequired
+                                        selectedNoteIds = emptySet()
+                                        editorVisible = false
+                                        val backendName = if (target == NoteStorageBackend.SQLCIPHER) "SQLCipher" else "Android Keystore"
+                                        snackbarHostState.showSnackbar("Storage switched to $backendName. The other store was kept.")
+                                    }.onFailure { error ->
+                                        snackbarHostState.showSnackbar(error.message ?: "Storage switch failed; the active store was kept.")
+                                    }
+                                }
+                            }
+                        }
                     )
                 } else if (selectedView == "About") {
                     AboutScreen(version = appVersion)
