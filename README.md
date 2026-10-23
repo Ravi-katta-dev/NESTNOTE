@@ -77,3 +77,5 @@ Use [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for v
 
 ## License
 Intended license: GPL-3.0-only. See [LICENSE](LICENSE) and the [canonical license text](https://www.gnu.org/licenses/gpl-3.0.txt). Confirm contributor and copyright-holder rights before distribution.
+
+- Markdown notes support formatted tables in preview; pasting a valid pipe table into the editor automatically aligns columns while preserving cell text and alignment markers.
