@@ -23,22 +23,29 @@ import javax.crypto.spec.SecretKeySpec
 internal class PrivateVaultBiometricKey(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    /** Creates a fresh auth-bound key and wraps the already-existing vault key. */
-    fun enroll(session: PrivateNoteCrypto.Session): Boolean = runCatching {
+    /** Creates the auth-bound key and returns an encryption Cipher for CryptoObject enrollment. */
+    fun createEnrollmentCipher(): Cipher? = runCatching {
         deleteEnrollment()
-        val key = generateKey()
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, key)
-        cipher.updateAAD(AAD)
-        val ciphertext = cipher.doFinal(session.key.encoded)
-        val payload = ByteBuffer.allocate(cipher.iv.size + ciphertext.size)
-            .put(cipher.iv).put(ciphertext).array()
-        check(prefs.edit()
-            .putInt(VERSION, SCHEMA_VERSION)
-            .putString(WRAPPED_KEY, Base64.encodeToString(payload, Base64.NO_WRAP))
-            .commit())
-        true
-    }.getOrDefault(false)
+        Cipher.getInstance(TRANSFORMATION).apply {
+            init(Cipher.ENCRYPT_MODE, generateKey())
+            updateAAD(AAD)
+        }
+    }.getOrNull()
+
+    /** Persist only after BiometricPrompt successfully authenticates the enrollment Cipher. */
+    fun completeEnrollment(session: PrivateNoteCrypto.Session, authenticatedCipher: Cipher?): Boolean =
+        runCatching {
+            val cipher = requireNotNull(authenticatedCipher) { "Missing authenticated enrollment cipher" }
+            require(cipher.algorithm == TRANSFORMATION)
+            val ciphertext = cipher.doFinal(session.key.encoded)
+            val payload = ByteBuffer.allocate(cipher.iv.size + ciphertext.size)
+                .put(cipher.iv).put(ciphertext).array()
+            check(prefs.edit()
+                .putInt(VERSION, SCHEMA_VERSION)
+                .putString(WRAPPED_KEY, Base64.encodeToString(payload, Base64.NO_WRAP))
+                .commit())
+            true
+        }.getOrDefault(false)
 
     /** Prepares the only Cipher that may be passed to BiometricPrompt.CryptoObject. */
     fun createUnlockCipher(): Cipher? = runCatching {
