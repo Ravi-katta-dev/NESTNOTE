@@ -11,18 +11,18 @@ NESTNOTE is a local-first note-taking app built with Kotlin, Jetpack Compose, an
 - Create, edit, pin, archive, restore, search, sort, and delete notes (with undo).
 - Categories, pastel note colours, editor wallpapers, light/dark themes, and configurable dashboard layout.
 - Full-screen and quick editors, checklist and bullet tools, list continuation, and optional writing statistics.
-- Editor text-size options, reminder metadata, and copy/share actions.
+- Editor text-size options plus an in-editor zoom slider (50%–200%) for editing and reading saved notes, reminder metadata, and copy/share actions.
 - JSON backup and restore through Android's system file picker.
-- Open external Markdown (`.md`) files directly in a read-only viewer without importing them as saved notes; adjust viewer zoom from 50% to 200% and configure the default in Settings.
+- Open external Markdown (`.md`) files directly in a read-only viewer without importing them as saved notes; adjust viewer zoom from 50% to 200% and configure the default in Settings.\n- Offline Text Toolbox under More → Power tools: live word/character/line counts, estimated reading time, case conversion, whitespace cleanup, copy, and clear.
 - Local-data recovery safeguards and validated, versioned backups.
-- Private Vault: open the dedicated Vault page from More or Settings → Privacy, authenticate with the vault password, and manage privacy guidance. Biometric unlock remains disabled pending device validation; exported JSON backups remain plaintext and may include private notes.
+- Private Vault: open the dedicated Vault page from More or Settings → Privacy, authenticate with the vault password, and manage privacy controls. Authentication-bound biometric enrollment/unlock is implemented behind explicit opt-in; physical-device validation remains a release gate. Exported JSON backups remain plaintext and may include private notes.
 
 ## License
 
 NESTNOTE is intended to be distributed under the GNU General Public License v3.0 only (GPL-3.0-only). See [`LICENSE`](LICENSE) and the [canonical license text](https://www.gnu.org/licenses/gpl-3.0.txt). Confirm contributor/copyright-holder rights before distribution.
 
 ## Current version and release downloads
-The latest published stable release is **v1.3.10**. The current v1.3.11 release record is maintained in [`CHANGELOG.md`](CHANGELOG.md) and [`docs/release-notes/v1.3.11.md`](docs/release-notes/v1.3.11.md); v1.3.11 is not a published release until its stable tag and release workflow complete. PR [#87](https://github.com/Ravi-katta-dev/NESTNOTE/pull/87) merged on 2026-10-23, adding direct external Markdown viewing and adjustable zoom to the v1.3.11 candidate; the feature is merged but v1.3.11 has not been published.
+The latest published stable release is **v1.3.10**. **v1.3.11 is the current repository candidate, not a published release**; its release record is maintained in [`CHANGELOG.md`](CHANGELOG.md) and [`docs/release-notes/v1.3.11.md`](docs/release-notes/v1.3.11.md). PR [#87](https://github.com/Ravi-katta-dev/NESTNOTE/pull/87) added direct external Markdown viewing and adjustable zoom. PR [#94](https://github.com/Ravi-katta-dev/NESTNOTE/pull/94) adds the Private Vault biometric flow, UI refinements, Text Toolbox, improved Home dashboard, and editor/reader zoom controls. These PR #94 changes are not a published release until the PR is merged, required validation is complete, and a versioned stable tag/release workflow succeeds.
 
 Visit [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases). Only download an APK attached to a versioned production release and verify its signature before installing. Historical “latest” or “CI-SIGNED” artifacts, if present, are not proof of production signing.
 
@@ -69,7 +69,7 @@ gradle --no-daemon assembleDebugAndroidTest
 The [Android CI workflow](https://github.com/Ravi-katta-dev/NESTNOTE/blob/main/.github/workflows/android-ci.yml) runs unit tests, builds debug and minified release APKs, and compiles instrumentation tests. Emulator execution is intentionally excluded from required CI to avoid hosted-emulator subscription/usage costs. Run `gradle --no-daemon connectedDebugAndroidTest` locally on an available emulator/device when possible. Do not claim instrumentation execution, physical-device, TalkBack, large-font, keyboard/insets, upgrade, migration, or visual-regression checks unless they were actually run and recorded.
 
 ## Repository guide
-- app/src/main/java/com/nestnote/app/MainActivity.kt — Compose UI and interactions.
+- app/src/main/java/com/nestnote/app/NestNoteApp.kt — top-level navigation, Home dashboard, and app-level interactions.\n- app/src/main/java/com/nestnote/app/NoteEditor.kt and NoteEditorSections.kt — note editor, reader, preview, and text-size controls.\n- app/src/main/java/com/nestnote/app/TextToolboxScreen.kt — offline text utility tools.
 - app/src/main/java/com/nestnote/app/NoteStore.kt — note model, persistence, encryption, backup validation, and merge.
 - app/src/main/java/com/nestnote/app/NoteText.kt — list/checklist helpers and text counters.
 - app/src/test/ — JVM/unit tests.
