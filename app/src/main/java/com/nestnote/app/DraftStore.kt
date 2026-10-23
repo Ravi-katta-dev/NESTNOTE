@@ -3,7 +3,7 @@ package com.nestnote.app
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.util.Base64
+import java.util.Base64
 import java.nio.ByteBuffer
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -144,26 +144,26 @@ class DraftStore internal constructor(rootOverride: File, private val privateKey
     // Versioned envelopes ensure old plaintext files are rejected, not silently migrated.
     private fun encodeEnvelope(draft: Draft): String {
         val plaintext = encodeProperties(draft).toByteArray(Charsets.UTF_8)
-        if (!draft.privateNote) return PUBLIC_PREFIX + Base64.encodeToString(plaintext, Base64.NO_WRAP)
+        if (!draft.privateNote) return PUBLIC_PREFIX + Base64.getEncoder().withoutPadding().encodeToString(plaintext)
         val key = privateKeyProvider?.invoke() ?: throw IllegalStateException("Private draft key unavailable")
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, key)
         cipher.updateAAD(PRIVATE_AAD)
         val ciphertext = cipher.doFinal(plaintext)
         val payload = ByteBuffer.allocate(cipher.iv.size + ciphertext.size).put(cipher.iv).put(ciphertext).array()
-        return PRIVATE_PREFIX + Base64.encodeToString(payload, Base64.NO_WRAP)
+        return PRIVATE_PREFIX + Base64.getEncoder().withoutPadding().encodeToString(payload)
     }
 
     private fun decodeEnvelope(raw: String): Draft? {
         val isPrivate = raw.startsWith(PRIVATE_PREFIX)
         val plain = when {
             raw.startsWith(PUBLIC_PREFIX) -> {
-                val bytes = Base64.decode(raw.removePrefix(PUBLIC_PREFIX).trim(), Base64.NO_WRAP)
+                val bytes = Base64.getDecoder().decode(raw.removePrefix(PUBLIC_PREFIX).trim())
                 Charsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString()
             }
             isPrivate -> {
                 val key = privateKeyProvider?.invoke() ?: return null
-                val payload = Base64.decode(raw.removePrefix(PRIVATE_PREFIX).trim(), Base64.NO_WRAP)
+                val payload = Base64.getDecoder().decode(raw.removePrefix(PRIVATE_PREFIX).trim())
                 if (payload.size < IV_BYTES + TAG_BYTES) return null
                 val buffer = ByteBuffer.wrap(payload)
                 val iv = ByteArray(IV_BYTES); buffer.get(iv)
