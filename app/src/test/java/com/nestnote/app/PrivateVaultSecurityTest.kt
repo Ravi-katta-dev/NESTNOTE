@@ -114,12 +114,19 @@ class PrivateVaultSecurityTest {
         assertEquals(listOf(public, private, archivedPrivate), restored)
 
         val notes = requireNotNull(restored)
-        listOf("Home", "All notes", "Pinned", "Archived", "Ideas").forEach { view ->
+        listOf("Home", "All notes", "Pinned", "Archived", "Reminders", "Ideas", "Work", "Personal").forEach { view ->
             assertFalse("private note leaked into $view",
                 NoteFilters.visibleNotes(notes, view, "", false, false).any { it.privateNote })
         }
-        assertFalse(NoteFilters.visibleNotes(notes, "Home", "hidden searchable text", false, false)
-            .any { it.privateNote })
+        listOf(
+            "hidden searchable text", "is:pinned", "is:archived", "has:reminder",
+            "category:Ideas", "in:Ideas"
+        ).forEach { query ->
+            assertFalse("private note leaked into query: $query",
+                NoteFilters.visibleNotes(notes, "Home", query, false, false).any { it.privateNote })
+            assertFalse("private note leaked into archived query: $query",
+                NoteFilters.visibleNotes(notes, "Archived", query, false, false).any { it.privateNote })
+        }
         assertEquals(listOf(private), NoteFilters.visibleNotes(notes, "Private", "", false, false))
     }
 
