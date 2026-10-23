@@ -14,7 +14,12 @@ internal class PrivateNoteStore(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun load(session: PrivateNoteCrypto.Session): List<NestNote> {
-        val records = prefs.getString(RECORDS, null) ?: return emptyList()
+        val version = prefs.getInt(VERSION, -1)
+        val records = prefs.getString(RECORDS, null)
+        if (version == -1 && records == null) return emptyList()
+        require(version == SCHEMA_VERSION && !records.isNullOrBlank()) {
+            "Private note store metadata is missing or unsupported"
+        }
         val array = JSONArray(records)
         val result = ArrayList<NestNote>(array.length())
         for (index in 0 until array.length()) {
@@ -43,8 +48,8 @@ internal class PrivateNoteStore(context: Context) {
         prefs.edit().putInt(VERSION, SCHEMA_VERSION).putString(RECORDS, array.toString()).commit()
     }.getOrDefault(false)
 
-    fun hasStoredRecords(): Boolean = prefs.getInt(VERSION, -1) == SCHEMA_VERSION &&
-        !prefs.getString(RECORDS, null).isNullOrBlank()
+    /** True if any store metadata exists, including malformed/unsupported data that must not be overwritten. */
+    fun hasStoredRecords(): Boolean = prefs.contains(VERSION) || prefs.contains(RECORDS)
 
     fun clear(): Boolean = prefs.edit().remove(RECORDS).remove(VERSION).commit()
 
