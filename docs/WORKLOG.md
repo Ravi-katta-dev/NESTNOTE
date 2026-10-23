@@ -969,3 +969,9 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Improved the biometric status messaging and recovery-method hierarchy; made the backup warning easier to scan while retaining the important plain-text-export warning.
 - Refined password and enrollment dialogs with icon-led titles, consistent field shapes, better spacing, and animated inline errors. No security policy, key derivation, or vault data flow was changed by the visual pass.
 - Exact-head Android CI is pending; verify on small and large screens, dark/light themes, and with system animations reduced before release.
+
+## Power tools expansion — Text Toolbox
+- Added an offline Text Toolbox entry under More → Power tools.
+- Provides live word/character/line counts, estimated reading time, uppercase/lowercase/title-case transforms, whitespace cleanup, copy, and clear actions.
+- Uses the existing Material 3 card and rounded-control styling. Text is transient screen state and is not persisted by the tool.
+- Validation: Android CI must compile and test the updated branch before this addition is considered verified.
