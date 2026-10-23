@@ -269,3 +269,9 @@ Remaining open items are all low-priority UX gaps.
 - Editor and backup/release audit updates
 
 Full comparison: https://github.com/Ravi-katta-dev/NESTNOTE/compare/v1.2.4...v1.2.5
+
+## Candidate additions in PR #94 — not yet published
+- Home dashboard quick-create card with active and pinned note counts.
+- Offline Text Toolbox under More → Power tools (text statistics, reading-time estimate, case transforms, whitespace cleanup, copy, and clear).
+- Expandable note editor/reader zoom slider (50%–200%, 5% increments); display-only and does not change stored text.
+- Private Vault biometric enrollment/unlock flow and modernized settings/dialog UI remain subject to exact-head CI and device-level verification before release.
