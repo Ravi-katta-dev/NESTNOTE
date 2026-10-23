@@ -1,3 +1,13 @@
+## 2026-10-23 — Independent Private Vault store integration
+
+- Wired the isolated private-record store into app password unlock, note loading/saving, legacy migration, and lifecycle/route locking on `feat/private-vault-crypto-isolation`.
+- Startup keeps only public notes in the normal active list and retains legacy private records for migration; ordinary saves preserve those records in the old encrypted NoteStore blob until the vault password is verified.
+- On unlock, the app unlocks the independent vault data key, merges any previously isolated records with legacy private records, commits all private records to the isolated encrypted store, then commits only public records to NoteStore. Failure denies unlock and does not intentionally fall back to plaintext.
+- Normal saves write private records only through `PrivateNoteStore` with an unlocked session and public records through `NoteStore`; if the public commit fails after the private commit, the app attempts to restore the prior encrypted private snapshot.
+- Locking drops the in-memory crypto session and removes private records from the active note list. Biometric unlock is disabled until it can cryptographically unlock the isolated key.
+- Added a migration integration test for private-store ciphertext and public-store separation.
+- Remaining release blockers: exact-head CI; authenticated biometric key wrapping; audit/verification of backups, linked-note flows, cross-store crash recovery, and password-change failure atomicity; emulator/device checks.
+
 ## 2026-10-23 — Editor draft flush on lifecycle stop/removal
 
 - Added a latest-state draft snapshot helper and a synchronous final `DraftStore.write` flush on Activity `ON_STOP` and editor composable disposal. This closes the debounce window where the editor could be hidden before the 2-second autosave timer fired.
