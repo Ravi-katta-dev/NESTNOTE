@@ -72,9 +72,8 @@ internal class PrivateVaultBiometricKey(context: Context) {
         PrivateNoteCrypto.Session(SecretKeySpec(keyBytes, "AES"))
     }.getOrNull()
 
-    fun isEnrolled(): Boolean = prefs.getInt(VERSION, -1) == SCHEMA_VERSION &&
-        !prefs.getString(WRAPPED_KEY, null).isNullOrBlank() &&
-        runCatching { existingKey() }.isSuccess
+    /** True only when the persisted envelope and an actually usable auth-bound key are present. */
+    fun isEnrolled(): Boolean = createUnlockCipher() != null
 
     fun deleteEnrollment(): Boolean = runCatching {
         prefs.edit().remove(VERSION).remove(WRAPPED_KEY).commit().also {
