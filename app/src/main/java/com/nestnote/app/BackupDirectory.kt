@@ -1,9 +1,7 @@
 package com.nestnote.app
 
-import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
-import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import java.io.IOException
 
@@ -19,6 +17,8 @@ internal object BackupDirectory {
     private const val FOLDER_NAME = "NESTNOTE"
     private const val BACKUP_NAME = "NESTNOTE-backup.json"
     private const val MIME_JSON = "application/json"
+    private const val ENCRYPTED_BACKUP_NAME = "NESTNOTE-backup.nestnote"
+    private const val MIME_ENCRYPTED = "application/octet-stream"
 
     fun persistTreeGrant(context: Context, treeUri: Uri): Boolean = runCatching {
         context.contentResolver.takePersistableUriPermission(
@@ -63,6 +63,39 @@ internal object BackupDirectory {
         } ?: return null
         output.toByteArray()
     }.getOrNull()
+
+    fun writeEncryptedLatest(context: Context, treeUri: Uri, bytes: ByteArray): Boolean = runCatching {
+        require(bytes.isNotEmpty() && bytes.size <= NoteStore.MAX_BACKUP_BYTES)
+        val folder = nestNoteFolder(context, treeUri, create = true) ?: error("Cannot access Documents/NESTNOTE")
+        val existing = folder.findFile(ENCRYPTED_BACKUP_NAME)
+        val target = existing ?: folder.createFile(MIME_ENCRYPTED, ENCRYPTED_BACKUP_NAME)
+            ?: error("Cannot create encrypted backup file")
+        context.contentResolver.openOutputStream(target.uri, "wt")?.use { output ->
+            output.write(bytes)
+            output.flush()
+        } ?: error("Cannot open encrypted backup destination")
+        true
+    }.getOrDefault(false)
+
+    fun readEncryptedLatest(context: Context, treeUri: Uri): ByteArray? = runCatching {
+        val folder = nestNoteFolder(context, treeUri, create = false) ?: return null
+        val file = folder.findFile(ENCRYPTED_BACKUP_NAME) ?: return null
+        val output = java.io.ByteArrayOutputStream()
+        context.contentResolver.openInputStream(file.uri)?.use { input ->
+            val buffer = ByteArray(8192)
+            var total = 0
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                total += count
+                if (total > NoteStore.MAX_BACKUP_BYTES) throw IOException("Encrypted backup is too large")
+                output.write(buffer, 0, count)
+            }
+        } ?: return null
+        output.toByteArray()
+    }.getOrNull()
+
+    fun encryptedBackupName(): String = ENCRYPTED_BACKUP_NAME
 
     fun folderName(): String = FOLDER_NAME
     fun backupName(): String = BACKUP_NAME
