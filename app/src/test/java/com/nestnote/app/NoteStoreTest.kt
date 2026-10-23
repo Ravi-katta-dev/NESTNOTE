@@ -51,6 +51,18 @@ class NoteStoreTest {
     }
 
     @Test
+    fun plaintextBackupSelectionAlwaysExcludesPrivateNotesAndHonorsArchivedOption() {
+        val active = NestNote(id = 1L, title = "Public active", body = "visible")
+        val archived = NestNote(id = 2L, title = "Public archived", body = "visible", archived = true)
+        val privateActive = NestNote(id = 3L, title = "Private", body = "secret", privateNote = true)
+        val privateArchived = NestNote(id = 4L, title = "Private archived", body = "secret", archived = true, privateNote = true)
+        val notes = listOf(active, archived, privateActive, privateArchived)
+
+        assertEquals(listOf(active), NoteStore.notesForBackup(notes, includeArchived = false))
+        assertEquals(listOf(active, archived), NoteStore.notesForBackup(notes, includeArchived = true))
+    }
+
+    @Test
     fun privateNoteFlagSurvivesSaveLoadAndBackupRoundTrip() {
         val secret = NestNote(id = 999L, title = "Private", body = "Secret", privateNote = true)
         assertTrue(store.save(listOf(secret)))
