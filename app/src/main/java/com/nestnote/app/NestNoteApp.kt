@@ -29,6 +29,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
@@ -748,6 +750,7 @@ internal fun NestNoteApp(
                 Column(
                     (if (isExpandedWidth) Modifier.widthIn(max = 840.dp) else Modifier)
                         .fillMaxSize()
+                        .animateContentSize(animationSpec = tween(durationMillis = 200))
                 ) {
                 if (storageRecoveryRequired) {
                     Surface(
