@@ -979,6 +979,41 @@ internal fun NestNoteApp(
                                 style = MaterialTheme.typography.titleSmall,
                                 color = colors.onSurfaceVariant
                             )
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
+                                color = colors.primaryContainer
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = colors.surface.copy(alpha = 0.72f)
+                                    ) {
+                                        Icon(Icons.Default.AutoAwesome, contentDescription = null,
+                                            modifier = Modifier.padding(12.dp).size(26.dp), tint = colors.primary)
+                                    }
+                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("A little space for big ideas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        Text(
+                                            "${notes.count { !it.privateNote && !it.archived }} active notes · ${notes.count { it.pinned && !it.privateNote && !it.archived }} pinned",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = colors.onSurfaceVariant
+                                        )
+                                    }
+                                    IconButton(onClick = {
+                                        editorNoteId = null
+                                        editorDraftId = NoteStore.allocateNoteId(notes)
+                                        editorTemplate = null
+                                        editorVisible = true
+                                    }) {
+                                        Icon(Icons.Default.Add, contentDescription = "Create a note", tint = colors.primary)
+                                    }
+                                }
+                            }
                         } else {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
