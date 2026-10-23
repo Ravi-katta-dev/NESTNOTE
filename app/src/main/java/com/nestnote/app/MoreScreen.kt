@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +61,7 @@ internal fun MoreScreen(
         }
         MoreGroup("Power tools") {
             MoreRow(Icons.Default.AutoAwesome, "Note templates", "Daily journal, meetings, projects and checklists", false) { onOpen("Templates") }
+            MoreRow(Icons.Default.TextFields, "Text Toolbox", "Word counts, reading time and quick text cleanup", true) { onOpen("TextToolbox") }
             MoreRow(Icons.Default.Insights, "Note insights", "Activity, word counts and rediscovery", true) { onOpen("Insights") }
             MoreRow(Icons.Default.Keyboard, "Keyboard shortcuts", "Undo and redo for hardware keyboards", true) { onOpen("Shortcuts") }
         }
