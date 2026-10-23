@@ -59,13 +59,15 @@ internal object MarkdownTableFormatter {
                         val width = widths[col]
                         val left = cell.startsWith(":")
                         val right = cell.endsWith(":")
-                        val dashes = "-".repeat((width - if (left) 1 else 0 - if (right) 1 else 0).coerceAtLeast(3))
-                        when {
-                            left && right -> ":" + dashes + ":"
-                            left -> ":" + dashes
-                            right -> dashes + ":"
-                            else -> dashes
-                        }.let { it.padEnd(width + if (left && right) 2 else if (left || right) 1 else 0, '-') }
+                        val dashCount = (width - (if (left) 1 else 0) - (if (right) 1 else 0)).coerceAtLeast(3)
+                        "-".repeat(dashCount).let { dashes ->
+                            when {
+                                left && right -> ":" + dashes + ":"
+                                left -> ":" + dashes
+                                right -> dashes + ":"
+                                else -> dashes
+                            }
+                        }
                     }.joinToString(" | ") + " |"
                 } else {
                     "| " + row.mapIndexed { col, cell -> cell.padEnd(widths[col]) }.joinToString(" | ") + " |"
