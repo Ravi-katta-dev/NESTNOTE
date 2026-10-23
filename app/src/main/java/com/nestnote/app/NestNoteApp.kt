@@ -567,6 +567,10 @@ internal fun NestNoteApp(
             pendingFolderExportPayload = null
             pendingFolderImport = false
             coroutineScope.launch { snackbarHostState.showSnackbar("Folder access could not be saved. Choose Documents again.") }
+        } else {
+            // A cancelled picker must not leave a stale export/import queued for a later selection.
+            pendingFolderExportPayload = null
+            pendingFolderImport = false
         }
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -912,6 +916,50 @@ internal fun NestNoteApp(
                             } else {
                                 pendingFolderImport = true
                                 backupFolderLauncher.launch(null)
+                            }
+                        },
+                        onExportEncryptedArchive = { includeArchived, password ->
+                            val exportNotes = NoteStore.notesForBackup(notes, includeArchived = includeArchived)
+                            val encrypted = runCatching {
+                                PasswordBackupArchive.encryptBackup(
+                                    NoteStore.encodeBackup(exportNotes),
+                                    password.toCharArray()
+                                )
+                            }.getOrNull()
+                            val savedTree = BackupDirectory.configuredTreeUri(context)
+                            val saved = encrypted != null && savedTree != null &&
+                                BackupDirectory.writeEncryptedLatest(context, savedTree, encrypted)
+                            if (saved) {
+                                lastBackupAt = System.currentTimeMillis()
+                                backupStatus = "Success"
+                                preferences.edit()
+                                    .putLong(PREF_BACKUP_LAST_SUCCESS_AT, lastBackupAt)
+                                    .putString(PREF_BACKUP_LAST_STATUS, backupStatus)
+                                    .apply()
+                            } else {
+                                backupStatus = "Failed"
+                                saveString(PREF_BACKUP_LAST_STATUS, backupStatus)
+                            }
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    when {
+                                        encrypted == null -> "Encrypted archive could not be created. Check the password and backup size."
+                                        saved -> "Password-protected archive saved to Documents/NESTNOTE/NESTNOTE-backup.nestnote."
+                                        else -> "Encrypted archive could not be saved. Your notes were not changed."
+                                    }
+                                )
+                            }
+                        },
+                        onImportEncryptedArchive = { password ->
+                            val savedTree = BackupDirectory.configuredTreeUri(context)
+                            val archive = savedTree?.let { BackupDirectory.readEncryptedLatest(context, it) }
+                            val raw = archive?.let { PasswordBackupArchive.decryptBackup(it, password.toCharArray()) }
+                            val incoming = raw?.let(NoteStore::decodeBackup)
+                            if (incoming != null && incoming.isNotEmpty()) {
+                                pendingRestore = incoming
+                                coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted archive unlocked. Review the restore before applying it.") }
+                            } else {
+                                coroutineScope.launch { snackbarHostState.showSnackbar("Could not unlock the encrypted archive. Check the password or archive file; no notes were changed.") }
                             }
                         }
                     )
