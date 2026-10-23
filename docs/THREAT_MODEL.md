@@ -73,3 +73,10 @@ Before release, verify lifecycle and activity/process recreation, biometric outc
 6. Which automated and device tests demonstrate each security claim?
 
 Until a separately reviewed design is implemented and verified, Private Vault must be described as a UI privacy boundary layered over the app's general local-storage encryption.
+
+
+## Draft confidentiality boundary
+
+Drafts are stored separately from encrypted note records. Schema-v2 draft envelopes persist an explicit `privateNote` classification. Private drafts use AES-GCM with a dedicated Android Keystore key and purpose-bound AAD; a missing key, invalid tag, malformed envelope, or classification/envelope mismatch rejects recovery without a plaintext fallback. Ordinary orphan discovery excludes private drafts. Legacy unversioned/schema-v1 plaintext draft files are not migrated or assumed public; they are rejected and deleted when discovered. Deletion on flash storage is not a guaranteed forensic secure erase, so this cleanup is risk reduction rather than a secure-erasure claim.
+
+A private draft is still protected by the app/device security boundary, not a separate vault password-derived key. Access to an existing private draft must occur only through the authenticated Private Vault editor path. Device-level compromise remains out of scope.
