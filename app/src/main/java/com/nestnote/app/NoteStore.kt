@@ -73,7 +73,8 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
     fun loadSafely(): NoteLoadResult = when (currentBackend()) {
         NoteStorageBackend.KEYSTORE -> loadKeyStoreSafely()
         NoteStorageBackend.SQLCIPHER -> if (testKeyProvider != null) NoteLoadResult(emptyList(), true)
-            else SqlCipherNoteStore(appContext).loadSafely()
+            else runCatching { SqlCipherNoteStore(appContext).loadSafely() }
+                .getOrElse { NoteLoadResult(emptyList(), true) }
     }
 
     /**
@@ -114,7 +115,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         if (!isValidNoteCollection(notes)) return false
         return when (currentBackend()) {
             NoteStorageBackend.KEYSTORE -> saveKeyStore(notes)
-            NoteStorageBackend.SQLCIPHER -> testKeyProvider == null && SqlCipherNoteStore(appContext).save(notes)
+            NoteStorageBackend.SQLCIPHER -> testKeyProvider == null && runCatching { SqlCipherNoteStore(appContext).save(notes) }.getOrDefault(false)
         }
     }
 
