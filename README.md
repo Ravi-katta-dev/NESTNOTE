@@ -37,6 +37,8 @@ Production APKs are created from tags matching v*.*.* (for example, v1.2.0). The
 
 A manually dispatched/non-tag release workflow run is for unsigned inspection output only; it must not be distributed as a production APK. Never commit keystores, passwords, signing keys, or other secret values.
 
+**Security boundary:** Private Vault is a password/optional-biometric **UI access gate**, not a separately encrypted vault. Private notes use the same general Android Keystore-backed local-storage encryption as ordinary notes; the vault password does not derive or unlock a separate encryption key. Exported JSON backups are plaintext and may contain readable private-note titles and bodies. See [Security Model](docs/SECURITY.md) and [Threat Model](docs/THREAT_MODEL.md) before making security or privacy claims.
+
 ## Private Vault security boundary
 
 **Private Vault is a UI access gate, not a separately encrypted vault.** The vault password is verified through a salted password hash and does not derive or unlock an independent encryption key for private notes. Private notes use NESTNOTE's general Android Keystore-backed local note-storage encryption, like other notes. This helps restrict access through the app's intended UI flow but is not cryptographic isolation against UI bypass or a compromised runtime.
