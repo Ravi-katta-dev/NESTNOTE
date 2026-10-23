@@ -32,6 +32,7 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
+import javax.crypto.Cipher
 
 internal object PrivateVaultSecurity {
     const val MIN_PASSWORD_LENGTH = 6
@@ -164,7 +165,7 @@ internal fun PrivateVaultGateDialog(
     biometricEnabled: Boolean,
     onDismiss: () -> Unit,
     onSubmit: (password: String, confirmation: String) -> Boolean,
-    onBiometricUnlock: () -> Unit
+    onBiometricUnlock: (Cipher) -> Unit
 ) {
     val context = LocalContext.current
     val activity = context.findFragmentActivity()
@@ -179,13 +180,23 @@ internal fun PrivateVaultGateDialog(
 
     fun launchBiometricPrompt() {
         val host = activity ?: return
+        val authenticatedCipher = PrivateVaultBiometricKey(context).createUnlockCipher()
+        if (authenticatedCipher == null) {
+            error = "Biometric unlock is not enrolled or the device key is unavailable. Use your password."
+            return
+        }
         val prompt = BiometricPrompt(
             host,
             ContextCompat.getMainExecutor(host),
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    error = ""
-                    onBiometricUnlock()
+                    val cipher = result.cryptoObject?.cipher
+                    if (cipher == null) {
+                        error = "Biometric authentication did not authorize the vault key. Use your password."
+                    } else {
+                        error = ""
+                        onBiometricUnlock(cipher)
+                    }
                 }
 
                 override fun onAuthenticationFailed() {
@@ -204,10 +215,10 @@ internal fun PrivateVaultGateDialog(
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Unlock Private Vault")
             .setSubtitle("Confirm your identity with your fingerprint or device biometric")
-            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
             .setNegativeButtonText("Use password")
             .build()
-        prompt.authenticate(promptInfo)
+        prompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(authenticatedCipher))
     }
 
     AlertDialog(
@@ -217,7 +228,7 @@ internal fun PrivateVaultGateDialog(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     if (passwordConfigured) {
-                        "Enter your vault password to reveal hidden notes, or use a registered device biometric."
+                        "Enter your vault password to reveal hidden notes, or use an enrolled strong biometric."
                     } else {
                         "Choose a password with at least ${PrivateVaultSecurity.MIN_PASSWORD_LENGTH} characters. This password cannot be recovered if forgotten."
                     }
@@ -264,7 +275,7 @@ internal fun PrivateVaultGateDialog(
         },
         dismissButton = {
             Column {
-                if (biometricAvailable) {
+                if (biometricAvailable && PrivateVaultBiometricKey(context).isEnrolled()) {
                     TextButton(onClick = ::launchBiometricPrompt) {
                         Text("Unlock with fingerprint")
                     }

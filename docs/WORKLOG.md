@@ -1,3 +1,22 @@
+## 2026-10-23 — Private Vault security-critical path follow-up
+
+- Hardened `PrivateNoteCrypto.initialize` to fail if wrapped-key metadata cannot be committed.
+- Hardened `PrivateNoteStore` load/save validation for duplicate IDs, collection bounds, note validity, and private classification.
+- Filtered linked-note chips and backlinks by the current note's privacy class to prevent public-note metadata from revealing private titles while the vault is unlocked.
+- Confirmed plaintext backup selection excludes private notes; added regression coverage for backup title/body exclusion, AES-GCM ciphertext tampering, record-ID AAD, wrong-password rejection, migration second-phase failure preserving the legacy copy, and isolated-store reload after creating new crypto/store objects.
+- Biometric unlock remains intentionally disabled. The current password-derived vault key does not have an authentication-bound Android Keystore wrapping key and `BiometricPrompt.CryptoObject` unwrap path. Do not re-enable until that implementation and device tests land.
+- Still required before merge: run exact-head CI; test password-change failure atomicity; audit every restore/draft/link pathway on-device; exercise process death and force-stop migration recovery; verify backup/restore behavior with legacy and malformed stores.
+
+## 2026-10-23 — Independent Private Vault store integration
+
+- Wired the isolated private-record store into app password unlock, note loading/saving, legacy migration, and lifecycle/route locking on `feat/private-vault-crypto-isolation`.
+- Startup keeps only public notes in the normal active list and retains legacy private records for migration; ordinary saves preserve those records in the old encrypted NoteStore blob until the vault password is verified.
+- On unlock, the app unlocks the independent vault data key, merges any previously isolated records with legacy private records, commits all private records to the isolated encrypted store, then commits only public records to NoteStore. Failure denies unlock and does not intentionally fall back to plaintext.
+- Normal saves write private records only through `PrivateNoteStore` with an unlocked session and public records through `NoteStore`; if the public commit fails after the private commit, the app attempts to restore the prior encrypted private snapshot.
+- Locking drops the in-memory crypto session and removes private records from the active note list. Biometric unlock is disabled until it can cryptographically unlock the isolated key.
+- Added a migration integration test for private-store ciphertext and public-store separation.
+- Remaining release blockers: exact-head CI; authenticated biometric key wrapping; audit/verification of backups, linked-note flows, cross-store crash recovery, and password-change failure atomicity; emulator/device checks.
+
 ## 2026-10-23 — Editor draft flush on lifecycle stop/removal
 
 - Added a latest-state draft snapshot helper and a synchronous final `DraftStore.write` flush on Activity `ON_STOP` and editor composable disposal. This closes the debounce window where the editor could be hidden before the 2-second autosave timer fired.
@@ -917,3 +936,18 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Added regression coverage for ciphertext-at-rest, wrong key, tampering, missing classification, both envelope/classification mismatch directions, legacy plaintext rejection, and private-draft exclusion from ordinary orphan listing.
 - Updated threat model and release checklist. This is draft confidentiality, not independent cryptographic isolation of the Private Vault itself.
 - Validation status: automated CI for the final commit still needs confirmation; do not merge until the exact head is green and code review confirms the authenticated recovery path.
+
+## CI follow-up — 2026-10-23
+
+- Maintainer reports the PR CI run succeeded. Treat CI as cleared for that run, while requiring checks on any subsequent commits.
+- Security review remains open: biometric authentication is still deliberately disabled because authentication-bound Keystore key access has not been implemented. Do not merge solely on the basis of green CI.
+- Private draft storage is separately AES-GCM encrypted with an Android Keystore key and excluded from ordinary orphan-draft listing; regression tests already cover at-rest secrecy, wrong-key rejection, tampering, and privacy-classification mismatch.
+
+
+## 2026-10-23 — Private Vault security follow-up: biometric binding and recovery tests
+
+- Added `PrivateVaultBiometricKey`: an Android Keystore AES-GCM key requires per-use authentication, invalidates on biometric enrollment changes, and wraps the existing vault data key. Enrollment and unlock require an authenticated `Cipher`; the prompt callback's authenticated `CryptoObject.cipher` is the only accepted input to unwrap.
+- Changed the gate's biometric prompt path to use `BiometricPrompt.CryptoObject` and strong biometrics. The feature remains **disabled** in both settings and the vault gate; enrollment UX, invalidation recovery, and real-device verification are not complete. Do not enable the preference manually or treat this primitive as release-ready.
+- Extracted cross-store password change compensation into `PrivateVaultPasswordChange` and added tests for key-rewrap failure, verifier-update failure with rollback, rollback failure requiring lock/recovery, and success. Added integration tests for real crypto rewrap preserving records and rejecting the old password after success.
+- Existing migration tests cover the boundary after isolated-store commit and before legacy-store cleanup by creating fresh store/crypto objects. Existing draft tests cover encrypted-at-rest recovery through a fresh store instance; backup tests cover private-note exclusion and restore round trips.
+- **Not yet verified:** a true Android process kill between migration phases, an Android device/emulator biometric prompt and key invalidation, process/activity recreation on device, restore followed by private-draft recovery, or exact-head CI. Robolectric object recreation is not a substitute for actual OS process termination. Keep PR #93 draft until CI and device/emulator evidence are available.
