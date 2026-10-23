@@ -875,7 +875,7 @@ internal fun NestNoteApp(
                         onShowEditorCountsChange = { showEditorCounts = it; saveBoolean(PREF_EDITOR_COUNTS, it) },
                         onResetDefaults = { resetPreferences() },
                         totalNotes = notes.count { !it.privateNote },
-                        archivedNotes = notes.count { it.archived },
+                        archivedNotes = notes.count { it.archived && !it.privateNote },
                         onOpenBackupRestore = { selectedView = "Backup" },
                         onOpenPrivateVaultSettings = { selectedView = "PrivateVaultSettings" }
                     )
