@@ -806,6 +806,8 @@ internal fun NestNoteApp(
                         selectedView = "Home"
                         editorVisible = true
                     }
+                } else if (selectedView == "TextToolbox") {
+                    TextToolboxScreen()
                 } else if (selectedView == "Shortcuts") {
                     KeyboardShortcutsScreen()
                 } else if (selectedView == "Backup") {
