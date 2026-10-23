@@ -81,12 +81,17 @@ internal object MarkdownTableFormatter {
         val formatted = format(text)
         if (formatted == text) return text to cursor.coerceIn(0, text.length)
         val safeCursor = cursor.coerceIn(0, text.length)
+        if (safeCursor == text.length) return formatted to formatted.length
         val lineIndex = text.substring(0, safeCursor).count { it == '\n' }
-        val column = safeCursor - (text.lastIndexOf('\n', (safeCursor - 1).coerceAtLeast(0)).let { if (it < 0) 0 else it + 1 })
+        val previousNewline = text.lastIndexOf('\n', (safeCursor - 1).coerceAtLeast(0))
+        val lineStart = if (previousNewline < 0) 0 else previousNewline + 1
+        val column = safeCursor - lineStart
+        val atLineEnd = safeCursor == text.indexOf('\n', lineStart).let { if (it < 0) text.length else it }
         val formattedLines = formatted.split("\n")
         val before = formattedLines.take(lineIndex).sumOf { it.length + 1 }
         val current = formattedLines.getOrElse(lineIndex) { "" }
-        return formatted to (before + column.coerceAtMost(current.length)).coerceIn(0, formatted.length)
+        val mappedColumn = if (atLineEnd) current.length else column.coerceAtMost(current.length)
+        return formatted to (before + mappedColumn).coerceIn(0, formatted.length)
     }
 
     private fun isPipeRow(line: String): Boolean =
