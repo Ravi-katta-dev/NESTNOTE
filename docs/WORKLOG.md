@@ -1,3 +1,13 @@
+## 2026-10-23 — Priority audit pass: plaintext export and metadata isolation
+
+- Fixed user-facing backup selection to exclude all private notes from plaintext JSON exports, whether archived notes are included or not.
+- Added regression coverage for both export modes, including archived private records.
+- Added defense-in-depth filtering inside `NoteInsightsScreen` and fixed the Settings archived count so private note data does not influence ordinary-user metadata.
+- Updated the threat model and release checklist to distinguish plaintext export of ordinary notes from independent vault encryption. The backup serialization format is still not encrypted; callers that explicitly serialize private notes can still produce plaintext.
+- Current PR-head Android CI is required before considering these code changes validated. Emulator/device lifecycle, biometric, and screenshot/Recents checks remain outstanding.
+
+---
+
 ## 2026-10-23 — Private-note metadata leak fixes
 
 - Fixed the Settings screen's archived-note count so archived private notes are excluded from ordinary Settings totals.
