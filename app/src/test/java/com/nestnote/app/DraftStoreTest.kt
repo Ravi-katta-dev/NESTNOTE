@@ -10,6 +10,10 @@ import org.junit.Before
 import org.junit.Test
 import java.io.File
 import java.nio.file.Files
+import java.util.Base64
+import java.util.Properties
+import java.io.StringWriter
+import javax.crypto.spec.SecretKeySpec
 
 class DraftStoreTest {
 
