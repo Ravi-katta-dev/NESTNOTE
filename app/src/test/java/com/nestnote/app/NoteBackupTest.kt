@@ -34,6 +34,8 @@ class NoteBackupTest {
         assertEquals(1, envelope.getInt("schemaVersion"))
         assertTrue(envelope.getLong("createdAt") > 0L)
         assertEquals(listOf(note(42, "Portable")), NoteStore.decodeBackup(encoded))
+        val missingFormat = org.json.JSONObject(encoded).apply { remove("format") }
+        assertNull(NoteStore.decodeBackup(missingFormat.toString()))
         envelope.put("schemaVersion", 999)
         assertNull(NoteStore.decodeBackup(envelope.toString()))
     }
