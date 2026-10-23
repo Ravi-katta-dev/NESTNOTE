@@ -218,7 +218,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
                 decode(raw, requireFields = true)
             } else {
                 val envelope = JSONObject(raw)
-                require(envelope.optString("format", "com.nestnote.backup") == "com.nestnote.backup") { "unsupported backup format" }
+                require(envelope.optString("format") == "com.nestnote.backup") { "unsupported or missing backup format" }
                 require(envelope.optInt("schemaVersion", -1) == CURRENT_BACKUP_SCHEMA_VERSION) {
                     "unsupported backup schema"
                 }
