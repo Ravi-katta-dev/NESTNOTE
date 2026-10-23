@@ -10,6 +10,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import javax.crypto.spec.SecretKeySpec
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -46,9 +47,11 @@ class PrivateNoteStoreTest {
     @Test fun wrongSessionCannotReadPrivateRecords() {
         val note = NestNote(id = 1003L, title = "Private", body = "secret", privateNote = true)
         assertTrue(store.save(session, listOf(note)))
-        val other = PrivateNoteCrypto(context)
-        assertTrue(other.initialize("another password".toCharArray()))
-        val wrong = other.unlock("another password".toCharArray())!!
+        // Construct an independent session key. A second crypto instance shares the same
+        // persisted vault metadata and must not initialize/replace the existing vault key.
+        val wrong = PrivateNoteCrypto.Session(
+            SecretKeySpec(ByteArray(32) { (it + 1).toByte() }, "AES")
+        )
         assertFalse(runCatching { store.load(wrong) }.isSuccess)
     }
 }
