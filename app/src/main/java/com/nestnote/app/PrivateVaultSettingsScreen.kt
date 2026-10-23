@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.SwipeDown
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -75,7 +74,7 @@ internal fun PrivateVaultSettingsScreen(
                 Icon(Icons.Default.Security, contentDescription = null, tint = colors.onPrimaryContainer, modifier = Modifier.size(30.dp))
                 Text("Your private space", style = MaterialTheme.typography.headlineSmall, color = colors.onPrimaryContainer)
                 Text(
-                    "Keep selected notes out of normal lists and search. Open the vault by swiping down on the Home title area, then authenticate.",
+                    "Keep selected notes out of normal lists and search. Open the vault here or from Settings → Privacy, then authenticate.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onPrimaryContainer
                 )
@@ -114,8 +113,8 @@ internal fun PrivateVaultSettingsScreen(
                         Text(
                             when {
                                 !passwordConfigured -> "Set a vault password first"
-                                !biometricAvailable -> "No supported biometric is currently enrolled"
-                                else -> "Use Android's system prompt for faster access"
+                                !biometricAvailable -> "Disabled until cryptographic unlock and device validation are complete"
+                                else -> "Disabled until cryptographic unlock and device validation are complete"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = colors.onSurfaceVariant
@@ -153,15 +152,6 @@ internal fun PrivateVaultSettingsScreen(
             }
         }
 
-        Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerLow)) {
-            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Icons.Default.SwipeDown, contentDescription = null, tint = colors.primary)
-                    Text("Quick access", style = MaterialTheme.typography.titleMedium)
-                }
-                Text("From Home, swipe down on the NESTNOTE title area. The vault locks when the app leaves the foreground; lock it manually with the lock icon before handing your phone to someone else.", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
-            }
-        }
 
         Card(
             shape = RoundedCornerShape(22.dp),
