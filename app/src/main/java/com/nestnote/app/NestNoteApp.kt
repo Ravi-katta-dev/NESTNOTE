@@ -253,19 +253,28 @@ internal fun NestNoteApp(
     var commitVoiceChanges by remember { mutableStateOf<() -> Unit>({}) }
     var confirmSystemDiscard by remember { mutableStateOf(false) }
     val editorNote = notes.firstOrNull { it.id == editorNoteId }
-    // Protect private content even when a private note is opened from Home and
-    // the selected destination is not the dedicated Private Vault screen.
-    DisposableEffect(context, selectedView, editorVisible, editorNote?.privateNote) {
-        val window = context.findActivityForSecureWindow()?.window
-        val protectPrivateContent = selectedView == "Private" ||
-            (editorVisible && editorNote?.privateNote == true)
-        val wasAlreadySecure = (window?.attributes?.flags ?: 0) and WindowManager.LayoutParams.FLAG_SECURE != 0
-        if (protectPrivateContent) {
-            window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    // Protect private content even when a private note is opened from Home.
+    // Track ownership across recompositions so changing between protected routes
+    // cannot accidentally leave FLAG_SECURE set or clear a flag owned elsewhere.
+    val protectPrivateContent = selectedView == "Private" ||
+        (editorVisible && editorNote?.privateNote == true)
+    var privateVaultAddedSecureFlag by remember { mutableStateOf(false) }
+    val secureWindow = remember(context) { context.findActivityForSecureWindow()?.window }
+    SideEffect {
+        val currentlySecure = (secureWindow?.attributes?.flags ?: 0) and WindowManager.LayoutParams.FLAG_SECURE != 0
+        if (protectPrivateContent && !currentlySecure) {
+            secureWindow?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            privateVaultAddedSecureFlag = true
+        } else if (!protectPrivateContent && privateVaultAddedSecureFlag) {
+            secureWindow?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            privateVaultAddedSecureFlag = false
         }
+    }
+    DisposableEffect(secureWindow) {
         onDispose {
-            if (protectPrivateContent && !wasAlreadySecure) {
-                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            if (privateVaultAddedSecureFlag) {
+                secureWindow?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                privateVaultAddedSecureFlag = false
             }
         }
     }
