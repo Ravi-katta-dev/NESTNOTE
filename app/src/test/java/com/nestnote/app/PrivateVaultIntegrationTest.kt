@@ -95,7 +95,19 @@ class PrivateVaultIntegrationTest {
         // Simulate process recreation: no old in-memory Session is reused.
         val restartedCrypto = PrivateNoteCrypto(context)
         val restartedSession = restartedCrypto.unlock("correct password".toCharArray())!!
-        assertEquals(listOf(private), PrivateNoteStore(context).load(restartedSession))
+        val restartedPrivateStore = PrivateNoteStore(context)
+        val committedPrivate = restartedPrivateStore.load(restartedSession)
+        assertEquals(listOf(private), committedPrivate)
+
+        // Replay the actual startup/unlock recovery decision after a process restart:
+        // merge committed private records with the still-present legacy copy by ID, then
+        // retry the public-only general-store commit. Recovery must be idempotent.
+        val recovered = NoteStore.merge(committedPrivate, generalStore.loadSafely().notes.filter { it.privateNote }).notes
+        assertEquals(listOf(private), recovered)
+        assertTrue(restartedPrivateStore.save(restartedSession, recovered))
+        assertTrue(generalStore.save(listOf(public)))
+        assertEquals(listOf(public), generalStore.loadSafely().notes)
+        assertEquals(listOf(private), restartedPrivateStore.load(restartedSession))
     }
 
     @Test fun wrongPasswordAndStoreTamperingNeverProduceSessionOrRecords() {
