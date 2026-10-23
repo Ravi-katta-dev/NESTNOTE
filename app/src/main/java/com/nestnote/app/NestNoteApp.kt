@@ -303,8 +303,9 @@ internal fun NestNoteApp(
             if (event == Lifecycle.Event.ON_STOP &&
                 (selectedView == "Private" || (editorVisible && editorNote?.privateNote == true))
             ) {
-                privateVaultUnlocked = false
-                if (selectedView == "Private") selectedView = "Home"
+                // Drop the cryptographic session and remove decrypted private records
+                // immediately; do not depend on a later route effect to perform the lock.
+                lockPrivateVault()
                 // Hide the editor without clearing its saveable IDs or dirty state.
                 // NoteEditor autosaves drafts, and retaining state avoids discarding
                 // a recent edit while still preventing the private UI from reappearing.
