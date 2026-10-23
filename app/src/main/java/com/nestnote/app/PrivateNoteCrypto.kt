@@ -23,7 +23,7 @@ import javax.crypto.spec.PBEKeySpec
 internal class PrivateNoteCrypto(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    internal class Session internal constructor(private val key: SecretKey) {
+    internal class Session internal constructor(internal val key: SecretKey) {
         fun encrypt(plaintext: ByteArray, recordId: Long): String {
             require(recordId > 0)
             val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -54,7 +54,7 @@ internal class PrivateNoteCrypto(context: Context) {
     fun initialize(password: CharArray): Boolean = runCatching {
         require(password.size >= MIN_PASSWORD_LENGTH)
         synchronized(LOCK) {
-            if (prefs.contains(WRAPPED_KEY)) return false
+            if (prefs.contains(WRAPPED_KEY)) false else run
             val vaultKey = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
             val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
             val wrappingKey = derive(password, salt)
@@ -121,11 +121,9 @@ internal class PrivateNoteCrypto(context: Context) {
         return SecretKeySpec(cipher.doFinal(encrypted), "AES")
     }
 
-    private fun recordAad(id: Long) = "$RECORD_AAD|$id".toByteArray(Charsets.UTF_8)
-
     companion object {
         private const val PREFS = "nestnote_private_vault_crypto"
-        private const val VERSION = 1
+        private const val VERSION = "schema_version"
         private const val SALT = "key_salt"
         private const val WRAPPED_KEY = "wrapped_vault_key"
         private const val SCHEMA_VERSION = 1
@@ -139,6 +137,7 @@ internal class PrivateNoteCrypto(context: Context) {
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val RECORD_PREFIX = "NESTNOTE_PRIVATE_RECORD_V1:"
         private const val RECORD_AAD = "com.nestnote.app|private-vault|record|v1"
+        private fun recordAad(id: Long) = "$RECORD_AAD|$id".toByteArray(Charsets.UTF_8)
         private val WRAP_AAD = "com.nestnote.app|private-vault|wrapped-key|v1".toByteArray(Charsets.UTF_8)
         private val LOCK = Any()
     }
