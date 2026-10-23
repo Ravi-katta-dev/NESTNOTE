@@ -241,9 +241,10 @@ class DraftStoreTest {
     @Test
     fun `private draft is excluded from ordinary orphan listing`() {
         val draft = sampleDraft(82L).copy(privateNote = true)
-        assertTrue(encryptedStore().write(draft))
-        assertTrue(store.listAll().isEmpty())
-        assertEquals(draft, encryptedStore().listAll(includePrivate = true).single())
+        val secureStore = encryptedStore()
+        assertTrue(secureStore.write(draft))
+        assertTrue(secureStore.listAll().isEmpty())
+        assertEquals(draft, secureStore.listAll(includePrivate = true).single())
     }
 
 
