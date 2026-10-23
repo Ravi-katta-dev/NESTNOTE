@@ -108,8 +108,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.platform.testTag
@@ -241,7 +239,7 @@ internal fun NestNoteApp(
         notes = notes.filterNot { it.privateNote }
         if (selectedView == "Private") selectedView = "Home"
     }
-    var privateVaultBiometricEnabled by remember { mutableStateOf(preferences.getBoolean(PREF_PRIVATE_VAULT_BIOMETRIC_ENABLED, true)) }
+    var privateVaultBiometricEnabled by remember { mutableStateOf(false) }
     val privateVaultBiometricAvailable = remember(context) {
         BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
     }
@@ -608,22 +606,7 @@ internal fun NestNoteApp(
                 TopAppBar(
                     title = {
                         Column(
-                            modifier = Modifier.pointerInput(selectedView) {
-                                var totalDrag = 0f
-                                detectVerticalDragGestures(
-                                    onVerticalDrag = { _, dragAmount ->
-                                        if (dragAmount > 0f) {
-                                            totalDrag += dragAmount
-                                            if (totalDrag > 72f && selectedView == "Home") {
-                                                totalDrag = 0f
-                                                requestPrivateVault()
-                                            }
-                                        } else if (dragAmount < 0f) totalDrag = 0f
-                                    },
-                                    onDragEnd = { totalDrag = 0f },
-                                    onDragCancel = { totalDrag = 0f }
-                                )
-                            }
+                            modifier = Modifier
                         ) {
                             Text(
                                 when (selectedView) { "Private" -> "Private Vault"; "PrivateVaultSettings" -> "Private Vault settings"; "Settings" -> "Settings"; "Backup" -> "Backup & restore"; "About" -> "About & help"; "Templates" -> "Note templates"; "Insights" -> "Note insights"; "Shortcuts" -> "Keyboard shortcuts"; "More" -> "More"; "Pinned" -> "Pinned notes"; "Archived" -> "Archived notes"; "Categories" -> "Categories"; else -> "NestNote" },
@@ -631,7 +614,7 @@ internal fun NestNoteApp(
                                 letterSpacing = 0.2.sp
                             )
                             Text(
-                                when (selectedView) { "Private" -> "Hidden notes · unlocked"; "PrivateVaultSettings" -> "Authentication and privacy controls"; "Settings" -> "Make your notes feel like yours"; "Backup" -> "Protect and manage your notes"; "About" -> "Version, licence and how NESTNOTE works"; "Templates" -> "A faster start for your next note"; "Insights" -> "Private patterns from your own notes"; "Shortcuts" -> "Hardware keyboard controls"; "More" -> "More ways to organize your notes"; else -> "Your thoughts, organized. · Swipe down to open Private Vault" },
+                                when (selectedView) { "Private" -> "Hidden notes · unlocked"; "PrivateVaultSettings" -> "Authentication and privacy controls"; "Settings" -> "Make your notes feel like yours"; "Backup" -> "Protect and manage your notes"; "About" -> "Version, licence and how NESTNOTE works"; "Templates" -> "A faster start for your next note"; "Insights" -> "Private patterns from your own notes"; "Shortcuts" -> "Hardware keyboard controls"; "More" -> "More ways to organize your notes"; else -> "Your thoughts, organized." },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = colors.onSurfaceVariant
                             )
