@@ -138,10 +138,9 @@ import kotlinx.coroutines.withContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
-
 private const val MAX_BACKUP_BYTES = 16 * 1024 * 1024
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 internal fun NestNoteApp(
     store: NoteStore,
