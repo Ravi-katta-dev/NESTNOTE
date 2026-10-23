@@ -72,6 +72,57 @@ class PrivateVaultSecurityTest {
     }
 
     @Test
+    fun lockoutEscalationPersistsAndCapsAtFifteenMinutes() {
+        assertTrue(PrivateVaultSecurity.configure(context, "correct horse"))
+        var now = 5_000_000L
+        repeat(4) { assertEquals(0L, PrivateVaultSecurity.recordFailedAttempt(context, now)) }
+
+        val expectedDelays = listOf(30_000L, 60_000L, 120_000L, 240_000L, 480_000L, 900_000L, 900_000L)
+        expectedDelays.forEach { delay ->
+            val deadline = PrivateVaultSecurity.recordFailedAttempt(context, now)
+            assertEquals(now + delay, deadline)
+            assertTrue(PrivateVaultSecurity.isLockedOut(context, now))
+            assertFalse(PrivateVaultSecurity.isLockedOut(context, deadline))
+            // Simulate a fresh read of persisted state after process recreation.
+            assertEquals(deadline, PrivateVaultSecurity.retryAtMillis(context))
+            now = deadline
+        }
+    }
+
+    @Test
+    fun attemptsDuringActiveCooldownDoNotExtendOrBypassIt() {
+        assertTrue(PrivateVaultSecurity.configure(context, "correct horse"))
+        val now = 8_000_000L
+        repeat(4) { PrivateVaultSecurity.recordFailedAttempt(context, now) }
+        val deadline = PrivateVaultSecurity.recordFailedAttempt(context, now)
+
+        assertEquals(deadline, PrivateVaultSecurity.recordFailedAttempt(context, now + 1L))
+        assertEquals(deadline, PrivateVaultSecurity.retryAtMillis(context))
+        assertTrue(PrivateVaultSecurity.isLockedOut(context, now))
+        assertFalse(PrivateVaultSecurity.isLockedOut(context, deadline))
+    }
+
+    @Test
+    fun mixedBackupRoundTripPreservesPrivateFlagAndOrdinaryViewsExcludePrivateNotes() {
+        val public = NestNote(id = 101L, title = "Public", body = "visible", pinned = true)
+        val private = NestNote(id = 102L, title = "Secret", body = "hidden searchable text",
+            pinned = true, archived = false, privateNote = true)
+        val archivedPrivate = NestNote(id = 103L, title = "Archived secret", body = "hidden",
+            archived = true, privateNote = true)
+        val restored = NoteStore.decodeBackup(NoteStore.encodeBackup(listOf(public, private, archivedPrivate)))
+        assertEquals(listOf(public, private, archivedPrivate), restored)
+
+        val notes = requireNotNull(restored)
+        listOf("Home", "All notes", "Pinned", "Archived", "Ideas").forEach { view ->
+            assertFalse("private note leaked into $view",
+                NoteFilters.visibleNotes(notes, view, "", false, false).any { it.privateNote })
+        }
+        assertFalse(NoteFilters.visibleNotes(notes, "Home", "hidden searchable text", false, false)
+            .any { it.privateNote })
+        assertEquals(listOf(private), NoteFilters.visibleNotes(notes, "Private", "", false, false))
+    }
+
+    @Test
     fun passwordSetupRejectsShortPasswords() {
         assertFalse(PrivateVaultSecurity.configure(context, "12345"))
         assertFalse(PrivateVaultSecurity.isConfigured(context))
