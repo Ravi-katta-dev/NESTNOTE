@@ -144,7 +144,7 @@ internal object VoicePlaybackNotifications {
             )
             .addAction(android.R.drawable.ic_media_stop, "Stop", stopIntent)
             .setStyle(
-                androidx.media.app.NotificationCompat.MediaStyle()
+                androidx.core.app.NotificationCompat.MediaStyle()
                     .setShowActionsInCompactView(0, 1)
             )
             .build()
