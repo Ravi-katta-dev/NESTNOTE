@@ -241,6 +241,33 @@ internal fun InlineVoicePlayer(
     val shownDuration = if (durationMs > 0) durationMs else fallbackDurationMs
     val reducedMotion = rememberSystemReducedMotion()
     val displayName = metadata?.displayName?.takeIf { it.isNotBlank() } ?: "Voice recording"
+
+    // Keep a compact media notification in the Android shade while this voice note is active.
+    // The callback routes notification actions back to the same player instance.
+    LaunchedEffect(isActive, player, paused, positionMs, shownDuration, displayName) {
+        if (isActive && player != null) {
+            VoicePlaybackNotifications.show(
+                context = context,
+                displayName = displayName,
+                positionMs = positionMs,
+                durationMs = shownDuration,
+                paused = paused
+            ) { action ->
+                when (action) {
+                    VoicePlaybackNotifications.Action.TOGGLE -> {
+                        if (paused) {
+                            runCatching { player?.resume() }.onSuccess { paused = false }
+                        } else {
+                            runCatching { player?.pause() }.onSuccess { paused = true }
+                        }
+                    }
+                    VoicePlaybackNotifications.Action.STOP -> onStopRequested()
+                }
+            }
+        } else {
+            VoicePlaybackNotifications.clear(context)
+        }
+    }
     var selected by remember(attachmentId) { mutableStateOf(false) }
 
     val playerPreferences = remember(context) {
