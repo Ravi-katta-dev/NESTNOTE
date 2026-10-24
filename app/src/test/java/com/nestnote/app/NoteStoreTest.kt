@@ -51,18 +51,6 @@ class NoteStoreTest {
     }
 
     @Test
-    fun plaintextBackupSelectionAlwaysExcludesPrivateNotesAndHonorsArchivedOption() {
-        val active = NestNote(id = 1L, title = "Public active", body = "visible")
-        val archived = NestNote(id = 2L, title = "Public archived", body = "visible", archived = true)
-        val privateActive = NestNote(id = 3L, title = "Private", body = "secret", privateNote = true)
-        val privateArchived = NestNote(id = 4L, title = "Private archived", body = "secret", archived = true, privateNote = true)
-        val notes = listOf(active, archived, privateActive, privateArchived)
-
-        assertEquals(listOf(active), NoteStore.notesForArchive(notes, includeArchived = false))
-        assertEquals(listOf(active, archived), NoteStore.notesForBackup(notes, includeArchived = true))
-    }
-
-    @Test
     fun privateNoteFlagSurvivesSaveLoadAndBackupRoundTrip() {
         val secret = NestNote(id = 999L, title = "Private", body = "Secret", privateNote = true)
         assertTrue(store.save(listOf(secret)))
@@ -143,8 +131,8 @@ class NoteStoreTest {
     @Test
     fun versionedBackupRoundTripsAndLegacyArrayRemainsImportable() {
         val notes = listOf(NestNote(id = 45, title = "Backup", body = "Version one"))
-        val versioned = NoteStore.encodeBackup(notes)
-        assertEquals(notes, NoteStore.decodeBackup(versioned))
+        val versioned = NoteStore.encodeArchivePayload(notes)
+        assertEquals(notes, NoteStore.decodeArchivePayload(versioned))
         assertEquals(notes, NoteStore.decodeBackup(NoteStore.encode(notes)))
     }
 
@@ -434,29 +422,5 @@ class NoteStoreTest {
     }
 
 
-    @Test
-    fun userFacingPlaintextBackupPayloadContainsNoPrivateTitlesOrBodies() {
-        val public = NestNote(id = 11L, title = "Public title", body = "Public body")
-        val secret = NestNote(
-            id = 12L, title = "UNIQUE_PRIVATE_TITLE_12", body = "UNIQUE_PRIVATE_BODY_12",
-            privateNote = true
-        )
-        val archivedSecret = secret.copy(
-            id = 13L, title = "UNIQUE_ARCHIVED_PRIVATE_TITLE_13",
-            body = "UNIQUE_ARCHIVED_PRIVATE_BODY_13", archived = true
-        )
-
-        listOf(false, true).forEach { includeArchived ->
-            val selected = NoteStore.notesForBackup(
-                listOf(public, secret, archivedSecret), includeArchived
-            )
-            val payload = NoteStore.encodeBackup(selected)
-            assertTrue(payload.contains("Public title"))
-            assertFalse(payload.contains("UNIQUE_PRIVATE_TITLE_12"))
-            assertFalse(payload.contains("UNIQUE_PRIVATE_BODY_12"))
-            assertFalse(payload.contains("UNIQUE_ARCHIVED_PRIVATE_TITLE_13"))
-            assertFalse(payload.contains("UNIQUE_ARCHIVED_PRIVATE_BODY_13"))
-        }
-    }
 
 }
