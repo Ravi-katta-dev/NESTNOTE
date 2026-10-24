@@ -160,7 +160,9 @@ internal fun SettingsScreen(
     onOpenBackupRestore: () -> Unit = {},
     onOpenPrivateVaultSettings: () -> Unit = {},
     storageBackend: NoteStorageBackend = NoteStorageBackend.KEYSTORE,
-    onStorageBackendChange: (NoteStorageBackend) -> Unit = {}
+    onStorageBackendChange: (NoteStorageBackend) -> Unit = {},
+    screenCaptureProtectionEnabled: Boolean = true,
+    onScreenCaptureProtectionChange: (Boolean) -> Unit = {}
 ) {
     val colors = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -983,6 +985,18 @@ internal fun SettingsScreen(
                         icon = Icons.Default.Lock,
                         title = "No account or tracking",
                         body = "No login required. Exporting does not automatically sync to any cloud server; you choose the file destination via Android's file picker."
+                    )
+
+                    HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.5f))
+
+                    SwitchRow(
+                        title = "Protect private screens",
+                        summary = if (screenCaptureProtectionEnabled)
+                            "Blocks screenshots and hides the app preview in Recents while the Private Vault or a private note is open."
+                        else
+                            "Screenshots and app previews are allowed while private content is open.",
+                        checked = screenCaptureProtectionEnabled,
+                        onChange = onScreenCaptureProtectionChange
                     )
 
                     HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.5f))
