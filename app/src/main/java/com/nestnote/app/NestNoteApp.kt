@@ -168,6 +168,7 @@ internal fun NestNoteApp(
     var legacyPrivateNotes by remember { mutableStateOf<List<NestNote>>(emptyList()) }
     val privateNoteCrypto = remember(context) { PrivateNoteCrypto(context) }
     val privateNoteStore = remember(context) { PrivateNoteStore(context) }
+    val ordinaryNoteCrypto = remember(context) { OrdinaryNoteCrypto(context) }
     var privateVaultSession by remember { mutableStateOf<PrivateNoteCrypto.Session?>(null) }
     var storageLoaded by remember { mutableStateOf(false) }
     var lastBackupAt by remember { mutableLongStateOf(preferences.getLong(PREF_BACKUP_LAST_SUCCESS_AT, 0L)) }
@@ -278,6 +279,7 @@ internal fun NestNoteApp(
     var search by remember { mutableStateOf("") }
     var selectedNoteIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var confirmBulkDelete by remember { mutableStateOf(false) }
+    var confirmEncryptAll by remember { mutableStateOf(false) }
     var savedSearches by remember {
         mutableStateOf<List<String>>(preferences.getStringSet(PREF_SAVED_SEARCHES, emptySet())?.toList()?.sorted() ?: emptyList())
     }
@@ -392,6 +394,81 @@ internal fun NestNoteApp(
             coroutineScope.launch { snackbarHostState.showSnackbar("Save failed. Your previous notes are still available.") }
         }
         return saved
+    }
+    fun encryptOrdinaryNote(note: NestNote): NestNote {
+        require(!note.privateNote && !note.encrypted) { "Only unencrypted ordinary notes can be encrypted here." }
+        val payload = ordinaryNoteCrypto.encrypt(note)
+        val locked = note.copy(
+            title = NoteStore.ENCRYPTED_NOTE_TITLE,
+            body = "",
+            category = "Encrypted",
+            color = 0,
+            pinned = false,
+            reminder = "",
+            background = 0,
+            wallpaperUri = "",
+            format = "plain",
+            encrypted = true,
+            encryptedPayload = payload
+        )
+        // Verify authenticated decryption and identity before the source record can be replaced.
+        val verified = ordinaryNoteCrypto.decrypt(locked)
+        check(verified == note) { "Encrypted note verification failed." }
+        return locked
+    }
+    fun decryptOrdinaryNote(note: NestNote): NestNote {
+        require(note.encrypted && !note.privateNote) { "Only encrypted ordinary notes can be decrypted here." }
+        return ordinaryNoteCrypto.decrypt(note)
+    }
+    fun toggleNoteEncryption(noteId: Long) {
+        val note = notes.firstOrNull { it.id == noteId } ?: return
+        if (note.privateNote) {
+            coroutineScope.launch { snackbarHostState.showSnackbar("Private Vault notes use their own independent encryption.") }
+            return
+        }
+        val replacement = runCatching {
+            if (note.encrypted) decryptOrdinaryNote(note) else encryptOrdinaryNote(note)
+        }.getOrElse { error ->
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(error.message ?: "Encryption failed; the original note was preserved.")
+            }
+            return
+        }
+        if (persist(notes.map { if (it.id == noteId) replacement else it })) {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(if (note.encrypted) "Note decrypted" else "Note encrypted and verified")
+            }
+        }
+    }
+    fun encryptSelectedNotes() {
+        val selected = notes.filter { it.id in selectedNoteIds && !it.privateNote && !it.encrypted }
+        if (selected.isEmpty()) {
+            coroutineScope.launch { snackbarHostState.showSnackbar("No unencrypted ordinary notes are selected.") }
+            return
+        }
+        val replacements = runCatching { selected.associate { it.id to encryptOrdinaryNote(it) } }.getOrElse { error ->
+            coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Bulk encryption failed; no notes were changed.") }
+            return
+        }
+        if (persist(notes.map { replacements[it.id] ?: it })) {
+            selectedNoteIds = emptySet()
+            coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted and verified ${replacements.size} notes") }
+        }
+    }
+    fun decryptSelectedNotes() {
+        val selected = notes.filter { it.id in selectedNoteIds && it.encrypted && !it.privateNote }
+        if (selected.isEmpty()) {
+            coroutineScope.launch { snackbarHostState.showSnackbar("No encrypted ordinary notes are selected.") }
+            return
+        }
+        val replacements = runCatching { selected.associate { it.id to decryptOrdinaryNote(it) } }.getOrElse { error ->
+            coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Bulk decryption failed; no notes were changed.") }
+            return
+        }
+        if (persist(notes.map { replacements[it.id] ?: it })) {
+            selectedNoteIds = emptySet()
+            coroutineScope.launch { snackbarHostState.showSnackbar("Decrypted and verified ${replacements.size} notes") }
+        }
     }
     fun deleteNote(note: NestNote, closeEditor: Boolean = false) {
         if (!persist(notes.filterNot { it.id == note.id })) return
@@ -688,7 +765,10 @@ internal fun NestNoteApp(
                             if (persist(notes.map { if (it.id in selectedNoteIds) it.copy(archived = !restore, pinned = if (restore) it.pinned else false, updated = System.currentTimeMillis()) else it })) selectedNoteIds = emptySet()
                         },
                         onDelete = { confirmBulkDelete = true },
-                        onClear = { selectedNoteIds = emptySet() }
+                        onClear = { selectedNoteIds = emptySet() },
+                        onSelectAll = { selectedNoteIds = filteredNotes.filterNot { it.privateNote }.map { it.id }.toSet() },
+                        onEncrypt = if (selectedNotes.any { !it.encrypted && !it.privateNote }) ({ encryptSelectedNotes() }) else null,
+                        onDecrypt = if (selectedNotes.any { it.encrypted && !it.privateNote }) ({ decryptSelectedNotes() }) else null
                     )
                 } else {
                     NestNoteNavBar(
@@ -1176,6 +1256,8 @@ internal fun NestNoteApp(
                                     DropdownMenuItem(text = { Text("Recently edited") }, onClick = { setSort("RECENT"); sortMenuExpanded = false })
                                     DropdownMenuItem(text = { Text("Recently created") }, onClick = { setSort("CREATED"); sortMenuExpanded = false })
                                     DropdownMenuItem(text = { Text("Title A–Z") }, onClick = { setSort("TITLE"); sortMenuExpanded = false })
+                                    HorizontalDivider()
+                                    DropdownMenuItem(text = { Text("Encrypt all notes…") }, onClick = { sortMenuExpanded = false; confirmEncryptAll = true }, enabled = notes.any { !it.privateNote && !it.encrypted })
                                 }
                             }
                             IconButton(
@@ -1261,7 +1343,7 @@ internal fun NestNoteApp(
                                     onSelect = { selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id },
                                     isSelected = note.id in selectedNoteIds,
                                     onPin = { persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { deleteNote(note) }, onArchive = { persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) },
+                                    onDelete = { deleteNote(note) }, onArchive = { if (!note.encrypted) persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) }, onToggleEncryption = { toggleNoteEncryption(note.id) },
                                     modifier = Modifier.animateItem())
                             }
                         }
@@ -1281,7 +1363,7 @@ internal fun NestNoteApp(
                                     onSelect = { selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id },
                                     isSelected = note.id in selectedNoteIds,
                                     onPin = { persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { deleteNote(note) }, onArchive = { persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) },
+                                    onDelete = { deleteNote(note) }, onArchive = { if (!note.encrypted) persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) }, onToggleEncryption = { toggleNoteEncryption(note.id) },
                                     modifier = Modifier.animateItem())
                             }
                         }
@@ -1846,6 +1928,30 @@ internal fun NestNoteApp(
                     dismissButton = { TextButton(onClick = { confirmSystemDiscard = false }) { Text("Keep editing") } }
                 )
             }
+        }
+        if (confirmEncryptAll) {
+            val eligible = notes.filter { !it.privateNote && !it.encrypted }
+            AlertDialog(
+                onDismissRequest = { confirmEncryptAll = false },
+                title = { Text("Encrypt all ordinary notes?") },
+                text = { Text("This will encrypt and verify ${eligible.size} ordinary notes using a dedicated device-bound Android Keystore key. Private Vault notes are excluded. If the device Keystore key is permanently lost, these notes may be unrecoverable. Continue only after considering that risk.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        confirmEncryptAll = false
+                        val replacements = runCatching { eligible.associate { it.id to encryptOrdinaryNote(it) } }.getOrElse { error ->
+                            coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Encrypt all failed; original notes were preserved.") }
+                            emptyMap()
+                        }
+                        if (replacements.isNotEmpty() && persist(notes.map { replacements[it.id] ?: it })) {
+                            selectedNoteIds = emptySet()
+                            coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted and verified ${replacements.size} ordinary notes") }
+                        } else if (eligible.isEmpty()) {
+                            coroutineScope.launch { snackbarHostState.showSnackbar("There are no unencrypted ordinary notes.") }
+                        }
+                    }) { Text("Encrypt all") }
+                },
+                dismissButton = { TextButton(onClick = { confirmEncryptAll = false }) { Text("Cancel") } }
+            )
         }
         if (confirmBulkDelete) {
             val deleting = notes.filter { it.id in selectedNoteIds }
