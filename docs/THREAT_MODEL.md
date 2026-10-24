@@ -14,7 +14,7 @@ Assets include note titles, bodies and metadata; encrypted local note payloads a
 
 **Private Vault has a separate encrypted private-record store in the current source, in addition to its UI access gate.**
 
-The vault password does not derive, wrap, or unlock an independent key for private notes. The password hash authenticates the user through the intended app UI flow; it is not the key encrypting note payloads. Private notes use the same general Android Keystore-backed local-storage encryption as ordinary notes.
+The Private Vault uses a random vault data key for private records. The vault password derives a wrapping key with PBKDF2-HMAC-SHA256 and AES-GCM unwraps that data key; the ordinary `NoteStore` key cannot decrypt private records. The biometric path separately wraps the existing vault data key using an authentication-bound Android Keystore key and a successful `BiometricPrompt.CryptoObject` cipher. These are source-level findings; exact-head CI and device validation are still required.
 
 | Property | Current Private Vault | What separate cryptographic isolation would require |
 | --- | --- | --- |
@@ -29,7 +29,7 @@ The vault password does not derive, wrap, or unlock an independent key for priva
 ## Controls and residual risks
 
 - **Local storage:** AES-GCM with an Android Keystore-managed key protects encrypted payloads at rest while the key remains available and protected. It does not protect content after decryption in memory.
-- **UI authentication:** password verification and optional biometrics gate the intended navigation path. UI bypass or process compromise does not encounter a second vault-specific encryption layer.
+- **UI authentication and cryptographic authorization:** password unlock unwraps the independent vault data key; enrolled biometric unlock is intended to unwrap the same key only through the authenticated CryptoObject path. UI bypass can still expose content while an authorized session is live, and process compromise remains outside the app's guarantees.
 - **Filtering:** the private flag is application metadata. Ordinary-view filtering must cover Home, categories, pinned, archived, search, insights, counts, links, and restored data. Filtering is not cryptographic access control.
 - **Screenshot protection:** `FLAG_SECURE` requests capture protection for the protected window. It does not guarantee protection against external cameras, a compromised OS, every OEM path, or content already exported.
 - **Lifecycle:** backgrounding should relock and hide private editor UI. Activity/process recreation and saveable editor state require dedicated tests.
@@ -90,6 +90,6 @@ A private draft is still protected by the app/device security boundary, not a se
 
 The optional biometric wrapping primitive now uses a dedicated Android Keystore AES-GCM key with per-use authentication required and invalidation on biometric enrollment changes. The existing random vault data key is wrapped only after an authenticated enrollment `Cipher` is supplied; unlocking requires the `Cipher` returned by a successful `BiometricPrompt.CryptoObject` result. A plain biometric-success callback cannot unwrap the vault key.
 
-Biometric unlock remains disabled in settings and in the vault gate. Enrollment UX, key invalidation recovery, and physical-device/emulator validation have not been completed. Do not claim the biometric feature is enabled or release-ready.
+Biometric enrollment and automatic unlock are wired in the current PR source. This does not establish device-level correctness: enrollment, successful unlock, cancellation-to-password fallback, biometric enrollment changes/key invalidation, and physical-device/emulator validation remain release gates. Do not claim release readiness until those checks and exact-head CI pass.
 
 Password-change recovery is explicitly coordinated and unit-tested for key-rewrap failure, verifier-update failure with successful rollback, and rollback failure that locks the vault and marks recovery required. Migration tests simulate the store-commit/legacy-cleanup boundary with new store instances, but do not yet kill and restart the Android process at that exact point. Draft tests simulate store recreation, not an OS process kill. True process termination, activity recreation, backup restoration plus private-draft recovery, and biometric hardware/key invalidation must be validated on an Android emulator/device before release.
