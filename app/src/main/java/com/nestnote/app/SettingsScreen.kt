@@ -129,6 +129,8 @@ internal fun SettingsScreen(
     onDynamicColorsChange: (Boolean) -> Unit,
     amoled: Boolean,
     onAmoledChange: (Boolean) -> Unit,
+    accentPalette: AccentPalette = AccentPalette.DEFAULT,
+    onAccentPaletteChange: (AccentPalette) -> Unit = {},
     dashboardLayout: DashboardLayout,
     onLayoutChange: (DashboardLayout) -> Unit,
     editorMode: EditorPresentationMode,
@@ -451,6 +453,67 @@ internal fun SettingsScreen(
                         checked = amoled,
                         onChange = onAmoledChange
                     )
+
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp), color = colors.outlineVariant.copy(alpha = 0.5f))
+
+                    SettingLabel("App accent colour")
+                    Text(
+                        "Choose the colour used for buttons, highlights and selected controls.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        AccentPalette.values().toList().chunked(4).forEach { paletteRow ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                paletteRow.forEach { palette ->
+                                    val selectedPalette = accentPalette == palette
+                                    val swatch = if (themeMode == ThemeMode.DARK ||
+                                        (themeMode == ThemeMode.SYSTEM && isSystemInDarkTheme())
+                                    ) palette.primaryDark else palette.primaryLight
+                                    Surface(
+                                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                                            .clickable { onAccentPaletteChange(palette) }
+                                            .semantics { contentDescription = "${palette.label} accent colour${if (selectedPalette) ", selected" else ""}" },
+                                        color = if (selectedPalette) colors.secondaryContainer else colors.surfaceVariant,
+                                        shape = RoundedCornerShape(12.dp),
+                                        border = BorderStroke(
+                                            if (selectedPalette) 2.dp else 1.dp,
+                                            if (selectedPalette) colors.primary else colors.outlineVariant
+                                        )
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.size(28.dp).clip(CircleShape).background(swatch),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (selectedPalette) {
+                                                    Icon(Icons.Default.Check, contentDescription = null, tint = if (swatch.luminance() > 0.45f) Color.Black else Color.White, modifier = Modifier.size(17.dp))
+                                                }
+                                            }
+                                            Text(palette.label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                                        }
+                                    }
+                                }
+                                repeat((4 - paletteRow.size).coerceAtLeast(0)) {
+                                    Spacer(Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
+                    if (accentPalette != AccentPalette.DEFAULT && dynamicColors) {
+                        Text(
+                            "Selecting a custom accent disables wallpaper colours so your palette stays consistent.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.onSurfaceVariant
+                        )
+                    }
 
                     HorizontalDivider(Modifier.padding(vertical = 4.dp), color = colors.outlineVariant.copy(alpha = 0.5f))
 
