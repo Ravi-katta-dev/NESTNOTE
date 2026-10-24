@@ -254,7 +254,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         /** Encodes the serialized payload that is placed inside an authenticated encrypted archive. */
         fun encodeArchivePayload(notes: List<NestNote>): String {
             require(isValidNoteCollection(notes)) { "invalid note records" }
-            require(notes.none { it.privateNote }) { "Private Vault notes cannot be placed in portable archives" }
+            require(notes.none { it.privateNote || it.encrypted }) { "Private Vault and device-encrypted ordinary notes cannot be placed in portable archives" }
             val backup = JSONObject()
                 .put("format", "com.nestnote.archive-payload")
                 .put("schemaVersion", CURRENT_ARCHIVE_PAYLOAD_SCHEMA_VERSION)
