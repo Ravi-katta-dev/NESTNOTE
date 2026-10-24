@@ -2234,7 +2234,7 @@ internal fun BackupRestoreScreen(
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Encrypted note archive", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    "Create a password-protected archive to move notes between devices. Plaintext JSON backup and restore are not available.",
+                    "Move notes between devices using password-protected encrypted archives.",
                     style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
