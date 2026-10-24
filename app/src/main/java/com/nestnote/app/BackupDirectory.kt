@@ -110,9 +110,25 @@ internal object BackupDirectory {
                 output.write(bytes)
                 output.flush()
             } ?: error("Cannot open temporary backup")
-            val verified = context.contentResolver.openInputStream(temporary.uri)?.use { it.readBytes() }
-                ?: error("Cannot verify temporary backup")
-            check(verified.contentEquals(bytes)) { "Temporary backup verification failed" }
+            val verified = context.contentResolver.openInputStream(temporary.uri)?.use { input ->
+                // SAF providers are external and may return more data than was written. Bound
+                // verification reads to the expected payload instead of readBytes(), which could
+                // allocate an unbounded array if a provider returns a corrupt/hostile stream.
+                val output = java.io.ByteArrayOutputStream(bytes.size)
+                val buffer = ByteArray(8192)
+                var total = 0
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    check(total <= bytes.size) { "Temporary backup is larger than expected" }
+                    output.write(buffer, 0, count)
+                }
+                output.toByteArray()
+            } ?: error("Cannot verify temporary backup")
+            check(verified.size == bytes.size && verified.contentEquals(bytes)) {
+                "Temporary backup verification failed"
+            }
 
             previous = folder.findFile(previousName)
             if (previous != null) check(previous.delete()) { "Cannot clear previous backup snapshot" }
