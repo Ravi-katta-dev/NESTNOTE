@@ -18,9 +18,20 @@ import java.io.InputStream
  * Payloads are encrypted by VoiceAttachmentStore using its dedicated Android Keystore key.
  * They are deliberately independent of ordinary-note encryption and Private Vault keys.
  */
-class VoiceNoteRepository(context: Context) {
-    private val store = VoiceAttachmentStore(context)
-    private val manifest = VoiceAttachmentManifest(context)
+class VoiceNoteRepository private constructor(
+    private val store: VoiceAttachmentStore,
+    private val manifest: VoiceAttachmentManifest,
+    @Suppress("UNUSED_PARAMETER") testSeam: Unit
+) {
+    constructor(context: Context) : this(
+        VoiceAttachmentStore(context),
+        VoiceAttachmentManifest(context),
+        Unit
+    )
+
+    /** Test seam: production callers should use the Context constructor. */
+    internal constructor(store: VoiceAttachmentStore, manifest: VoiceAttachmentManifest) :
+        this(store, manifest, Unit)
 
     /** Returns only manifest entries whose encrypted payloads still exist and match the index. */
     @Throws(IOException::class)
