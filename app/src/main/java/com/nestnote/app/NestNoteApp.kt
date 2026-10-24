@@ -135,13 +135,14 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-private const val PREF_PRIVATE_SCREEN_PROTECTION = "private_screen_protection_enabled"
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+
+private const val PREF_PRIVATE_SCREEN_PROTECTION = "private_screen_protection_enabled"
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
