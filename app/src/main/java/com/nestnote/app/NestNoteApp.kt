@@ -418,10 +418,6 @@ internal fun NestNoteApp(
                 snackbarHostState.showSnackbar("Private note encryption failed. No plaintext fallback was used.")
                 return false
             }
-            if (!saved && !rollbackSucceeded) {
-                storageRecoveryRequired = true
-                snackbarHostState.showSnackbar("Storage recovery is required after a failed private-note save.")
-            }
             if (saved) {
                 val previousIds = notes.map { it.id }.toSet()
                 val nextIds = next.map { it.id }.toSet()
@@ -433,6 +429,9 @@ internal fun NestNoteApp(
                 }
                 notes = if (session == null) publicNext else next
                 if (allowRecovery) storageRecoveryRequired = false
+            } else if (!rollbackSucceeded) {
+                storageRecoveryRequired = true
+                snackbarHostState.showSnackbar("Storage recovery is required after a failed save. Do not make further changes until recovery is complete.")
             } else {
                 snackbarHostState.showSnackbar("Save failed. Your previous notes are still available.")
             }
