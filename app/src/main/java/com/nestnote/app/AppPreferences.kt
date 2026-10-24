@@ -28,6 +28,7 @@ internal const val PREF_VOICE_PLAYER_COMPACT = "voice_player_compact"
 internal const val PREF_VOICE_PLAYER_SPEED = "voice_player_speed"
 internal const val PREF_VOICE_PLAYER_STYLE = "voice_player_style"
 internal const val PREF_VOICE_PLAYER_SIZE_PERCENT = "voice_player_size_percent"
+internal const val PREF_VOICE_NOTIFICATION_PERMISSION_ASKED = "voice_notification_permission_asked"
 internal val VoicePlayerSpeeds = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
 
 internal enum class VoicePlayerStyle(val label: String, val description: String) {
