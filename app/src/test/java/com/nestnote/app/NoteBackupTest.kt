@@ -41,6 +41,17 @@ class NoteBackupTest {
     }
 
     @Test
+    fun plaintextBackupSelectionAlwaysExcludesPrivateVaultNotes() {
+        val publicNote = note(1, "Public")
+        val privateNote = note(2, "Secret").copy(privateNote = true)
+
+        val selected = NoteStore.notesForBackup(listOf(publicNote, privateNote), includeArchived = true)
+        val decoded = NoteStore.decodeBackup(NoteStore.encodeBackup(selected))
+
+        assertEquals(listOf(publicNote), decoded)
+    }
+
+    @Test
     fun decodeRejectsInvalidAndUnrelatedJson() {
         assertNull(NoteStore.decode("not json"))
         assertNull(NoteStore.decode("{\"a\":1}"))
