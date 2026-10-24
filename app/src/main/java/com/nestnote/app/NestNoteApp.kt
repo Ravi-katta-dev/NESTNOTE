@@ -365,12 +365,22 @@ internal fun NestNoteApp(
         // Preserve not-yet-migrated private records in the legacy encrypted blob while locked.
         val generalNext = if (session == null) publicNext + legacyPrivateNotes else publicNext
         val oldPrivate = notes.filter { it.privateNote }
-        val privateSaved = if (session == null) true else privateNoteStore.save(session, privateNext)
+        android.os.Trace.beginSection("NestNote.persist.privateStoreSave")
+        val privateSaved = try {
+            if (session == null) true else privateNoteStore.save(session, privateNext)
+        } finally {
+            android.os.Trace.endSection()
+        }
         if (!privateSaved) {
             coroutineScope.launch { snackbarHostState.showSnackbar("Private note encryption failed. No plaintext fallback was used.") }
             return false
         }
-        val saved = store.save(generalNext)
+        android.os.Trace.beginSection("NestNote.persist.publicStoreSave")
+        val saved = try {
+            store.save(generalNext)
+        } finally {
+            android.os.Trace.endSection()
+        }
         if (!saved && session != null) {
             // SharedPreferences cannot transact across namespaces; restore the previous encrypted
             // private snapshot if the public-store commit fails.
