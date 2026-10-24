@@ -858,7 +858,7 @@ internal fun NestNoteApp(
                         onExportEncryptedArchive = { includeArchived, password ->
                             val archiveNotes = NoteStore.notesForArchive(notes, includeArchived = includeArchived)
                             val encrypted = runCatching {
-                                PasswordBackupArchive.encryptBackup(
+                                PasswordBackupArchive.encryptArchive(
                                     NoteStore.encodeArchivePayload(archiveNotes),
                                     password.toCharArray()
                                 )
@@ -890,7 +890,7 @@ internal fun NestNoteApp(
                         onImportEncryptedArchive = { password ->
                             val savedTree = BackupDirectory.configuredTreeUri(context)
                             val archive = savedTree?.let { BackupDirectory.readEncryptedLatest(context, it) }
-                            val raw = archive?.let { PasswordBackupArchive.decryptBackup(it, password.toCharArray()) }
+                            val raw = archive?.let { PasswordBackupArchive.decryptArchive(it, password.toCharArray()) }
                             val incoming = raw?.let(NoteStore::decodeArchivePayload)
                             if (incoming != null && incoming.isNotEmpty()) {
                                 pendingRestore = incoming
