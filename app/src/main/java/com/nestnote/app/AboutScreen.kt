@@ -187,7 +187,7 @@ internal fun AboutScreen(version: AboutInfo.Version) {
             AboutInfoRow(
                 Icons.Default.Description,
                 "Encrypted archive format",
-                "Portable .nestnote archives are protected with a password and AES-GCM. Plaintext JSON export and import are not offered.",
+                "Portable .nestnote archives are protected with a password and AES-GCM. Private Vault notes and voice attachments are excluded.",
                 true
             )
             AboutInfoRow(
