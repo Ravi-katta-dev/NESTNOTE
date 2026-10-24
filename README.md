@@ -2,9 +2,9 @@
 
 NESTNOTE is a local-first Android notes app built with Kotlin, Jetpack Compose, and Material 3. It focuses on quick note capture, flexible editing and reading, offline use, and user-controlled backups.
 
-## Current release: 1.4.5
+## Current release: 1.4.6
 
-Version **1.4.5** is the current release baseline. Consult [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for authoritative release assets. CI artifacts are for testing unless explicitly attached to a versioned production release and verified.
+Version **1.4.6** is the current release candidate baseline; publish only after the exact tagged commit passes release checks. Consult [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for authoritative release assets. CI artifacts are for testing unless explicitly attached to a versioned production release and verified.
 
 ## Platform
 - Minimum Android: API 26; compile/target SDK: API 36.
