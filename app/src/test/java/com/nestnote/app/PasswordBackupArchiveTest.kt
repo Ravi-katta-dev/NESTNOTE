@@ -10,7 +10,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class PasswordBackupArchiveTest {
-    private fun validBackup(): String = NoteStore.encodeBackup(
+    private fun validBackup(): String = NoteStore.encodeArchivePayload(
         listOf(NestNote(id = 123, title = "Archive test", body = "private payload"))
     )
 
