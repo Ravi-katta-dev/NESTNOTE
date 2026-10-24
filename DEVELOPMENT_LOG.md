@@ -14,14 +14,14 @@ This file records durable engineering decisions. Implementation/validation histo
 ## Data safety and migration
 - Encrypt local note payloads with AES-GCM and an Android Keystore-managed key.
 - During plaintext migration, commit encrypted data before removing the old plaintext value. On failure, preserve original bytes and expose recovery.
-- Disable Android automatic app-data backup and disclose that user-exported JSON is plaintext.
-- Validate imports fully before mutation. Restore merges by stable note ID and never deletes local notes merely because they are absent from the backup.
+- Disable Android automatic app-data backup. User-facing portability is limited to password-protected encrypted archives.
+- Validate encrypted archive restores fully before mutation. Restore merges by stable note ID and never deletes local notes merely because they are absent from the archive.
 
 ## Private Vault and biometrics
 - Treat Private Vault as an app-level access gate unless independent cryptographic isolation is implemented and verified.
 - Biometric authentication must authorize the actual Keystore operation via an authenticated BiometricPrompt CryptoObject; prompt success alone is insufficient.
 - Missing, invalidated, or corrupt biometric key material fails closed. Preserve password recovery and do not persist enabled state before enrollment succeeds.
-- Exported JSON may contain readable private-note content; private-note classification is metadata, not encryption.
+- Private-note classification is metadata, not encryption; portable archives exclude Private Vault notes and require a separate password.
 
 ## Editor, Markdown, and zoom
 - Editor and saved-note reader share presentation-only text zoom; never rewrite note content when zoom changes.
