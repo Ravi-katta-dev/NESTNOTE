@@ -189,7 +189,7 @@ class MarkdownPreviewTest {
 
     @Test
     fun markdownPipeTablesRenderAsReadableTableCells() {
-        val markdown = "| Name | Count |\\n| --- | ---: |\\n| Apples | 3 |"
+        val markdown = "| Name | Count |\n| --- | ---: |\n| Apples | 3 |"
         val result = MarkdownPreview.toSpanned(RuntimeEnvironment.getApplication(), markdown).toString()
 
         assertTrue(result.contains("Name"))
