@@ -71,6 +71,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import com.nestnote.app.voicenote.VoiceNoteRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -561,12 +562,10 @@ internal fun NoteEditorContent(
 
     DisposableEffect(voiceNoteId) {
         onRegisterVoiceCommit {
-            val store = VoiceAttachmentStore(context)
-            val manifest = VoiceAttachmentManifest(context)
+            val repository = VoiceNoteRepository(context)
             val anchored = NoteText.voiceMarkers(bodyValue.text).map { it.attachmentId }.toSet()
             (pendingVoiceDeletions + sessionVoiceIds).filter { it !in anchored }.forEach { id ->
-                runCatching { store.delete(voiceNoteId, id) }
-                runCatching { manifest.remove(voiceNoteId, id) }
+                runCatching { repository.delete(voiceNoteId, id) }
             }
             pendingVoiceDeletions = emptySet()
             sessionVoiceIds = emptySet()
@@ -574,14 +573,12 @@ internal fun NoteEditorContent(
             runCatching { DraftStore(context).clear(voiceNoteId) }
         }
         onRegisterVoiceDiscard {
-            val store = VoiceAttachmentStore(context)
-            val manifest = VoiceAttachmentManifest(context)
+            val repository = VoiceNoteRepository(context)
             val ids = sessionVoiceIds
             sessionVoiceIds = emptySet()
             pendingVoiceDeletions = emptySet()
             ids.forEach { id ->
-                runCatching { store.delete(voiceNoteId, id) }
-                runCatching { manifest.remove(voiceNoteId, id) }
+                runCatching { repository.delete(voiceNoteId, id) }
             }
             runCatching { DraftStore(context).clear(voiceNoteId) }
         }
@@ -603,7 +600,7 @@ internal fun NoteEditorContent(
         if (markerIds.isNotEmpty()) {
             voiceNames = withContext(Dispatchers.IO) {
                 runCatching {
-                    VoiceAttachmentManifest(context).list(voiceNoteId, VoiceAttachmentStore(context))
+                    VoiceNoteRepository(context).list(voiceNoteId)
                         .associate { it.attachmentId to it.displayName }
                 }.getOrDefault(emptyMap())
             }
@@ -624,8 +621,8 @@ internal fun NoteEditorContent(
     }
 
     LaunchedEffect(voiceNoteId) {
-        val store = VoiceAttachmentStore(context)
-        val existingIds = runCatching { store.list(voiceNoteId).map { it.attachmentId } }
+        val repository = VoiceNoteRepository(context)
+        val existingIds = runCatching { repository.listPayloads(voiceNoteId).map { it.attachmentId } }
             .getOrDefault(emptyList())
             .filter { it !in pendingVoiceDeletions && it !in sessionVoiceIds }
         if (existingIds.isNotEmpty()) {
