@@ -288,44 +288,19 @@ The recommendation is to strengthen data-at-rest protection and release safeguar
 
 ### Findings by severity
 
-#### 🔴 High — Insecure local storage of notes
+#### 🔴 High — Verify local-storage and system-backup policy
 
-**Location:** app/src/main/java/com/nestnote/app/NoteStore.kt (assessment cited lines 8–20; verify line numbers against current main).
-
-**Issue:** Notes are serialized as JSON and stored in a plain SharedPreferences file (nestnote_local) without application-level encryption.
-
-**Potential impact:** A person with root access, a compromised device, or access to an exposed device backup/ADB workflow may be able to extract note contents, including titles, bodies, reminders, and categories. This is a local-device threat; it does not by itself imply remote access.
+**Issue:** Note records use an internal serialized representation inside the selected encrypted storage backend. This internal JSON representation is not a user-facing export format. Portable exports are limited to password-protected AES-GCM `.nestnote` archives.
 
 **Recommendation:**
-- Evaluate AndroidX security-crypto support and maintenance status before choosing an encryption approach. Compare an encrypted preferences migration with a dedicated encrypted database such as SQLCipher.
-- Design a backward-compatible migration from existing plaintext records; do not overwrite or delete old data until encrypted data has been written, verified, and a recovery path is available.
-- Keep user-controlled JSON export/restore behavior explicit and explain that exported files are readable unless the export format is separately encrypted.
-- If encryption is deferred, clearly disclose the local-storage threat model and avoid claiming that notes are encrypted at rest.
+- Keep the Android manifest and backup/data-extraction rules aligned with the intended local-first policy.
+- Verify system/device backup behavior separately from the in-app encrypted archive feature.
+- Preserve verified migration and recovery guarantees for both supported encrypted storage backends.
 
 **Acceptance criteria:**
-- The selected storage protection and threat model are documented.
-- Existing notes migrate without loss, with tests for first launch, interrupted migration, malformed legacy data, and repeated launches.
-- No plaintext copy is silently left behind after successful migration; cleanup occurs only after verified migration and a documented recovery strategy.
-- Backup/export compatibility and recovery are tested, and the privacy disclosure accurately describes what is and is not encrypted.
-
-#### 🟠 Medium — Android automatic backup may include note data
-
-**Location:** app/src/main/AndroidManifest.xml (android:allowBackup="true" was reported by the assessment; verify the current manifest and backup rules).
-
-**Issue:** Android automatic backup behavior may include app SharedPreferences, depending on platform version and configured backup/data-extraction rules.
-
-**Potential impact:** Note data could be copied into a cloud or device backup outside the app's explicit export flow.
-
-**Recommendation:**
-- Decide whether automatic system backup is an intentional product feature.
-- If it is not intended, disable automatic backup and configure applicable Android backup/data-extraction rules to exclude sensitive note storage.
-- If backup is intended, document the behavior and assess the security of the destination and restore path. Keep portable archives password-protected; plaintext export and scheduled automatic backups are not part of the current product.
-
-**Acceptance criteria:**
-- The chosen backup policy is documented and matches the manifest and applicable backup-rule files.
-- Tests or repeatable device validation confirm whether note storage is included or excluded as intended across supported Android versions.
-- Disabling backup does not remove or break the in-app user-controlled JSON export/restore feature.
-- Privacy documentation explains actual backup behavior without overstating protection.
+- The selected storage protection and Android system-backup policy are documented and match the manifest and backup-rule files.
+- Encrypted archive round trips, wrong-password rejection, tampering rejection, and restore merge behavior are tested.
+- Privacy documentation does not describe JSON export/import as a supported user feature.
 
 #### 🟠 Medium — Note input lacks explicit validation limits
 
