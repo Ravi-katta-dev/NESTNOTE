@@ -1365,7 +1365,7 @@ internal fun NestNoteApp(
         }
 
         pendingRestore?.let { incoming ->
-            // Plain JSON backups are never a supported transport for Private Vault records.
+            // Defense in depth: even archive restores must never introduce Private Vault records.
             val publicIncoming = incoming.filterNot { it.privateNote }
             val restoreIncoming = NoteStore.remapDraftIdCollisionForRestore(notes, publicIncoming, editorDraftId)
             val preview = NoteStore.merge(notes, restoreIncoming)
