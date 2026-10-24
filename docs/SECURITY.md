@@ -23,7 +23,7 @@ Therefore, the current Private Vault is a privacy/navigation boundary, **not a c
 
 ## Backup and data movement
 
-Plaintext JSON backup/import is not available in the current app. Portable note transfer uses password-protected `.nestnote` archives with AES-GCM authenticated encryption. Private Vault notes and voice attachments are excluded from these archives. The archive password is independent of the vault password; losing it makes that archive unrecoverable.
+Portable note transfer uses password-protected `.nestnote` archives with AES-GCM authenticated encryption. Private Vault notes and voice attachments are excluded from these archives. The archive password is independent of the vault password; losing it makes that archive unrecoverable.
 
 ## Threat-model assumptions and residual risks
 
