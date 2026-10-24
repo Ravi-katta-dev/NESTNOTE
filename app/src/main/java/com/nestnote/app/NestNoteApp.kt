@@ -480,7 +480,7 @@ internal fun NestNoteApp(
             }
             return
         }
-        if (persist(notes.map { if (it.id == noteId) replacement else it })) {
+        requestPersist(notes.map { if (it.id == noteId) replacement else it }) {
             coroutineScope.launch {
                 snackbarHostState.showSnackbar(if (note.encrypted) "Note decrypted" else "Note encrypted and verified")
             }
@@ -496,7 +496,7 @@ internal fun NestNoteApp(
             coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Bulk encryption failed; no notes were changed.") }
             return
         }
-        if (persist(notes.map { replacements[it.id] ?: it })) {
+        requestPersist(notes.map { replacements[it.id] ?: it }) {
             selectedNoteIds = emptySet()
             coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted and verified ${replacements.size} notes") }
         }
@@ -511,29 +511,32 @@ internal fun NestNoteApp(
             coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Bulk decryption failed; no notes were changed.") }
             return
         }
-        if (persist(notes.map { replacements[it.id] ?: it })) {
+        requestPersist(notes.map { replacements[it.id] ?: it }) {
             selectedNoteIds = emptySet()
             coroutineScope.launch { snackbarHostState.showSnackbar("Decrypted and verified ${replacements.size} notes") }
         }
     }
     fun deleteNote(note: NestNote, closeEditor: Boolean = false) {
-        if (!persist(notes.filterNot { it.id == note.id })) return
-        if (closeEditor) editorVisible = false
-        coroutineScope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message = "Note deleted",
-                actionLabel = "Undo",
-                withDismissAction = true,
-                duration = SnackbarDuration.Short
-            )
-            if (result == SnackbarResult.ActionPerformed && notes.none { it.id == note.id }) {
-                persist(notes + note)
-            } else if (
-                result != SnackbarResult.ActionPerformed &&
-                !storageRecoveryRequired &&
-                notes.none { it.id == note.id }
-            ) {
-                runCatching { com.nestnote.app.voicenote.VoiceNoteRepository(context).deleteAllForNote(note.id) }
+        requestPersist(notes.filterNot { it.id == note.id }) {
+            if (closeEditor) editorVisible = false
+            coroutineScope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = "Note deleted",
+                    actionLabel = "Undo",
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Short
+                )
+                if (result == SnackbarResult.ActionPerformed && notes.none { it.id == note.id }) {
+                    persist(notes + note)
+                } else if (
+                    result != SnackbarResult.ActionPerformed &&
+                    !storageRecoveryRequired &&
+                    notes.none { it.id == note.id }
+                ) {
+                    withContext(Dispatchers.IO) {
+                        runCatching { com.nestnote.app.voicenote.VoiceNoteRepository(context).deleteAllForNote(note.id) }
+                    }
+                }
             }
         }
     }
@@ -799,15 +802,15 @@ internal fun NestNoteApp(
                         allPinned = selectedNotes.isNotEmpty() && selectedNotes.all { it.pinned },
                         allArchived = selectedNotes.isNotEmpty() && selectedNotes.all { it.archived },
                         onMoveCategory = { category ->
-                            if (persist(notes.map { if (it.id in selectedNoteIds) it.copy(category = category) else it })) selectedNoteIds = emptySet()
+                            requestPersist(notes.map { if (it.id in selectedNoteIds) it.copy(category = category) else it }) { selectedNoteIds = emptySet() }
                         },
                         onTogglePin = {
                             val pin = !(selectedNotes.isNotEmpty() && selectedNotes.all { it.pinned })
-                            if (persist(notes.map { if (it.id in selectedNoteIds) it.copy(pinned = pin, updated = System.currentTimeMillis()) else it })) selectedNoteIds = emptySet()
+                            requestPersist(notes.map { if (it.id in selectedNoteIds) it.copy(pinned = pin, updated = System.currentTimeMillis()) else it }) { selectedNoteIds = emptySet() }
                         },
                         onToggleArchive = {
                             val restore = selectedNotes.isNotEmpty() && selectedNotes.all { it.archived }
-                            if (persist(notes.map { if (it.id in selectedNoteIds) it.copy(archived = !restore, pinned = if (restore) it.pinned else false, updated = System.currentTimeMillis()) else it })) selectedNoteIds = emptySet()
+                            requestPersist(notes.map { if (it.id in selectedNoteIds) it.copy(archived = !restore, pinned = if (restore) it.pinned else false, updated = System.currentTimeMillis()) else it }) { selectedNoteIds = emptySet() }
                         },
                         onDelete = { confirmBulkDelete = true },
                         onClear = { selectedNoteIds = emptySet() },
@@ -1398,8 +1401,8 @@ internal fun NestNoteApp(
                                     },
                                     onSelect = { selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id },
                                     isSelected = note.id in selectedNoteIds,
-                                    onPin = { if (!note.encrypted) persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { deleteNote(note) }, onArchive = { if (!note.encrypted) persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) }, onToggleEncryption = { toggleNoteEncryption(note.id) },
+                                    onPin = { if (!note.encrypted) requestPersist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
+                                    onDelete = { deleteNote(note) }, onArchive = { if (!note.encrypted) requestPersist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) }, onToggleEncryption = { toggleNoteEncryption(note.id) },
                                     modifier = Modifier.animateItem())
                             }
                         }
@@ -1418,8 +1421,8 @@ internal fun NestNoteApp(
                                     },
                                     onSelect = { selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id },
                                     isSelected = note.id in selectedNoteIds,
-                                    onPin = { persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { deleteNote(note) }, onArchive = { if (!note.encrypted) persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) }, onToggleEncryption = { toggleNoteEncryption(note.id) },
+                                    onPin = { requestPersist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
+                                    onDelete = { deleteNote(note) }, onArchive = { if (!note.encrypted) requestPersist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) }, onToggleEncryption = { toggleNoteEncryption(note.id) },
                                     modifier = Modifier.animateItem())
                             }
                         }
@@ -1480,8 +1483,8 @@ internal fun NestNoteApp(
                             updated = newest.savedAtMillis,
                             created = newest.savedAtMillis
                         )
-                        if (persist(notes + recovered)) {
-                            runCatching { DraftStore(context).clear(newest.noteId) }
+                        requestPersist(notes + recovered) {
+                            coroutineScope.launch(Dispatchers.IO) { runCatching { DraftStore(context).clear(newest.noteId) } }
                             pendingOrphanDrafts = pendingOrphanDrafts.drop(1)
                             if (pendingOrphanDrafts.isEmpty()) {
                                 showOrphanDraftDialog = false
@@ -1531,7 +1534,7 @@ internal fun NestNoteApp(
                     TextButton(
                         enabled = withinNoteLimit,
                         onClick = {
-                            if (persist(preview.notes, allowRecovery = true)) {
+                            requestPersist(preview.notes, allowRecovery = true) {
                                 val restoredCategories = (categoryOptions + preview.notes.map { it.category })
                                     .distinct().filter { it.isNotBlank() }
                                 if (restoredCategories != categoryOptions) {
@@ -1921,7 +1924,7 @@ internal fun NestNoteApp(
                         keepReminder = false,
                         keepPinned = false
                     )
-                    if (persist(notes + duplicate)) {
+                    requestPersist(notes + duplicate) {
                         coroutineScope.launch { snackbarHostState.showSnackbar("Note duplicated") }
                     }
                 }
@@ -2007,9 +2010,11 @@ internal fun NestNoteApp(
                             coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Encrypt all failed; original notes were preserved.") }
                             emptyMap()
                         }
-                        if (replacements.isNotEmpty() && persist(notes.map { replacements[it.id] ?: it })) {
-                            selectedNoteIds = emptySet()
-                            coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted and verified ${replacements.size} ordinary notes") }
+                        if (replacements.isNotEmpty()) {
+                            requestPersist(notes.map { replacements[it.id] ?: it }) {
+                                selectedNoteIds = emptySet()
+                                coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted and verified ${replacements.size} ordinary notes") }
+                            }
                         } else if (eligible.isEmpty()) {
                             coroutineScope.launch { snackbarHostState.showSnackbar("There are no unencrypted ordinary notes.") }
                         }
@@ -2027,9 +2032,11 @@ internal fun NestNoteApp(
                 confirmButton = {
                     TextButton(onClick = {
                         confirmBulkDelete = false
-                        if (persist(notes.filterNot { it.id in selectedNoteIds })) {
-                            deleting.forEach { note ->
-                                runCatching { com.nestnote.app.voicenote.VoiceNoteRepository(context).deleteAllForNote(note.id) }
+                        requestPersist(notes.filterNot { it.id in selectedNoteIds }) {
+                            coroutineScope.launch(Dispatchers.IO) {
+                                deleting.forEach { note ->
+                                    runCatching { com.nestnote.app.voicenote.VoiceNoteRepository(context).deleteAllForNote(note.id) }
+                                }
                             }
                             selectedNoteIds = emptySet()
                             coroutineScope.launch { snackbarHostState.showSnackbar("Selected notes deleted") }
