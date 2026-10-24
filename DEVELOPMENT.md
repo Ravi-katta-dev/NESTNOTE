@@ -38,7 +38,7 @@ Run connectedDebugAndroidTest when a device/emulator is available. CI compilatio
 3. Validate the complete backup before restore; preserve notes absent from the backup.
 4. Preserve legacy backup compatibility unless a tested migration plan replaces it.
 5. Never log or commit signing secrets, keystores, passwords, or note contents.
-6. Disclose that JSON exports are plaintext and voice-note audio attachments are excluded.
+6. Use only password-protected encrypted `.nestnote` archives for portability; private notes and voice-note audio attachments are excluded.
 7. Biometric success must authorize the cryptographic operation, not merely flip a preference. Invalidated/missing keys must fail closed while preserving password recovery.
 
 ## Documentation and release discipline
