@@ -109,10 +109,9 @@ class DraftStore internal constructor(rootOverride: File, private val privateKey
                 out.flush()
                 out.fd.sync()
             }
-            // renameTo replaces the target atomically on Linux/Android. Only fall back to
-            // delete-then-rename where the platform refuses to overwrite.
+            // On Android/Linux rename replaces the target atomically. If replacement fails,
+            // preserve the previous draft rather than deleting it as a fallback.
             if (temp.renameTo(target)) return true
-            if (target.delete() && temp.renameTo(target)) return true
             temp.delete()
             false
         }.getOrDefault(false)
