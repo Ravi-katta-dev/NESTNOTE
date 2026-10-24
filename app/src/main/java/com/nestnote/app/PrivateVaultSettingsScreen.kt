@@ -165,8 +165,8 @@ internal fun PrivateVaultSettingsScreen(
                         Icon(Icons.Default.WarningAmber, contentDescription = null, tint = colors.error, modifier = Modifier.padding(9.dp).size(22.dp))
                     }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Text("Backup privacy", style = MaterialTheme.typography.titleSmall, color = colors.error)
-                        Text("Exported JSON backups can contain private notes in readable form. The vault password protects access in the app, so store exports securely.", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                        Text("Archive privacy", style = MaterialTheme.typography.titleSmall, color = colors.primary)
+                        Text("Only password-protected encrypted archives are offered for portability. Private Vault notes are excluded from archives; keep a separate secure recovery plan for private content.", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                     }
                 }
             }
