@@ -11,7 +11,7 @@ class MarkdownTableFormatterTest {
         val formatted = MarkdownTableFormatter.format(input)
 
         assertEquals(
-            "| Name      | Qty |\n| ---------- | ---: |\n| Apple     | 2   |\n| Very long | 12  |",
+            "| Name       | Qty  |\n| ---------- | ---: |\n| Apple      | 2    |\n| Very long  | 12   |",
             formatted
         )
         assertTrue(formatted.contains("---:"))
