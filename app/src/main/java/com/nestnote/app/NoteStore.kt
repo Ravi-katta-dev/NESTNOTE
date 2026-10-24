@@ -271,7 +271,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         fun decodeArchivePayload(raw: String): List<NestNote>? = runCatching {
             require(raw.toByteArray(Charsets.UTF_8).size <= MAX_ARCHIVE_PAYLOAD_BYTES) { "archive payload is too large" }
             if (raw.trimStart().startsWith("[")) {
-                decode(raw, requireFields = true)?.also { require(it.none { note -> note.privateNote }) { "Private Vault records are not allowed in portable archives" } }
+                decode(raw, requireFields = true)?.also { require(it.none { note -> note.privateNote || note.encrypted }) { "Private Vault and device-encrypted ordinary notes are not allowed in portable archives" } }
             } else {
                 val envelope = JSONObject(raw)
                 require(envelope.optString("format") in setOf("com.nestnote.archive-payload", "com.nestnote.backup")) { "unsupported or missing archive payload format" }
