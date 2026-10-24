@@ -43,14 +43,14 @@
 - Rechecked insights defense-in-depth and Settings archived counts: calculations/counts now use public notes only.
 - Historical audit note: the former JSON export selector excluded private notes. Plaintext JSON export/import has since been removed; current portability uses password-protected encrypted `.nestnote` archives.
 - **New release-blocking finding:** `DraftStore` writes editor draft text as plaintext files and does not persist `privateNote`. Private editor drafts therefore do not inherit `NoteStore` AES-GCM encryption and orphan recovery cannot reliably retain the vault boundary. This needs a dedicated code fix and regression tests; this documentation update does not claim it is fixed.
-- Serializer boundary: `encodeBackup` itself can serialize private records if a caller passes them directly. Keep all user-facing exports routed through the filtering selector and test this call boundary; do not claim the serializer encrypts or filters by itself.
+- Historical serializer note: the former `encodeBackup` API did not encrypt or filter records. Current `encodeArchivePayload` is internal to the authenticated encrypted archive flow.
 - Exact-head CI must be rerun after these test/documentation updates. Device-only lifecycle/biometric/screenshot checks remain outstanding.
 
 ---
 
 ## 2026-10-23 — Priority audit pass: plaintext export and metadata isolation
 
-- Fixed user-facing backup selection to exclude all private notes from plaintext JSON exports, whether archived notes are included or not.
+- Historical: the former JSON export selector excluded private notes; plaintext JSON export/import has since been removed.
 - Added regression coverage for both export modes, including archived private records.
 - Added defense-in-depth filtering inside `NoteInsightsScreen` and fixed the Settings archived count so private note data does not influence ordinary-user metadata.
 - Updated the threat model and release checklist to distinguish plaintext export of ordinary notes from independent vault encryption. The backup serialization format is still not encrypted; callers that explicitly serialize private notes can still produce plaintext.
@@ -443,7 +443,7 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 - **Validation at implementation time:** the pure logic in `NoteText.kt` was compiled with a standalone Kotlin compiler and its cases passed. The Compose UI and Robolectric/instrumentation suites were not built locally because no Android SDK was available.
 - **Android CI:** [run #38196257185 — success](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38196257185) on implementation commit `37055c10c5064129517ddd2efd82e4fc0928a921`, and [follow-up run #38196444610 — success](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38196444610) on branch head `7e9134a295ae93c41bb7e8c7a6412ff7ca89a9e4`. Both runs passed unit tests, the API 36 debug APK build, Android instrumentation-test compilation, and test-APK signing. Instrumentation tests were compiled, not run on a device; no emulator or physical-device testing is claimed.
 - **Review status:** [PR #5](https://github.com/Ravi-katta-dev/NESTNOTE/pull/5) was opened as a draft and is ready to move to review after the final documentation commit's CI check. It targets `main`; no merge performed, awaiting owner review.
-- **Known limits:** reminders are still metadata only; checkboxes toggle via the toolbar rather than by tapping; import accepts only NESTNOTE JSON backups.
+- **Historical known limits:** reminders were metadata only; checkboxes toggled via the toolbar; the former JSON import accepted NESTNOTE JSON backups. JSON import has since been removed.
 
 
 ### Phase 5 documentation reconciliation — 2026-10-12
@@ -466,7 +466,7 @@ Branch: `feature/phase-5-settings-editor-ux` (from `main` after PR #4 merge). No
 - [x] Validate note collections for duplicate/non-positive IDs, invalid timestamps, field length limits, and maximum record count.
 - [x] Make local persistence report commit success/failure; keep the editor open when a note save fails.
 - [x] Distinguish unreadable local storage from a fresh install. Corrupt stored bytes are left untouched; normal note writes are blocked until recovery.
-- [x] Add versioned JSON backup envelopes (schema version 1) while retaining import compatibility for legacy JSON-array backups.
+- [x] Historical: versioned JSON backup envelopes were used by an earlier user-facing feature; JSON backup/import is now removed.
 - [x] Validate a complete backup and show an add/update preview before applying restore; restore merges without deleting notes absent from the backup.
 - [x] Add unit coverage for duplicate IDs, invalid/oversized data, corrupt local storage recovery, backup versioning, and legacy backup compatibility.
 - [x] Android CI passed for the initial storage/backup increment (run #129, commit `c3155b2a92d16996f025bc8be09d762613e2ef2f`). Newer editor lifecycle/stale-draft commits still require CI validation.
@@ -927,13 +927,13 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Updated the lifecycle stop handler so backgrounding while the Private view or a private-note editor is visible relocks the vault, navigates away, and closes the editor UI. This addresses the identified mismatch between vault route state and independently saveable editor visibility state.
 - Added regression coverage for lockout escalation through the 15-minute cap, active-cooldown boundary behavior, mixed public/private backup round trips, and exclusion of private notes from ordinary note views/search.
 - **Validation:** Android CI passed for the earlier head `d1ddff8b97fd88cc311c71d0c5c0a58ec2320828` (run [#873](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/39909930289)). Follow-up changes fixed FLAG_SECURE ownership across route changes, aligned security documentation, and blocked linked-note navigation from opening a private target without vault authentication. Exact-head CI for the latest commit must pass before merge. Activity/process recreation, biometric outcomes, FLAG_SECURE/Recents behavior, wall-clock manipulation, and full ordinary-surface filtering still require emulator/device validation. Keep release blocked until evidence is recorded.
-- **Threat-model limitation remains:** vault password gates UI access; it is not a separate content-encryption key. Exported JSON backups may contain readable private-note content.
+- Historical threat-model note: older plaintext JSON exports could contain readable note content. Current portable archives are password-protected and exclude Private Vault notes.
 
 
 ## 2026-10-23 — Document Private Vault UI lock vs cryptographic isolation
 - Added `docs/SECURITY.md` to distinguish Android Keystore-backed local-storage encryption from the vault's password/biometric UI gate.
 - Added `docs/THREAT_MODEL.md` describing assets, trust boundaries, threats, residual risks, and requirements for any future independent vault encryption.
-- Updated README to state explicitly that the vault password does not derive/unlock a separate encryption key and that exported JSON backups may contain readable private-note content.
+- Historical documentation update for the retired JSON export path; current README describes encrypted `.nestnote` archives.
 - Documentation boundary: these edits clarify the existing design; they do not add cryptographic isolation. Exact-head CI and all device-dependent vault checks remain pending.
 
 
