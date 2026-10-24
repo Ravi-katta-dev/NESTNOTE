@@ -11,6 +11,7 @@ import io.noties.markwon.Markwon
 import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
 import io.noties.markwon.ext.tasklist.TaskListPlugin
 import io.noties.markwon.ext.tables.TablePlugin
+import io.noties.markwon.ext.tables.TableTheme
 import java.util.Locale
 
 /**
@@ -37,7 +38,7 @@ internal object MarkdownPreview {
                 Markwon.builder(appContext)
                     .usePlugin(StrikethroughPlugin.create())
                     .usePlugin(TaskListPlugin.create(appContext))
-                    .usePlugin(TablePlugin.create(appContext))
+                    .usePlugin(TablePlugin.create(TableTheme.builder().build()))
                     .build()
                     .also { cachedRenderer = it }
             }
