@@ -2578,7 +2578,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            compactVoicePlayer = true
+                            choosePlayerStyle(VoicePlayerStyle.COMPACT)
                             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                                 .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).putString(PREF_VOICE_PLAYER_STYLE, VoicePlayerStyle.COMPACT.name).apply()
                         }
@@ -2590,7 +2590,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         FilledIconButton(
                             onClick = {
-                                compactVoicePlayer = true
+                                choosePlayerStyle(VoicePlayerStyle.COMPACT)
                                 context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                                     .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
                             },
@@ -2610,7 +2610,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                         RadioButton(
                             selected = compactVoicePlayer,
                             onClick = {
-                                compactVoicePlayer = true
+                                choosePlayerStyle(VoicePlayerStyle.COMPACT)
                                 context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                                     .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
                             }
@@ -2622,7 +2622,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            compactVoicePlayer = false
+                            choosePlayerStyle(VoicePlayerStyle.FULL)
                             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                                 .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).putString(PREF_VOICE_PLAYER_STYLE, VoicePlayerStyle.FULL.name).apply()
                         }
@@ -2634,7 +2634,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         FilledIconButton(
                             onClick = {
-                                compactVoicePlayer = false
+                                choosePlayerStyle(VoicePlayerStyle.FULL)
                                 context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                                     .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
                             },
@@ -2654,7 +2654,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                         RadioButton(
                             selected = !compactVoicePlayer,
                             onClick = {
-                                compactVoicePlayer = false
+                                choosePlayerStyle(VoicePlayerStyle.FULL)
                                 context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                                     .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
                             }
