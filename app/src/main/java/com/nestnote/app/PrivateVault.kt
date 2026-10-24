@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -249,6 +250,14 @@ internal fun PrivateVaultGateDialog(
             .setNegativeButtonText("Use password")
             .build()
         prompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(authenticatedCipher))
+    }
+
+    // Prefer fingerprint on entry when this device has a valid enrollment, while leaving
+    // password unlock immediately available if the user cancels or biometric auth fails.
+    LaunchedEffect(biometricAvailable) {
+        if (biometricAvailable && PrivateVaultBiometricKey(context).isEnrolled()) {
+            launchBiometricPrompt()
+        }
     }
 
     AlertDialog(
