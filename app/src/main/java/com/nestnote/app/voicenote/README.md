@@ -19,9 +19,8 @@ encrypt or include its audio attachments.
 
 ## Voice-player presentation
 
-The inline voice player supports four saved presentation styles: Compact, Full, Waveform, and
-Minimal. Settings also provides a custom player-size control from 75% to 150% in 5% increments.
-These preferences affect presentation only; they do not resample or rewrite the encrypted audio.
+The inline voice player supports Compact, Full, Waveform, Minimal, and Transport layouts. Transport adds explicit 10-second rewind/forward controls alongside seeking. Settings provides a custom player-size control from 75% to 150% in 5% increments.
+An Android media-style notification appears during active inline playback with the recording label, elapsed/total time, pause/resume, and stop controls. Lock-screen public content hides the recording label. The notification uses the Android notification permission and remains optional if the user denies it. Current playback remains foreground-only: the existing lifecycle safety rule stops audio when NESTNOTE leaves the foreground. These preferences affect presentation only; they do not resample or rewrite the encrypted audio.
 Existing installs retain their previous Compact/Full choice when no newer style preference exists.
 
 ## Follow-up plan
