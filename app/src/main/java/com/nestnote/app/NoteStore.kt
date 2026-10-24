@@ -249,6 +249,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         /** Encodes the serialized payload that is placed inside an authenticated encrypted archive. */
         fun encodeArchivePayload(notes: List<NestNote>): String {
             require(isValidNoteCollection(notes)) { "invalid note records" }
+            require(notes.none { it.privateNote }) { "Private Vault notes cannot be placed in portable archives" }
             val backup = JSONObject()
                 .put("format", "com.nestnote.archive-payload")
                 .put("schemaVersion", CURRENT_ARCHIVE_PAYLOAD_SCHEMA_VERSION)
@@ -265,7 +266,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         fun decodeArchivePayload(raw: String): List<NestNote>? = runCatching {
             require(raw.toByteArray(Charsets.UTF_8).size <= MAX_ARCHIVE_PAYLOAD_BYTES) { "archive payload is too large" }
             if (raw.trimStart().startsWith("[")) {
-                decode(raw, requireFields = true)
+                decode(raw, requireFields = true)?.also { require(it.none { note -> note.privateNote }) { "Private Vault records are not allowed in portable archives" } }
             } else {
                 val envelope = JSONObject(raw)
                 require(envelope.optString("format") in setOf("com.nestnote.archive-payload", "com.nestnote.backup")) { "unsupported or missing archive payload format" }
@@ -273,7 +274,9 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
                     "unsupported archive payload schema"
                 }
                 val records = envelope.optJSONArray("notes") ?: error("missing archive notes")
-                decode(records.toString(), requireFields = true) ?: error("invalid archive records")
+                decode(records.toString(), requireFields = true)
+                    ?.also { require(it.none { note -> note.privateNote }) { "Private Vault records are not allowed in portable archives" } }
+                    ?: error("invalid archive records")
             }
         }.getOrNull()
 
