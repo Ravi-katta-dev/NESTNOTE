@@ -13,7 +13,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = providers.gradleProperty("versionCode").orElse("1").get().toInt()
-        versionName = providers.gradleProperty("versionName").orElse("1.4.5").get()
+        versionName = providers.gradleProperty("versionName").orElse("1.4.6" ).get()
     }
 
     buildFeatures { compose = true }
