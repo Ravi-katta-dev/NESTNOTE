@@ -1026,12 +1026,12 @@ internal fun SettingsScreen(
             }
         }
 
-        // ---- 7. Data & Backup Section ----
+        // ---- 7. Data & Encrypted Archive Section ----
         if (matchesSearch("data")) {
             item(key = SettingsItemKeys[7]) {
                 SettingsSection(
                     title = "Data",
-                    subtitle = "Backup and manage your notes",
+                    subtitle = "Manage encrypted archives and local storage",
                     icon = Icons.Default.Archive
                 ) {
                     Row(
@@ -1053,7 +1053,7 @@ internal fun SettingsScreen(
                     }
 
                     Text(
-                        "Keep a portable backup of your notes or restore from a backup file.",
+                        "Create or restore a password-protected encrypted archive.",
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.onSurfaceVariant,
                         modifier = Modifier.padding(start = 2.dp)
@@ -1099,7 +1099,7 @@ internal fun SettingsScreen(
                         }
                     }
 
-                    // Preserves texts "Back up notes" and "Restore backup" for tests
+                    // Opens the encrypted archive workflow.
                     OutlinedButton(
                         onClick = onOpenBackupRestore,
                         modifier = Modifier
@@ -1110,7 +1110,7 @@ internal fun SettingsScreen(
                     ) {
                         Icon(Icons.Default.Archive, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Backup & restore notes", fontWeight = FontWeight.SemiBold)
+                        Text("Encrypted archive", fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.weight(1f))
                         Icon(Icons.Default.ChevronRight, contentDescription = null, modifier = Modifier.size(18.dp))
                     }
