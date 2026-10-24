@@ -31,9 +31,9 @@ internal object MarkdownPreview {
             .usePlugin(TaskListPlugin.create(context.applicationContext))
             .usePlugin(TablePlugin.create(context.applicationContext))
             .build()
-        // The Markwon table extension uses drawing spans that do not expose their text reliably
-        // through Spanned.toString() on all Android/test runtimes. Convert table blocks to
-        // aligned readable cells first; preserve all other Markdown for Markwon.
+        // Keep table blocks in Markwon's native rendering pipeline. Table cell content is
+        // held by drawing spans, so tests should assert the table spans rather than rely on
+        // Spanned.toString() to expose cell text.
         val rendered = SpannableStringBuilder(renderer.toMarkdown(markdown))
 
         if (foregroundColor != Color.BLACK) {
