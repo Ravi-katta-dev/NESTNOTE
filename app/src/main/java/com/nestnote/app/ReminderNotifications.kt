@@ -77,17 +77,20 @@ internal object VoicePlaybackNotifications {
 
     internal enum class Action { TOGGLE, STOP }
     @Volatile private var actionHandler: ((Action) -> Unit)? = null
+    @Volatile private var activeAttachmentId: String? = null
     @Volatile private var lastSignature: String? = null
     @Volatile private var lastPostedSecond: Int = -1
 
     fun show(
         context: Context,
+        attachmentId: String,
         displayName: String,
         positionMs: Int,
         durationMs: Int,
         paused: Boolean,
         onAction: (Action) -> Unit
     ) {
+        activeAttachmentId = attachmentId
         actionHandler = onAction
         ensureChannel(context)
         val safeName = displayName.take(100).ifBlank { "Voice note" }
@@ -164,7 +167,10 @@ internal object VoicePlaybackNotifications {
         handler.invoke(action)
     }
 
-    fun clear(context: Context) {
+    fun clear(context: Context, attachmentId: String? = null) {
+        // An inactive sibling player must not clear the active note's notification.
+        if (attachmentId != null && activeAttachmentId != attachmentId) return
+        activeAttachmentId = null
         actionHandler = null
         lastSignature = null
         lastPostedSecond = -1
