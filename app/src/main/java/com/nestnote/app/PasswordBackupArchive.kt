@@ -29,14 +29,14 @@ internal object PasswordBackupArchive {
     private const val TAG_BITS = 128
     private const val KEY_BITS = 256
     private const val PBKDF2_ITERATIONS = 210_000
-    private const val MAX_ARCHIVE_BYTES = NoteStore.MAX_BACKUP_BYTES
+    private const val MAX_ARCHIVE_BYTES = NoteStore.MAX_ARCHIVE_PAYLOAD_BYTES
     private const val BACKUP_ENTRY = "backup.json"
     private const val MANIFEST_ENTRY = "manifest.txt"
 
     fun encryptBackup(backupJson: String, password: CharArray): ByteArray {
         require(password.size >= 10) { "Use a password with at least 10 characters" }
         require(backupJson.toByteArray(Charsets.UTF_8).size <= MAX_ARCHIVE_BYTES) { "Backup is too large" }
-        require(NoteStore.decodeBackup(backupJson) != null) { "Invalid NESTNOTE backup" }
+        require(NoteStore.decodeArchivePayload(backupJson) != null) { "Invalid NESTNOTE backup" }
 
         val zipBytes = makeZip(backupJson)
         require(zipBytes.size <= MAX_ARCHIVE_BYTES) { "Backup archive is too large" }
