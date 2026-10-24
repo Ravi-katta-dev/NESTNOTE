@@ -519,8 +519,7 @@ internal fun NestNoteApp(
                 !storageRecoveryRequired &&
                 notes.none { it.id == note.id }
             ) {
-                runCatching { VoiceAttachmentStore(context).deleteAll(note.id) }
-                runCatching { VoiceAttachmentManifest(context).removeNote(note.id) }
+                runCatching { com.nestnote.app.voicenote.VoiceNoteRepository(context).deleteAllForNote(note.id) }
             }
         }
     }
@@ -1825,8 +1824,7 @@ internal fun NestNoteApp(
                 discardVoiceChanges()
                 if (editorNote == null) {
                     editorDraftId?.let { draftId ->
-                        runCatching { VoiceAttachmentStore(context).deleteAll(draftId) }
-                        runCatching { VoiceAttachmentManifest(context).removeNote(draftId) }
+                        runCatching { com.nestnote.app.voicenote.VoiceNoteRepository(context).deleteAllForNote(draftId) }
                     }
                 }
                 closeEditor()
@@ -2016,8 +2014,7 @@ internal fun NestNoteApp(
                         confirmBulkDelete = false
                         if (persist(notes.filterNot { it.id in selectedNoteIds })) {
                             deleting.forEach { note ->
-                                runCatching { VoiceAttachmentStore(context).deleteAll(note.id) }
-                                runCatching { VoiceAttachmentManifest(context).removeNote(note.id) }
+                                runCatching { com.nestnote.app.voicenote.VoiceNoteRepository(context).deleteAllForNote(note.id) }
                             }
                             selectedNoteIds = emptySet()
                             coroutineScope.launch { snackbarHostState.showSnackbar("Selected notes deleted") }
