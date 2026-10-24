@@ -31,7 +31,7 @@ Version **1.4.6** is the current release candidate baseline; publish only after 
 - Password-protected `.nestnote` archives use authenticated AES-GCM encryption and are stored under `Documents/NESTNOTE` after folder access is granted.
 - Private Vault access from More or Settings → Privacy, with password protection and biometric enrollment/unlock via an authentication-bound Android Keystore key and BiometricPrompt CryptoObject; physical-device validation remains a release gate.
 - Private Vault is an app-level access gate, not a guarantee of independent cryptographic isolation.
-- Plaintext JSON backup/import and scheduled automatic backups are not offered. Private Vault notes and voice-note audio attachments are excluded from portable archives.
+- Portable archives exclude Private Vault notes and voice-note audio attachments.
 
 ## Security boundaries
 Local encryption at rest does not protect content on a compromised device while the app is running or through clipboard sharing. Private-note classification is metadata, not encryption. Portable archives are separately password-protected and exclude Private Vault notes. Keystore loss may prevent local decryption; understand the archive limitations before uninstalling or clearing app data.
