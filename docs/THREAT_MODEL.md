@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-23
 
-> Audit note: ordinary-view filters and encrypted archive selection exclude private notes, but private editor drafts are currently persisted separately by `DraftStore` as plaintext UTF-8/Properties files. Those draft files are inside app-private storage, but they do not inherit `NoteStore`'s AES-GCM encryption. Private draft encryption/classification and safe orphan recovery remain a release-blocking follow-up.
+> Implementation status (source audit, 2026-10-24): `DraftStore` uses schema-v2 envelopes with explicit `privateNote` classification. Private drafts use AES-GCM with a dedicated Android Keystore key and purpose-bound AAD; missing keys, malformed/authentication-failed envelopes, and classification mismatches are rejected without plaintext fallback. Legacy plaintext/unknown envelopes are rejected and may be deleted when discovered. This source-level assessment is not a substitute for exact-head CI and device/process-death validation.
 
 ## Scope and assets
 
@@ -12,7 +12,7 @@ Assets include note titles, bodies and metadata; encrypted local note payloads a
 
 ## Critical distinction: UI lock vs cryptographic isolation
 
-**Private Vault is currently a UI access gate, not a separately encrypted vault.**
+**Private Vault has a separate encrypted private-record store in the current source, in addition to its UI access gate.**
 
 The vault password does not derive, wrap, or unlock an independent key for private notes. The password hash authenticates the user through the intended app UI flow; it is not the key encrypting note payloads. Private notes use the same general Android Keystore-backed local-storage encryption as ordinary notes.
 
@@ -20,8 +20,8 @@ The vault password does not derive, wrap, or unlock an independent key for priva
 | --- | --- | --- |
 | Restricts normal in-app navigation | Password / optional biometric UI gate | May also need authenticated UI |
 | Relocks and hides protected UI | Intended lifecycle behavior; must be tested | Still needed, but is not encryption |
-| Independent encryption key for private notes | **No** | Yes, with reviewed generation, protection/wrapping, authorization, rotation and recovery |
-| Vault password is an encryption key | **No** | A reviewed password/key protocol; never store the raw password |
+| Independent encryption key for private notes | **Yes, a separate private data key and encrypted record store are implemented; lifecycle/recovery still require validation** | Continue reviewing authorization, rotation, recovery, and all access pathways |
+| Vault password is an encryption key | **Not directly; it participates in the private-key wrapping/unlock protocol** | Review KDF parameters, wrapping, rotation, and recovery; never store the raw password |
 
 | Portable archive encryption | **Yes** | AES-GCM authenticated archive encryption; Private Vault notes are excluded |
 
@@ -35,7 +35,7 @@ The vault password does not derive, wrap, or unlock an independent key for priva
 - **Lifecycle:** backgrounding should relock and hide private editor UI. Activity/process recreation and saveable editor state require dedicated tests.
 
 - **Archives:** portable archives are password-protected and AES-GCM encrypted. Archive selection excludes Private Vault notes, including archived private notes. The serialized payload is only intended to be consumed inside the encrypted archive flow.
-- **Drafts:** `DraftStore` persists editor draft title/body and metadata in plaintext files. The files live in app-private storage, but are not encrypted by `NoteStore`; a private-note draft may therefore remain readable to an attacker with access to app-private files or a device/runtime compromise. Drafts currently do not persist a private/public classification, so orphan recovery cannot reliably apply the vault boundary. Encrypt and classify private drafts, or prevent them from being written in plaintext, before release.
+- **Drafts:** schema-v2 envelopes persist an explicit privacy classification. Private draft payloads are AES-GCM encrypted with a dedicated Android Keystore key and purpose-bound AAD; missing keys, invalid tags, malformed envelopes, and classification mismatches fail closed. Legacy plaintext/unknown envelopes are rejected rather than reclassified. Exact-head regression and device/process-death validation remain required.
 - **Lockout:** persisted cooldown/backoff slows repeated attempts through the app flow. Restart, boundary, maximum delay, and clock-change behavior require tests.
 - **Biometrics:** cancellation, failure, unavailable hardware, enrollment changes, and fallback must never grant access except after explicit successful authentication.
 - **Key loss:** invalidation or loss of the local-storage key may make encrypted data unrecoverable. Recovery behavior must preserve original bytes and be tested.
@@ -56,7 +56,7 @@ No claim is made to protect against a rooted or otherwise compromised device, pr
 Use this statement:
 
 
-> Private Vault adds a password/biometric gate to viewing private notes inside NESTNOTE. Private notes use NESTNOTE's general local-storage encryption, not a separate vault key. portable archives are password-protected and exclude Private Vault notes.
+> Private Vault uses a password gate and a separate encrypted private-record store; biometric unlock is implemented in source but remains disabled pending device validation. Private-note drafts are separately encrypted and classified. Portable archives are password-protected and exclude Private Vault notes.
 
 
 Do not claim that portable archives include Private Vault notes or voice attachments.
@@ -76,7 +76,7 @@ The isolated-store integration is now wired into the app's password unlock, load
 
 Private records use a separate random vault data key wrapped by a PBKDF2-HMAC-SHA256-derived AES key, and record ciphertext is authenticated with record-ID-bound AES-GCM AAD. The general NoteStore key cannot directly decrypt the isolated record payloads. This is cryptographic isolation at the record-store layer, not a claim that every app pathway has been fully audited. Portable encrypted archive selection excludes private notes. Linked-note chips and backlinks are filtered to the same privacy class so public notes do not reveal private-note titles while the vault is open. Migration keeps the original encrypted general-store copy until encrypted private records are committed and the public-only general store is successfully committed; a failed second phase leaves the legacy copy for retry. Cross-store crash recovery and password-change failure atomicity still require dedicated fault-injection and device testing.
 
-Biometric unlock remains deliberately disabled in the gate: no authentication-bound Android Keystore key plus BiometricPrompt CryptoObject flow is implemented yet. Do not re-enable the biometric setting or claim biometric support until the cryptographic unwrap path is implemented and tested. A successful biometric UI callback must never be treated as cryptographic authorization. Do not merge/release until exact-head CI and security review pass.
+Biometric key wrapping and the BiometricPrompt CryptoObject path are present in source, but the setting/gate remains subject to device-level validation. Do not claim biometric unlock is release-ready until enrollment, unlock, cancellation, failure, enrollment-change/key-invalidation, and fallback tests pass. A successful biometric UI callback must never be treated as cryptographic authorization. Do not merge/release until exact-head CI and security review pass.
 
 
 ## Draft confidentiality boundary
