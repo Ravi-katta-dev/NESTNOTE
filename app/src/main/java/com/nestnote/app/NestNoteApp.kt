@@ -1338,11 +1338,11 @@ internal fun NestNoteApp(
                                     onOpen = {
                                         if (selectedNoteIds.isNotEmpty()) {
                                             selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id
-                                        } else { editorNoteId = note.id; editorDraftId = note.id; editorTemplate = null; editorVisible = true }
+                                        } else if (note.encrypted) { toggleNoteEncryption(note.id) } else { editorNoteId = note.id; editorDraftId = note.id; editorTemplate = null; editorVisible = true }
                                     },
                                     onSelect = { selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id },
                                     isSelected = note.id in selectedNoteIds,
-                                    onPin = { persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
+                                    onPin = { if (!note.encrypted) persist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
                                     onDelete = { deleteNote(note) }, onArchive = { if (!note.encrypted) persist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) }, onToggleEncryption = { toggleNoteEncryption(note.id) },
                                     modifier = Modifier.animateItem())
                             }
@@ -1358,7 +1358,7 @@ internal fun NestNoteApp(
                                     onOpen = {
                                         if (selectedNoteIds.isNotEmpty()) {
                                             selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id
-                                        } else { editorNoteId = note.id; editorDraftId = note.id; editorTemplate = null; editorVisible = true }
+                                        } else if (note.encrypted) { toggleNoteEncryption(note.id) } else { editorNoteId = note.id; editorDraftId = note.id; editorTemplate = null; editorVisible = true }
                                     },
                                     onSelect = { selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id },
                                     isSelected = note.id in selectedNoteIds,
