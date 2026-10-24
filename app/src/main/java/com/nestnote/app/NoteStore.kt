@@ -251,11 +251,11 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
             require(isValidNoteCollection(notes)) { "invalid note records" }
             val backup = JSONObject()
                 .put("format", "com.nestnote.archive-payload")
-                .put("schemaVersion", CURRENT_BACKUP_SCHEMA_VERSION)
+                .put("schemaVersion", CURRENT_ARCHIVE_PAYLOAD_SCHEMA_VERSION)
                 .put("createdAt", System.currentTimeMillis())
                 .put("notes", JSONArray(encode(notes)))
                 .toString()
-            require(backup.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) {
+            require(backup.toByteArray(Charsets.UTF_8).size <= MAX_ARCHIVE_PAYLOAD_BYTES) {
                 "Archive payload exceeds the supported ${MAX_BACKUP_BYTES / (1024 * 1024)} MiB limit"
             }
             return backup
@@ -268,7 +268,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
                 decode(raw, requireFields = true)
             } else {
                 val envelope = JSONObject(raw)
-                require(envelope.optString("format") == "com.nestnote.backup") { "unsupported or missing archive payload format" }
+                require(envelope.optString("format") in setOf("com.nestnote.archive-payload", "com.nestnote.backup")) { "unsupported or missing archive payload format" }
                 require(envelope.optInt("schemaVersion", -1) == CURRENT_BACKUP_SCHEMA_VERSION) {
                     "unsupported archive payload schema"
                 }
@@ -283,7 +283,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
          * (used to reject unrelated files during import).
          */
         fun decode(raw: String, requireFields: Boolean = false): List<NestNote>? = runCatching {
-            require(raw.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) { "backup is too large" }
+            require(raw.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) { "serialized payload is too large" }
             val array = JSONArray(raw)
             require(array.length() <= MAX_NOTES) { "too many notes" }
             val decoded = (0 until array.length()).map { i ->
