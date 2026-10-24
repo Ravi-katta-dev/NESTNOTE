@@ -215,13 +215,13 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         private const val GCM_TAG_LENGTH_BITS = 128
         private val AAD_V2 = "com.nestnote.app|notes|v2".toByteArray(Charsets.UTF_8)
 
-        const val MAX_BACKUP_BYTES = 10 * 1024 * 1024
+        const val MAX_ARCHIVE_PAYLOAD_BYTES = 10 * 1024 * 1024
         const val MAX_NOTES = 10_000
         const val MAX_TITLE_LENGTH = 10_000
         const val MAX_BODY_LENGTH = 1_000_000
         const val MAX_CATEGORY_LENGTH = 256
         const val MAX_REMINDER_LENGTH = 512
-        const val CURRENT_BACKUP_SCHEMA_VERSION = 1
+        const val CURRENT_ARCHIVE_PAYLOAD_SCHEMA_VERSION = 1
 
         /** Serializes notes to the same JSON array used for local storage and backups. */
         fun encode(notes: List<NestNote>): String {
@@ -241,40 +241,39 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         }
 
         /**
-         * Selects notes for a user-facing plaintext backup. Private Vault content is
-         * excluded because this export is not encrypted independently of the app.
+         * Selects notes for an encrypted archive. Private Vault records are excluded from portability archives.
          */
-        fun notesForBackup(notes: List<NestNote>, includeArchived: Boolean): List<NestNote> =
+        fun notesForArchive(notes: List<NestNote>, includeArchived: Boolean): List<NestNote> =
             notes.filter { !it.privateNote && (includeArchived || !it.archived) }
 
-        /** Encodes a versioned user-facing backup envelope. Local storage keeps the legacy array format. */
-        fun encodeBackup(notes: List<NestNote>): String {
+        /** Encodes the serialized payload that is placed inside an authenticated encrypted archive. */
+        fun encodeArchivePayload(notes: List<NestNote>): String {
             require(isValidNoteCollection(notes)) { "invalid note records" }
             val backup = JSONObject()
-                .put("format", "com.nestnote.backup")
+                .put("format", "com.nestnote.archive-payload")
                 .put("schemaVersion", CURRENT_BACKUP_SCHEMA_VERSION)
                 .put("createdAt", System.currentTimeMillis())
                 .put("notes", JSONArray(encode(notes)))
                 .toString()
             require(backup.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) {
-                "Backup exceeds the supported ${MAX_BACKUP_BYTES / (1024 * 1024)} MiB limit"
+                "Archive payload exceeds the supported ${MAX_BACKUP_BYTES / (1024 * 1024)} MiB limit"
             }
             return backup
         }
 
-        /** Accepts versioned backups and legacy JSON-array backups for backward compatibility. */
-        fun decodeBackup(raw: String): List<NestNote>? = runCatching {
-            require(raw.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) { "backup is too large" }
+        /** Decodes the archive's serialized payload and validates every note record. */
+        fun decodeArchivePayload(raw: String): List<NestNote>? = runCatching {
+            require(raw.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) { "archive payload is too large" }
             if (raw.trimStart().startsWith("[")) {
                 decode(raw, requireFields = true)
             } else {
                 val envelope = JSONObject(raw)
-                require(envelope.optString("format") == "com.nestnote.backup") { "unsupported or missing backup format" }
+                require(envelope.optString("format") == "com.nestnote.backup") { "unsupported or missing archive payload format" }
                 require(envelope.optInt("schemaVersion", -1) == CURRENT_BACKUP_SCHEMA_VERSION) {
-                    "unsupported backup schema"
+                    "unsupported archive payload schema"
                 }
-                val records = envelope.optJSONArray("notes") ?: error("missing notes")
-                decode(records.toString(), requireFields = true) ?: error("invalid backup records")
+                val records = envelope.optJSONArray("notes") ?: error("missing archive notes")
+                decode(records.toString(), requireFields = true) ?: error("invalid archive records")
             }
         }.getOrNull()
 
