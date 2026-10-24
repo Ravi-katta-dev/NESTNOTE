@@ -2537,8 +2537,8 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                                 FilterChip(
                                     selected = playerStyle == style,
                                     onClick = { choosePlayerStyle(style) },
-                                    label = { Text(\${style.label}) },
-                                    modifier = Modifier.weight(1f).testTag("voice_player_style_\${style.name.lowercase()}")
+                                    label = { Text(${style.label}) },
+                                    modifier = Modifier.weight(1f).testTag("voice_player_style_${style.name.lowercase()}")
                                 )
                             }
                             if (rowStyles.size == 1) Spacer(Modifier.weight(1f))
@@ -2549,7 +2549,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Player size", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text("\${playerSizePercent}%", style = MaterialTheme.typography.labelLarge, color = colors.primary)
+                        Text("${playerSizePercent}%", style = MaterialTheme.typography.labelLarge, color = colors.primary)
                     }
                     TextButton(onClick = {
                         playerSizePercent = DEFAULT_VOICE_PLAYER_SIZE_PERCENT
@@ -2580,7 +2580,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                         .clickable {
                             compactVoicePlayer = true
                             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
+                                .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).putString(PREF_VOICE_PLAYER_STYLE, VoicePlayerStyle.COMPACT.name).apply()
                         }
                         .testTag("voice_player_style_compact"),
                     shape = RoundedCornerShape(18.dp),
@@ -2624,7 +2624,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                         .clickable {
                             compactVoicePlayer = false
                             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
+                                .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).putString(PREF_VOICE_PLAYER_STYLE, VoicePlayerStyle.FULL.name).apply()
                         }
                         .testTag("voice_player_style_full"),
                     shape = RoundedCornerShape(18.dp),
