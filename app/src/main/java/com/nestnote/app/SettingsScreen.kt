@@ -2537,7 +2537,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                                 FilterChip(
                                     selected = playerStyle == style,
                                     onClick = { choosePlayerStyle(style) },
-                                    label = { Text(${style.label}) },
+                                    label = { Text("${style.label}") },
                                     modifier = Modifier.weight(1f).testTag("voice_player_style_${style.name.lowercase()}")
                                 )
                             }
