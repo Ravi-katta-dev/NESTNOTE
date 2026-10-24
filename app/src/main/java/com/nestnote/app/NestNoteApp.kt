@@ -1,6 +1,5 @@
 package com.nestnote.app
 
-import java.io.ByteArrayOutputStream
 import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.ClipData
