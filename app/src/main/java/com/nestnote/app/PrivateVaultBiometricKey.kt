@@ -30,7 +30,6 @@ internal class PrivateVaultBiometricKey(context: Context) {
         deleteEnrollment()
         Cipher.getInstance(TRANSFORMATION).apply {
             init(Cipher.ENCRYPT_MODE, generateKey())
-            updateAAD(AAD)
         }
     }.getOrNull()
 
@@ -53,6 +52,7 @@ internal class PrivateVaultBiometricKey(context: Context) {
                 return enrollmentFailed("The vault key has an unexpected size.")
             }
             val ciphertext = try {
+                cipher.updateAAD(AAD)
                 cipher.doFinal(keyBytes)
             } catch (error: Exception) {
                 // Log provider diagnostics without logging key material or ciphertext. The UI
@@ -118,6 +118,7 @@ internal class PrivateVaultBiometricKey(context: Context) {
         require(authenticatedCipher.algorithm == TRANSFORMATION)
         val payload = wrappedPayload() ?: return null
         val ciphertext = payload.copyOfRange(IV_BYTES, payload.size)
+        authenticatedCipher.updateAAD(AAD)
         val keyBytes = authenticatedCipher.doFinal(ciphertext)
         require(keyBytes.size == KEY_BYTES)
         PrivateNoteCrypto.Session(SecretKeySpec(keyBytes, "AES"))
