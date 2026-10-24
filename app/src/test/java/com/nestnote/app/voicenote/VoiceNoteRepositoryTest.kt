@@ -102,7 +102,7 @@ class VoiceNoteRepositoryTest {
         val repository = repository(root)
         repository.save(55L, "indexed", ByteArrayInputStream(byteArrayOf(1, 2)), 1L, 1L, "Indexed")
         val manifestFile = File(root, "manifest_v1.json")
-        manifestFile.writeText("""{"version":1,"attachments":[]}""")
+        manifestFile.writeText("""{"schemaVersion":1,"attachments":[]}""")
 
         assertTrue(repository.list(55L).isEmpty())
         assertEquals(listOf("indexed"), repository.listPayloads(55L).map { it.attachmentId })
