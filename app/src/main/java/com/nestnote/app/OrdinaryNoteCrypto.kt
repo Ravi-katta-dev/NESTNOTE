@@ -56,7 +56,7 @@ internal class OrdinaryNoteCrypto(context: Context) {
         val iv = ByteArray(IV_BYTES).also(buffer::get)
         val ciphertext = ByteArray(buffer.remaining()).also(buffer::get)
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(TAG_BITS, iv))
+        cipher.init(Cipher.DECRYPT_MODE, getExistingKey(), GCMParameterSpec(TAG_BITS, iv))
         cipher.updateAAD(aad(note.id))
         val payload = JSONObject(String(cipher.doFinal(ciphertext), Charsets.UTF_8))
         require(payload.getLong("id") == note.id) { "Encrypted note identity did not verify." }
@@ -76,6 +76,12 @@ internal class OrdinaryNoteCrypto(context: Context) {
             encrypted = false,
             encryptedPayload = ""
         )
+    }
+
+    private fun getExistingKey(): SecretKey {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        return (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)
+            ?: throw IllegalStateException("The device encryption key is unavailable. The encrypted note was preserved.")
     }
 
     private fun getOrCreateKey(): SecretKey {
