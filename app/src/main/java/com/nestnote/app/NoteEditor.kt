@@ -611,7 +611,17 @@ internal fun NoteEditorContent(
     }
 
     LaunchedEffect(hasUnsavedChanges) { onUnsavedChangesChange(hasUnsavedChanges) }
-    LaunchedEffect(Unit) { if (original == null) runCatching { titleFocus.requestFocus() } }
+    LaunchedEffect(original?.id, draftNoteId, lifecycleOwner) {
+        if (original != null) return@LaunchedEffect
+        // Opening a new editor during a route/sheet transition can race the window's
+        // InputConnection becoming active. Defer focus until the transition settles,
+        // and never request it while the Activity is stopped. Cancellation on disposal
+        // prevents a stale coroutine from reopening the IME for a dismissed editor.
+        delay(150L)
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            runCatching { titleFocus.requestFocus() }
+        }
+    }
 
     LaunchedEffect(voiceNoteId) {
         val store = VoiceAttachmentStore(context)
