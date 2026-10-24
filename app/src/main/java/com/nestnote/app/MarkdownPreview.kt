@@ -37,7 +37,7 @@ internal object MarkdownPreview {
                 Markwon.builder(appContext)
                     .usePlugin(StrikethroughPlugin.create())
                     .usePlugin(TaskListPlugin.create(appContext))
-                    .usePlugin(TablePlugin.create())
+                    .usePlugin(TablePlugin.create(appContext))
                     .build()
                     .also { cachedRenderer = it }
             }
