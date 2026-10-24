@@ -1628,6 +1628,9 @@ internal fun NestNoteApp(
                     pendingBiometricEnrollment = false
                 },
                 onSubmit = { password, confirmation, onResult ->
+                    // First-time setup should offer biometric enrollment immediately after the
+                    // password has successfully created and unlocked the vault.
+                    val wasConfiguredBeforeSubmit = PrivateVaultSecurity.isConfigured(context)
                     coroutineScope.launch {
                         val result = withContext(Dispatchers.IO) {
                             val configured = PrivateVaultSecurity.isConfigured(context)
@@ -1672,6 +1675,7 @@ internal fun NestNoteApp(
                         }
                         onResult(accepted)
                         if (accepted) {
+                            if (!wasConfiguredBeforeSubmit) pendingBiometricEnrollment = true
                             privateVaultUnlocked = true
                             selectedView = "Private"
                             search = ""
