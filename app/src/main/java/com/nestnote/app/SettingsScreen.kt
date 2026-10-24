@@ -2201,9 +2201,8 @@ internal fun OverviewTile(
 }
 
 // -------------------------------------------------------------------------------------------------
-// Dedicated Backup & Restore Screen
-// -------------------------------------------------------------------------------------------------
-
+// Dedicated encrypted Backup & Restore Screen
+// Plaintext JSON export/import has intentionally been removed.
 @Composable
 internal fun BackupRestoreScreen(
     totalNotes: Int,
@@ -2211,216 +2210,84 @@ internal fun BackupRestoreScreen(
     pinnedNotes: Int,
     lastBackupAt: Long,
     backupStatus: String,
-    automaticBackupEnabled: Boolean,
-    automaticBackupLastRun: Long,
-    automaticBackupStatus: String,
-    onAutomaticBackupChange: (Boolean) -> Unit,
     onChooseBackupFolder: () -> Unit,
     backupFolderConfigured: Boolean,
-    onExportNotes: (Boolean) -> Unit,
-    onImportNotes: () -> Unit,
     onExportEncryptedArchive: (Boolean, String) -> Unit,
     onImportEncryptedArchive: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
-    val reducedMotion = rememberSystemReducedMotion()
-    var showBackupDetails by rememberSaveable { mutableStateOf(false) }
     var includeArchivedInBackup by rememberSaveable { mutableStateOf(true) }
     var archivePassword by rememberSaveable { mutableStateOf("") }
 
     Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+        modifier.fillMaxSize().verticalScroll(rememberScrollState())
             .padding(horizontal = 18.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Hero Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerLow),
             border = BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.6f))
         ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Encrypted note archive", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    "Your notes, in your control",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
+                    "Create a password-protected archive to move notes between devices. Plaintext JSON backup and restore are not available.",
+                    style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant
                 )
-                Text(
-                    "Keep a copy of your notes or bring notes back from a backup file.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.onSurfaceVariant
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    BackupStatTile(
-                        label = "Active",
-                        count = (totalNotes - archivedNotes).coerceAtLeast(0),
-                        icon = Icons.Default.Edit,
-                        modifier = Modifier.weight(1f)
-                    )
-                    BackupStatTile(
-                        label = "Archived",
-                        count = archivedNotes,
-                        icon = Icons.Default.Archive,
-                        modifier = Modifier.weight(1f)
-                    )
-                    BackupStatTile(
-                        label = "Pinned",
-                        count = pinnedNotes,
-                        icon = Icons.Default.PushPin,
-                        modifier = Modifier.weight(1f)
-                    )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    BackupStatTile("Active", (totalNotes - archivedNotes).coerceAtLeast(0), Icons.Default.Edit, Modifier.weight(1f))
+                    BackupStatTile("Archived", archivedNotes, Icons.Default.Archive, Modifier.weight(1f))
+                    BackupStatTile("Pinned", pinnedNotes, Icons.Default.PushPin, Modifier.weight(1f))
                 }
             }
         }
 
-        // Automatic Backup Section
         SettingsSection(
-            title = "Automatic backup",
-            subtitle = "Scheduled copies stay privately on this device",
-            icon = Icons.Default.Tune
-        ) {
-            SwitchRow(
-                title = "Enable daily automatic backup",
-                summary = "Saves the latest copy in NESTNOTE's private app storage.",
-                checked = automaticBackupEnabled,
-                onChange = onAutomaticBackupChange
-            )
-            Text(
-                if (!automaticBackupEnabled) {
-                    "Next run: not scheduled."
-                } else {
-                    "Last run: " + (if (automaticBackupLastRun > 0L) {
-                        SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(automaticBackupLastRun)) + " · " + automaticBackupStatus
-                    } else "Not run yet") + ". Next run: approximately within 24 hours; Android may defer background work. The private copy is not uploaded to cloud storage."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onSurfaceVariant,
-                modifier = Modifier.padding(start = 2.dp)
-            )
-        }
-
-        // Documents backup folder: the system grants persistent access once.
-        SettingsSection(
-            title = "Backup folder",
-            subtitle = "Keep backups in Documents/NESTNOTE",
+            title = "Archive location",
+            subtitle = "Choose where encrypted archives are stored",
             icon = Icons.Default.FolderOpen
         ) {
             Text(
-                if (backupFolderConfigured) {
-                    "Folder access is saved. Backup and restore can use NESTNOTE-backup.json there without asking you to pick a location each time."
-                } else {
-                    "Choose Documents once. NESTNOTE will create a NESTNOTE folder there and remember the permission for future backups."
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.onSurfaceVariant
+                if (backupFolderConfigured) "Folder access is saved. Encrypted archives will be stored in Documents/NESTNOTE."
+                else "Choose a folder once and grant NESTNOTE access to store encrypted archives.",
+                style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant
             )
-            OutlinedButton(
-                onClick = onChooseBackupFolder,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            OutlinedButton(onClick = onChooseBackupFolder, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
                 Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(if (backupFolderConfigured) "Change backup folder" else "Choose Documents folder")
+                Text(if (backupFolderConfigured) "Change archive folder" else "Choose archive folder")
             }
         }
 
-        // Backup Status Card
         SettingsSection(
-            title = "Backup status",
-            subtitle = "Know when your notes were last protected",
+            title = "Archive status",
+            subtitle = "Last encrypted archive operation",
             icon = Icons.Default.Security
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = if (backupStatus == "Success") colors.primaryContainer else colors.surfaceContainerHighest,
-                    modifier = Modifier.size(42.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            if (backupStatus == "Success") Icons.Default.Check else Icons.Default.Archive,
-                            contentDescription = null,
-                            tint = if (backupStatus == "Success") colors.primary else colors.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(
-                        if (lastBackupAt > 0L) "Last backup: " + SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()).format(Date(lastBackupAt))
-                        else "No backup recorded yet",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        if (lastBackupAt > 0L) "$backupStatus · backup file saved to the chosen destination"
-                        else "Create a backup and save it somewhere safe.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.onSurfaceVariant
-                    )
-                }
-            }
-        }
-
-        // Back Up Notes Section (Contains exact string "Back up notes")
-        SettingsSection(
-            title = "Back up notes",
-            subtitle = "Save a portable copy to your device",
-            icon = Icons.Default.Archive
-        ) {
             Text(
-                "Create a NESTNOTE backup file that you can keep or move to another device.",
-                style = MaterialTheme.typography.bodyMedium
+                if (lastBackupAt > 0L) "Last operation: " + SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()).format(Date(lastBackupAt)) + " · $backupStatus"
+                else "No encrypted archive has been created in this installation.",
+                style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant
             )
-            Text(
-                "Includes note text and note settings. Voice recordings and audio attachments are not included.",
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onSurfaceVariant
-            )
-
-            SwitchRow(
-                title = "Include archived notes",
-                summary = "Turn off to export active notes only",
-                checked = includeArchivedInBackup,
-                onChange = { includeArchivedInBackup = it }
-            )
-
-            FilledTonalButton(
-                onClick = { onExportNotes(includeArchivedInBackup) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("settings_backup"),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Archive, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Create backup", fontWeight = FontWeight.SemiBold)
-            }
         }
 
         SettingsSection(
             title = "Password-protected archive",
-            subtitle = "Optional encrypted export for safer sharing",
+            subtitle = "AES-GCM encrypted .nestnote file",
             icon = Icons.Default.Lock
         ) {
             Text(
-                "Creates a .nestnote archive encrypted with AES-GCM. Use a strong password of at least 10 characters and keep it separately; NESTNOTE cannot recover a forgotten archive password. This is separate from the regular JSON backup.",
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onSurfaceVariant
+                "Use a strong password of at least 10 characters. Keep it separately; NESTNOTE cannot recover a forgotten archive password. Voice recordings are not included.",
+                style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant
+            )
+            SwitchRow(
+                title = "Include archived notes",
+                summary = "Turn off to archive active notes only",
+                checked = includeArchivedInBackup,
+                onChange = { includeArchivedInBackup = it }
             )
             OutlinedTextField(
                 value = archivePassword,
@@ -2437,12 +2304,11 @@ internal fun BackupRestoreScreen(
                     onExportEncryptedArchive(includeArchivedInBackup, password)
                 },
                 enabled = backupFolderConfigured && archivePassword.length >= 10,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Export encrypted .nestnote archive")
+                Text("Create encrypted archive")
             }
             OutlinedButton(
                 onClick = {
@@ -2451,86 +2317,11 @@ internal fun BackupRestoreScreen(
                     onImportEncryptedArchive(password)
                 },
                 enabled = backupFolderConfigured && archivePassword.length >= 10,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Default.FileOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Import encrypted archive")
-            }
-            if (!backupFolderConfigured) {
-                Text(
-                    "Choose the Documents folder above before using encrypted archives.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.onSurfaceVariant
-                )
-            }
-        }
-
-        // Restore Backup Section (Contains exact string "Restore backup" for tests)
-        SettingsSection(
-            title = "Restore backup",
-            subtitle = "Review before applying changes",
-            icon = Icons.Default.FileOpen
-        ) {
-            Text(
-                "Choose a NESTNOTE backup file to inspect and review its changes before restoring.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            OutlinedButton(
-                onClick = onImportNotes,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("settings_restore"),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, colors.primary)
-            ) {
-                Icon(Icons.Default.FileOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Choose backup file", fontWeight = FontWeight.SemiBold)
-            }
-
-            TextButton(
-                onClick = { showBackupDetails = !showBackupDetails },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (showBackupDetails) "Hide restore rules" else "How restore works")
-                Spacer(Modifier.width(6.dp))
-                Icon(
-                    if (showBackupDetails) Icons.Default.Close else Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-
-            AnimatedVisibility(
-                visible = showBackupDetails,
-                enter = fadeIn(NestMotion.fast(reducedMotion)) + slideInVertically(
-                    animationSpec = NestMotion.spatial(reducedMotion),
-                    initialOffsetY = { -it / 3 }
-                ),
-                exit = fadeOut(NestMotion.fast(reducedMotion)) + slideOutVertically(
-                    animationSpec = NestMotion.fast(reducedMotion),
-                    targetOffsetY = { -it / 3 }
-                )
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = colors.surfaceContainerHighest.copy(alpha = 0.6f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            "• Your existing notes are not cleared.\n• Notes in the backup are merged with local notes.\n• When the same note exists in both places, the most recently edited version is kept.\n• You can cancel at the review step before changes are applied.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = colors.onSurfaceVariant
-                        )
-                    }
-                }
+                Text("Restore encrypted archive")
             }
         }
     }
