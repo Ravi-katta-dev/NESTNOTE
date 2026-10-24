@@ -1,8 +1,17 @@
 # Changelog
 
-All notable changes to NESTNOTE are documented here. The current release baseline is **1.4.5**.
+All notable changes to NESTNOTE are documented here. The current release candidate is **1.4.6**.
 
-## [1.4.5] — Current release
+## [1.4.6] — Release candidate
+
+This version updates release metadata to 1.4.6 and carries forward the current feature set. Publish only after exact-tag CI, signing, and release gates are verified.
+
+### Included capabilities
+- Native Markwon Markdown table rendering and automatic pipe-table alignment.
+- Private Vault biometric enrollment and CryptoObject-based unlock path, with password recovery; physical-device validation remains a release check.
+- Bounded SAF backup verification reads.
+
+## [1.4.5] — Previous release baseline
 
 Version 1.4.5 is the current release version supplied by the project maintainer. Consult [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for the authoritative release asset and publication metadata.
 
