@@ -33,20 +33,54 @@ internal class PrivateVaultBiometricKey(context: Context) {
         }
     }.getOrNull()
 
+    /** Safe, non-secret explanation for the most recent enrollment failure. */
+    var lastEnrollmentFailure: String? = null
+        private set
+
     /** Persist only after BiometricPrompt successfully authenticates the enrollment Cipher. */
-    fun completeEnrollment(session: PrivateNoteCrypto.Session, authenticatedCipher: Cipher?): Boolean =
-        runCatching {
-            val cipher = requireNotNull(authenticatedCipher) { "Missing authenticated enrollment cipher" }
-            require(cipher.algorithm == TRANSFORMATION)
-            val ciphertext = cipher.doFinal(session.key.encoded)
+    fun completeEnrollment(session: PrivateNoteCrypto.Session, authenticatedCipher: Cipher?): Boolean {
+        lastEnrollmentFailure = null
+        return try {
+            val cipher = authenticatedCipher
+                ?: return enrollmentFailed("Android did not return the authenticated encryption cipher.")
+            if (cipher.algorithm != TRANSFORMATION) {
+                return enrollmentFailed("Android returned an unexpected encryption cipher.")
+            }
+            val keyBytes = session.key.encoded
+                ?: return enrollmentFailed("The vault key could not be prepared for secure wrapping.")
+            if (keyBytes.size != KEY_BYTES) {
+                return enrollmentFailed("The vault key has an unexpected size.")
+            }
+            val ciphertext = try {
+                cipher.doFinal(keyBytes)
+            } catch (error: Exception) {
+                return enrollmentFailed(
+                    when (error) {
+                        is android.security.keystore.UserNotAuthenticatedException ->
+                            "Android did not authorize the biometric key operation. Unlock the device and try again."
+                        is java.security.InvalidKeyException ->
+                            "Android rejected the biometric key. Check that strong biometrics are enrolled, then try again."
+                        else -> "Secure key wrapping failed (${error.javaClass.simpleName})."
+                    }
+                )
+            }
             val payload = ByteBuffer.allocate(cipher.iv.size + ciphertext.size)
                 .put(cipher.iv).put(ciphertext).array()
-            check(prefs.edit()
+            val saved = prefs.edit()
                 .putInt(VERSION, SCHEMA_VERSION)
                 .putString(WRAPPED_KEY, Base64.encodeToString(payload, Base64.NO_WRAP))
-                .commit())
+                .commit()
+            if (!saved) return enrollmentFailed("Android could not save the secure enrollment record.")
             true
-        }.getOrDefault(false)
+        } catch (error: Exception) {
+            enrollmentFailed("Secure enrollment failed (${error.javaClass.simpleName}).")
+        }
+    }
+
+    private fun enrollmentFailed(reason: String): Boolean {
+        lastEnrollmentFailure = reason
+        return false
+    }
 
     /** Prepares the only Cipher that may be passed to BiometricPrompt.CryptoObject. */
     fun createUnlockCipher(): Cipher? = runCatching {
