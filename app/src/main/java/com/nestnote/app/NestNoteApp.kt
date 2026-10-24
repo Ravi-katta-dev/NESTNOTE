@@ -1675,7 +1675,13 @@ internal fun NestNoteApp(
                         }
                         onResult(accepted)
                         if (accepted) {
-                            if (!wasConfiguredBeforeSubmit) pendingBiometricEnrollment = true
+                            if (!wasConfiguredBeforeSubmit && privateVaultBiometricAvailable) {
+                                pendingBiometricEnrollment = true
+                            } else if (!wasConfiguredBeforeSubmit) {
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Vault created. Strong fingerprint/biometric unlock is not available on this device; you can still use your password.")
+                                }
+                            }
                             privateVaultUnlocked = true
                             selectedView = "Private"
                             search = ""
