@@ -1,3 +1,13 @@
+## 2026-10-24 — Remove plaintext JSON backup/import
+
+- Removed plaintext JSON export/import controls and file handling from the Backup & restore screen.
+- Removed the scheduled plaintext JSON worker/scheduler and its WorkManager dependency.
+- Retained password-protected AES-GCM `.nestnote` archives as the sole user-facing portability flow; Private Vault notes and voice attachments are excluded.
+- Renamed the serializer APIs to `encodeArchivePayload` / `decodeArchivePayload` to make their internal archive role explicit. Local storage continues using its existing JSON representation.
+- Deleted standalone tests for the removed user-facing JSON backup feature and updated archive payload tests and security/release documentation. Existing user-created `.json` files are not automatically deleted from storage.
+
+---
+
 ## 2026-10-23 — Private Vault security-critical path follow-up
 
 - Hardened `PrivateNoteCrypto.initialize` to fail if wrapped-key metadata cannot be committed.
