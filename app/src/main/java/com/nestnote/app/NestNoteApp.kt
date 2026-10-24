@@ -261,6 +261,9 @@ internal fun NestNoteApp(
         if (selectedView == "Private") selectedView = "Home"
     }
     var privateVaultBiometricEnabled by remember { mutableStateOf(preferences.getBoolean("private_vault_biometric_enabled", false)) }
+    var screenCaptureProtectionEnabled by remember {
+        mutableStateOf(preferences.getBoolean(PREF_PRIVATE_SCREEN_PROTECTION, true))
+    }
     var pendingBiometricEnrollment by remember { mutableStateOf(false) }
     var showBiometricEnrollment by remember { mutableStateOf(false) }
     val privateVaultBiometricAvailable = remember(context) {
@@ -293,8 +296,8 @@ internal fun NestNoteApp(
     // Protect private content even when a private note is opened from Home.
     // Track ownership across recompositions so changing between protected routes
     // cannot accidentally leave FLAG_SECURE set or clear a flag owned elsewhere.
-    val protectPrivateContent = selectedView == "Private" ||
-        (editorVisible && editorNote?.privateNote == true)
+    val protectPrivateContent = preferences.getBoolean(PREF_PRIVATE_SCREEN_PROTECTION, true) &&
+        (selectedView == "Private" || (editorVisible && editorNote?.privateNote == true))
     var privateVaultAddedSecureFlag by remember { mutableStateOf(false) }
     val secureWindow = remember(context) { context.findActivityForSecureWindow()?.window }
     SideEffect {
@@ -1155,6 +1158,11 @@ internal fun NestNoteApp(
                         onOpenBackupRestore = { selectedView = "Backup" },
                         onOpenPrivateVaultSettings = { selectedView = "PrivateVaultSettings" },
                         storageBackend = store.currentBackend(),
+                        screenCaptureProtectionEnabled = screenCaptureProtectionEnabled,
+                        onScreenCaptureProtectionChange = { enabled ->
+                            screenCaptureProtectionEnabled = enabled
+                            preferences.edit().putBoolean(PREF_PRIVATE_SCREEN_PROTECTION, enabled).apply()
+                        },
                         onStorageBackendChange = { target ->
                             if (!storageLoaded || storageRecoveryRequired) {
                                 coroutineScope.launch { snackbarHostState.showSnackbar("Resolve storage recovery before switching storage.") }
