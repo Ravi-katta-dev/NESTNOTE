@@ -71,6 +71,18 @@ class DraftStoreTest {
     }
 
     @Test
+    fun `failed atomic replacement preserves previous draft`() {
+        val target = File(root, "note-1.json").apply { writeText("previous-good-draft") }
+        val temp = File(root, "note-1.json.tmp").apply { writeText("replacement-draft") }
+
+        val replaced = DraftStore.replaceDraftFile(temp, target) { _, _ -> false }
+
+        assertFalse(replaced)
+        assertEquals("previous-good-draft", target.readText())
+        assertFalse(temp.exists())
+    }
+
+    @Test
     fun `write twice overwrites`() {
         val first = sampleDraft().copy(title = "First")
         val second = sampleDraft().copy(title = "Second")
