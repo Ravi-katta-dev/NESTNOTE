@@ -110,7 +110,7 @@ class PrivateVaultSecurityTest {
             pinned = true, archived = false, privateNote = true, reminder = "2030-01-01")
         val archivedPrivate = NestNote(id = 103L, title = "Archived secret", body = "hidden",
             archived = true, privateNote = true)
-        val restored = NoteStore.decodeBackup(NoteStore.encodeBackup(listOf(public, private, archivedPrivate)))
+        val restored = NoteStore.decodeArchivePayload(NoteStore.encodeArchivePayload(listOf(public, private, archivedPrivate)))
         assertEquals(listOf(public, private, archivedPrivate), restored)
 
         val notes = requireNotNull(restored)
