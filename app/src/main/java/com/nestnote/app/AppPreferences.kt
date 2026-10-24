@@ -26,7 +26,20 @@ internal const val PREF_MARKDOWN_ZOOM = "markdown_viewer_zoom_percent"
 internal const val PREF_EDITOR_COUNTS = "editor_show_counts"
 internal const val PREF_VOICE_PLAYER_COMPACT = "voice_player_compact"
 internal const val PREF_VOICE_PLAYER_SPEED = "voice_player_speed"
+internal const val PREF_VOICE_PLAYER_STYLE = "voice_player_style"
+internal const val PREF_VOICE_PLAYER_SIZE_PERCENT = "voice_player_size_percent"
 internal val VoicePlayerSpeeds = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
+
+internal enum class VoicePlayerStyle(val label: String, val description: String) {
+    COMPACT("Compact", "Small pill with play control and short waveform"),
+    FULL("Full", "Expanded card with title, waveform and seek bar"),
+    WAVEFORM("Waveform", "Prominent waveform with recording name and duration"),
+    MINIMAL("Minimal", "Small play control and duration with no waveform")
+}
+
+internal const val DEFAULT_VOICE_PLAYER_SIZE_PERCENT = 100
+internal const val MIN_VOICE_PLAYER_SIZE_PERCENT = 75
+internal const val MAX_VOICE_PLAYER_SIZE_PERCENT = 150
 
 // Encrypted archive status keys.
 internal const val PREF_BACKUP_LAST_SUCCESS_AT = "backup_last_success_at"
