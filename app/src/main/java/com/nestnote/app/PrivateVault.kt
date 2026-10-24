@@ -189,7 +189,7 @@ internal fun PrivateVaultGateDialog(
     biometricEnabled: Boolean,
     onDismiss: () -> Unit,
     onSubmit: (password: String, confirmation: String, onResult: (Boolean) -> Unit) -> Unit,
-    onBiometricUnlock: (Cipher) -> Unit
+    onBiometricUnlock: (Cipher, (Boolean) -> Unit) -> Unit
 ) {
     val context = LocalContext.current
     val activity = context.findFragmentActivity()
@@ -222,7 +222,11 @@ internal fun PrivateVaultGateDialog(
                         error = "Biometric authentication did not authorize the vault key. Use your password."
                     } else {
                         error = ""
-                        onBiometricUnlock(cipher)
+                        submitting = true
+                        onBiometricUnlock(cipher) { unlocked ->
+                            submitting = false
+                            if (!unlocked) error = "Vault could not be opened safely. Use your password."
+                        }
                     }
                 }
 
@@ -232,6 +236,7 @@ internal fun PrivateVaultGateDialog(
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     // Cancellation is not an unlock; keep the password fallback available.
+                    submitting = false
                     error = if (errorCode == BiometricPrompt.ERROR_USER_CANCELED ||
                         errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON ||
                         errorCode == BiometricPrompt.ERROR_CANCELED
