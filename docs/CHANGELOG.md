@@ -1,5 +1,13 @@
 # NESTNOTE Changelog
 
+## Unreleased — encrypted-only portability
+
+- Removed plaintext JSON backup/export and import controls and their file-handling paths.
+- Removed scheduled plaintext JSON backups and their WorkManager worker/scheduler.
+- Kept password-protected AES-GCM `.nestnote` archives as the only user-facing note portability option.
+- Archive payload serialization remains an internal implementation detail; Private Vault notes and voice attachments are excluded.
+
+
 ## v1.4.6 — Release candidate
 
 - Align app release metadata and current documentation with version 1.4.6.
