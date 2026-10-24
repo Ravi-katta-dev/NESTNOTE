@@ -161,9 +161,9 @@ Remaining open items are all low-priority UX gaps.
 - Restore is merge-oriented rather than destructively replacing current notes. Private Vault notes and voice attachments are excluded.
 
 ### Privacy and portability notes
-- Password-protected backup files are not implemented in this version.
+- Current portable archives are password-protected and AES-GCM encrypted; plaintext JSON export/import is not offered.
 - Historical note: the retired JSON export format contained readable note data. Current portable backups use password-protected encrypted `.nestnote` archives.
-- The versioned format is intended to support validation and future migration across app versions.
+- Internal archive payload schema checks support validation and compatibility across app versions.
 
 ### Testing and release readiness
 - Add Robolectric regression tests for plaintext and encrypted-v1 note migrations, migration idempotence, corrupt/tampered payload recovery, and preservation of unreadable source data.
@@ -247,7 +247,7 @@ Remaining open items are all low-priority UX gaps.
 
 ### Compatibility and privacy notes
 - Audio-file import currently supports uncompressed 16-bit mono or stereo WAV files; other formats are not yet supported.
-- Voice recordings are stored as local attachments. Audio attachments remain excluded from the current JSON backup/restore format.
+- Voice recordings are stored as local attachments. Audio attachments are excluded from portable `.nestnote` archives.
 - NESTNOTE remains local-first with no account-based cloud sync.
 
 ## v1.2.5 — 2026-10-18
