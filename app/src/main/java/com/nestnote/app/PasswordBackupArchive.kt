@@ -85,7 +85,7 @@ internal object PasswordBackupArchive {
         val json = entries[BACKUP_ENTRY] ?: return null
         // Manifest is required so arbitrary ZIPs cannot masquerade as NESTNOTE exports.
         if (entries[MANIFEST_ENTRY] != "format=com.nestnote.password-backup\nschema=1") return null
-        return json.takeIf { NoteStore.decodeBackup(it) != null }
+        return json.takeIf { NoteStore.decodeArchivePayload(it) != null }
     }
 
     private fun makeZip(json: String): ByteArray {
