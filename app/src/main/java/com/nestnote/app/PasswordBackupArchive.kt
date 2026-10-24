@@ -37,9 +37,9 @@ internal object PasswordBackupArchive {
     fun encryptArchive(archivePayload: String, password: CharArray): ByteArray {
         require(password.size >= 10) { "Use a password with at least 10 characters" }
         require(archivePayload.toByteArray(Charsets.UTF_8).size <= MAX_ARCHIVE_BYTES) { "Archive payload is too large" }
-        require(NoteStore.decodeArchivePayload(backupJson) != null) { "Invalid NESTNOTE archive payload" }
+        require(NoteStore.decodeArchivePayload(archivePayload) != null) { "Invalid NESTNOTE archive payload" }
 
-        val zipBytes = makeZip(backupJson)
+        val zipBytes = makeZip(archivePayload)
         require(zipBytes.size <= MAX_ARCHIVE_BYTES) { "Encrypted archive is too large" }
         val salt = ByteArray(SALT_BYTES).also(SecureRandom()::nextBytes)
         val nonce = ByteArray(NONCE_BYTES).also(SecureRandom()::nextBytes)
