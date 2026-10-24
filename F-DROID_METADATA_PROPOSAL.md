@@ -14,7 +14,7 @@ This document records the metadata prepared for a possible merge request to the 
 - **Minimum SDK:** 26
 - **Suggested category:** Writing
 - **Suggested summary:** Local-first encrypted notes with Markdown and voice attachments.
-- **Suggested description:** NESTNOTE is a native Android note-taking app for creating, organizing, searching, archiving, and backing up notes. It supports categories, checklists, Markdown formatting and preview, themes, voice recording with a review-before-attach flow, WAV import, and inline playback cards for multiple audio attachments. Notes are stored locally; note payloads are encrypted using AES-GCM with a key held by Android Keystore. The app has no account-based cloud sync. JSON backups contain plaintext note data, and audio attachments are not currently included in JSON backup/restore.
+- **Suggested description:** NESTNOTE is a native Android note-taking app for creating, organizing, searching, archiving, and backing up notes. It supports categories, checklists, Markdown formatting and preview, themes, voice recording with a review-before-attach flow, WAV import, and inline playback cards for multiple audio attachments. Notes are stored locally; note payloads are encrypted using AES-GCM with a key held by Android Keystore. The app has no account-based cloud sync. Portable note transfer uses password-protected encrypted archives; Private Vault notes and audio attachments are excluded.
 
 ## Proposed build recipe — validation required before submission
 
