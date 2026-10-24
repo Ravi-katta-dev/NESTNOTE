@@ -2584,8 +2584,8 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                         }
                         .testTag("voice_player_style_compact"),
                     shape = RoundedCornerShape(18.dp),
-                    color = if (compactVoicePlayer) colors.secondaryContainer else colors.surfaceContainerLow,
-                    border = BorderStroke(1.dp, if (compactVoicePlayer) colors.primary else colors.outlineVariant)
+                    color = if (playerStyle == VoicePlayerStyle.COMPACT) colors.secondaryContainer else colors.surfaceContainerLow,
+                    border = BorderStroke(1.dp, if (playerStyle == VoicePlayerStyle.COMPACT) colors.primary else colors.outlineVariant)
                 ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         FilledIconButton(
@@ -2608,7 +2608,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                             )
                         }
                         RadioButton(
-                            selected = compactVoicePlayer,
+                            selected = playerStyle == VoicePlayerStyle.COMPACT,
                             onClick = {
                                 choosePlayerStyle(VoicePlayerStyle.COMPACT)
                                 context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
@@ -2628,8 +2628,8 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                         }
                         .testTag("voice_player_style_full"),
                     shape = RoundedCornerShape(18.dp),
-                    color = if (!compactVoicePlayer) colors.secondaryContainer else colors.surfaceContainerLow,
-                    border = BorderStroke(1.dp, if (!compactVoicePlayer) colors.primary else colors.outlineVariant)
+                    color = if (playerStyle == VoicePlayerStyle.FULL) colors.secondaryContainer else colors.surfaceContainerLow,
+                    border = BorderStroke(1.dp, if (playerStyle == VoicePlayerStyle.FULL) colors.primary else colors.outlineVariant)
                 ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         FilledIconButton(
@@ -2652,7 +2652,7 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                             )
                         }
                         RadioButton(
-                            selected = !compactVoicePlayer,
+                            selected = playerStyle == VoicePlayerStyle.FULL,
                             onClick = {
                                 choosePlayerStyle(VoicePlayerStyle.FULL)
                                 context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
