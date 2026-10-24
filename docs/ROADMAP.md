@@ -29,9 +29,9 @@ The supplied HTML redesign is implemented as a native Compose adaptation. The re
 ## Private Vault — PR #88 (in progress)
 
 - Add swipe-down entry from the Home title area and a password setup/unlock dialog.
-- Persist a private-note flag in encrypted local storage and versioned/plain-array JSON backup formats; older records default to visible notes.
+- Persist a private-note flag in encrypted local storage; portable archives exclude Private Vault records.
 - Exclude private notes from normal views and provide an editor More-menu action to hide/reveal them while the vault is unlocked.
-- Password gate uses a random salt and PBKDF2-HMAC-SHA256; the vault password is not an encryption key. Exported JSON backups remain plaintext.
+- Password gate uses a random salt and PBKDF2-HMAC-SHA256; the vault password is not an encryption key. Portable archives use a separate password and authenticated encryption; Private Vault notes are excluded.
 - Added a dedicated Private Vault settings page linked from More and Settings → Privacy, with biometric enable/disable, verified password change, quick-access guidance, and export-security notes.
 - Added AndroidX BiometricPrompt unlock (fingerprint where enrolled and supported) after password setup; password fallback remains available. Device-level biometric paths still require verification.
 - Required validation before merge: Android CI, password-hash tests, note persistence/backup tests, view-filter tests, and manual gesture/lifecycle checks.
@@ -79,7 +79,7 @@ Implemented a unified Material 3 editor with saveable title/body/category/color/
 
 ## Phase 5 — Reliability and finishing touches
 **Status: In progress** — PR [#5](https://github.com/Ravi-katta-dev/NESTNOTE/pull/5) was squash-merged into `main` on 2026-10-12 (merge commit `ee046eaa67fe2b2be713ef96becabf0892f034fe`). Android CI passed on the previously recorded implementation head; manual UI, accessibility/larger-font, keyboard/edge-to-edge, and final regression checks remain outstanding, so Phase 5 is not marked complete.
-- [x] Backup and restore: JSON backup to a user-chosen file and merge-restore (new ids added, newest copy wins, nothing deleted). Same JSON format as local storage.
+- [x] Portable note transfer uses password-protected encrypted `.nestnote` archives with merge-restore.
 - [x] Settings redesign: segmented controls (theme, view, density, sort, text size), selectable cards (note card colors, editor mode), default-category chips, per-setting summaries, reset-to-defaults.
 - [x] Editor UX: checklist and bullet tools with Enter-to-continue lists, live word count and reading time (optional), editor text size setting, category chips, reminder presets (later today, tomorrow morning, next Monday) and clear-reminder, share/copy note, new notes open focused, edited/created info.
 - [x] Verify automated checks with Android CI: [run #38196257185 — success](https://github.com/Ravi-katta-dev/NESTNOTE/actions/runs/38196257185). Unit tests, API 36 debug APK build, instrumentation-test compilation, and test-APK signing passed.
@@ -113,7 +113,7 @@ I reviewed the current `main` branch of [Ravi-katta-dev/NESTNOTE](https://github
 
 My recommendation is to make the next phase about data safety, editor reliability, and a polished real-device experience before adding major new features.
 
-NESTNOTE already has a useful foundation: native Android with Kotlin, Jetpack Compose and Material 3, local note storage, a customizable editor, categories, archive/restore, and JSON backup. The most valuable next step is to make those features more dependable as the app grows.
+NESTNOTE already has a useful foundation: native Android with Kotlin, Jetpack Compose and Material 3, local note storage, a customizable editor, categories, archive/restore, and password-protected encrypted portability archives. The most valuable next step is to make those features more dependable as the app grows.
 
 ### 1. Current project assessment
 
@@ -319,7 +319,7 @@ The recommendation is to strengthen data-at-rest protection and release safeguar
 **Recommendation:**
 - Decide whether automatic system backup is an intentional product feature.
 - If it is not intended, disable automatic backup and configure applicable Android backup/data-extraction rules to exclude sensitive note storage.
-- If backup is intended, document the behavior and assess the security of the destination and restore path. Keep user-controlled export separate from automatic backup policy.
+- If backup is intended, document the behavior and assess the security of the destination and restore path. Keep portable archives password-protected; plaintext export and scheduled automatic backups are not part of the current product.
 
 **Acceptance criteria:**
 - The chosen backup policy is documented and matches the manifest and applicable backup-rule files.
@@ -412,7 +412,7 @@ PR #4 introduced a created field to the note model and updated JSON serializatio
 - [ ] **P1 — Add storage and import validation.** Centralize field limits and schema validation; reject invalid imports atomically and preserve valid Unicode/multiline content.
 - [ ] **P1 — Harden production release signing.** Separate CI signing from production signing and require stable signing credentials for tagged releases before public distribution.
 - [ ] **P1 — Evaluate R8 and resource shrinking.** Enable them for release only after a minified-release smoke test and regression suite pass.
-- [ ] **P1 — Update privacy and release documentation.** Explain local storage, encryption status, automatic backup behavior, user-controlled exports, and signing/release safeguards accurately.
+- [ ] **P1 — Update privacy and release documentation.** Explain local storage, encryption status, encrypted archive behavior, and signing/release safeguards accurately.
 - [ ] **P1 — Add a security release checklist.** Include dependency/configuration review, manifest inspection, backup/restore tests, release signer verification, and installation/upgrade validation.
 
 ### Security release gate
@@ -421,7 +421,7 @@ Before a public release intended for sensitive personal notes:
 
 1. All P0 findings are remediated or have a documented, owner-approved risk decision.
 2. Existing-note migration and backup/restore have passed regression tests with no silent data loss.
-3. Automatic backup behavior is verified and disclosed.
+3. Encrypted archive behavior and password recovery limitations are verified and disclosed.
 4. A production artifact is signed with the expected stable certificate; temporary CI keys are not used for distribution.
 5. The release variant builds and passes the agreed regression/smoke tests, including if R8 is enabled.
 6. User-facing privacy documentation matches the shipped implementation.
