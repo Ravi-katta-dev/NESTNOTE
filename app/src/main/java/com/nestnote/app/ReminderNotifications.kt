@@ -145,11 +145,7 @@ internal object VoicePlaybackNotifications {
                 if (paused) "Resume" else "Pause",
                 toggleIntent
             )
-            .addAction(android.R.drawable.ic_media_stop, "Stop", stopIntent)
-            .setStyle(
-                androidx.core.app.NotificationCompat.MediaStyle()
-                    .setShowActionsInCompactView(0, 1)
-            )
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopIntent)
             .build()
         try {
             NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
