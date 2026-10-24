@@ -291,8 +291,9 @@ internal fun NestNoteApp(
     // Protect private content even when a private note is opened from Home.
     // Track ownership across recompositions so changing between protected routes
     // cannot accidentally leave FLAG_SECURE set or clear a flag owned elsewhere.
-    val protectPrivateContent = preferences.getBoolean(PREF_PRIVATE_SCREEN_PROTECTION, true) &&
-        (selectedView == "Private" || (editorVisible && editorNote?.privateNote == true))
+    // Apply FLAG_SECURE across the app whenever the privacy setting is enabled.
+    // This protects private content consistently, without relying on the current route.
+    val protectPrivateContent = screenCaptureProtectionEnabled
     var privateVaultAddedSecureFlag by remember { mutableStateOf(false) }
     val secureWindow = remember(context) { context.findActivityForSecureWindow()?.window }
     SideEffect {
