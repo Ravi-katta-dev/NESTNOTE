@@ -367,64 +367,79 @@ internal fun NestNoteApp(
     fun saveString(key: String, value: String) = preferences.edit().putString(key, value).apply()
     fun saveBoolean(key: String, value: Boolean) = preferences.edit().putBoolean(key, value).apply()
     fun saveLong(key: String, value: Long) = preferences.edit().putLong(key, value).apply()
-    fun persist(next: List<NestNote>, allowRecovery: Boolean = false): Boolean {
-        if (!storageLoaded) {
-            coroutineScope.launch { snackbarHostState.showSnackbar("Notes are still loading. Try again in a moment.") }
+    var persistenceBusy by remember { mutableStateOf(false) }
+    suspend fun persist(next: List<NestNote>, allowRecovery: Boolean = false): Boolean {
+        if (persistenceBusy) {
+            snackbarHostState.showSnackbar("A save is already in progress. Please try again.")
             return false
         }
-        if (storageRecoveryRequired && !allowRecovery) {
-            coroutineScope.launch { snackbarHostState.showSnackbar("Restore a backup before changing notes. Existing local data was not overwritten.") }
-            return false
-        }
-        val session = privateVaultSession
-        val publicNext = next.filterNot { it.privateNote }
-        val privateNext = next.filter { it.privateNote }
-        if (privateNext.isNotEmpty() && session == null) {
-            coroutineScope.launch { snackbarHostState.showSnackbar("Unlock Private Vault before saving private notes.") }
-            return false
-        }
-        // Preserve not-yet-migrated private records in the legacy encrypted blob while locked.
-        val generalNext = if (session == null) publicNext + legacyPrivateNotes else publicNext
-        val oldPrivate = notes.filter { it.privateNote }
-        android.os.Trace.beginSection("NestNote.persist.privateStoreSave")
-        val privateSaved = try {
-            if (session == null) true else privateNoteStore.save(session, privateNext)
-        } finally {
-            android.os.Trace.endSection()
-        }
-        if (!privateSaved) {
-            coroutineScope.launch { snackbarHostState.showSnackbar("Private note encryption failed. No plaintext fallback was used.") }
-            return false
-        }
-        android.os.Trace.beginSection("NestNote.persist.publicStoreSave")
-        val saved = try {
-            store.save(generalNext)
-        } finally {
-            android.os.Trace.endSection()
-        }
-        if (!saved && session != null) {
-            // SharedPreferences cannot transact across namespaces; restore the previous encrypted
-            // private snapshot if the public-store commit fails.
-            if (!privateNoteStore.save(session, oldPrivate)) {
+        persistenceBusy = true
+        try {
+            if (!storageLoaded) {
+                snackbarHostState.showSnackbar("Notes are still loading. Try again in a moment.")
+                return false
+            }
+            if (storageRecoveryRequired && !allowRecovery) {
+                snackbarHostState.showSnackbar("Restore a backup before changing notes. Existing local data was not overwritten.")
+                return false
+            }
+            val session = privateVaultSession
+            val publicNext = next.filterNot { it.privateNote }
+            val privateNext = next.filter { it.privateNote }
+            if (privateNext.isNotEmpty() && session == null) {
+                snackbarHostState.showSnackbar("Unlock Private Vault before saving private notes.")
+                return false
+            }
+            val generalNext = if (session == null) publicNext + legacyPrivateNotes else publicNext
+            val oldPrivate = notes.filter { it.privateNote }
+            val (privateSaved, saved, rollbackSucceeded) = withContext(Dispatchers.IO) {
+                android.os.Trace.beginSection("NestNote.persist.privateStoreSave")
+                val privateOk = try {
+                    if (session == null) true else privateNoteStore.save(session, privateNext)
+                } finally {
+                    android.os.Trace.endSection()
+                }
+                if (!privateOk) return@withContext Triple(false, false, true)
+                android.os.Trace.beginSection("NestNote.persist.publicStoreSave")
+                val publicOk = try {
+                    store.save(generalNext)
+                } finally {
+                    android.os.Trace.endSection()
+                }
+                val rollbackOk = if (!publicOk && session != null) privateNoteStore.save(session, oldPrivate) else true
+                Triple(privateOk, publicOk, rollbackOk)
+            }
+            if (!privateSaved) {
+                snackbarHostState.showSnackbar("Private note encryption failed. No plaintext fallback was used.")
+                return false
+            }
+            if (!saved && !rollbackSucceeded) {
                 storageRecoveryRequired = true
-                coroutineScope.launch { snackbarHostState.showSnackbar("Storage recovery is required after a failed private-note save.") }
+                snackbarHostState.showSnackbar("Storage recovery is required after a failed private-note save.")
             }
-        }
-        if (saved) {
-            val previousIds = notes.map { it.id }.toSet()
-            val nextIds = next.map { it.id }.toSet()
-            val removedIds = previousIds - nextIds
-            val notesForAlarms = next
-            coroutineScope.launch(Dispatchers.IO) {
-                removedIds.forEach { ReminderScheduler.cancel(context, it) }
-                ReminderScheduler.rescheduleAll(context, notesForAlarms)
+            if (saved) {
+                val previousIds = notes.map { it.id }.toSet()
+                val nextIds = next.map { it.id }.toSet()
+                val removedIds = previousIds - nextIds
+                val notesForAlarms = next
+                coroutineScope.launch(Dispatchers.IO) {
+                    removedIds.forEach { ReminderScheduler.cancel(context, it) }
+                    ReminderScheduler.rescheduleAll(context, notesForAlarms)
+                }
+                notes = if (session == null) publicNext else next
+                if (allowRecovery) storageRecoveryRequired = false
+            } else {
+                snackbarHostState.showSnackbar("Save failed. Your previous notes are still available.")
             }
-            notes = if (session == null) publicNext else next
-            if (allowRecovery) storageRecoveryRequired = false
-        } else {
-            coroutineScope.launch { snackbarHostState.showSnackbar("Save failed. Your previous notes are still available.") }
+            return saved
+        } finally {
+            persistenceBusy = false
         }
-        return saved
+    }
+    fun requestPersist(next: List<NestNote>, allowRecovery: Boolean = false, onSuccess: () -> Unit = {}) {
+        coroutineScope.launch {
+            if (persist(next, allowRecovery)) onSuccess()
+        }
     }
     fun encryptOrdinaryNote(note: NestNote): NestNote {
         require(!note.privateNote && !note.encrypted) { "Only unencrypted ordinary notes can be encrypted here." }
@@ -1110,10 +1125,7 @@ internal fun NestNoteApp(
                         onCategoryOptionsChange = { updated ->
                             val removed = categoryOptions.toSet() - updated.toSet()
                             val fallback = updated.firstOrNull() ?: "Other"
-                            val notesMoved = removed.isEmpty() || persist(
-                                notes.map { if (it.category in removed) it.copy(category = fallback) else it }
-                            )
-                            if (notesMoved) {
+                            fun applyCategoryUpdate() {
                                 if (selectedView in removed) selectedView = "Home"
                                 categoryOptions = updated
                                 preferences.edit().putStringSet(PREF_CUSTOM_CATEGORIES, updated.toMutableSet()).apply()
@@ -1121,6 +1133,10 @@ internal fun NestNoteApp(
                                     defaultNoteCategory = updated.firstOrNull() ?: "Ideas"
                                     saveString(PREF_DEFAULT_CATEGORY, defaultNoteCategory)
                                 }
+                            }
+                            if (removed.isEmpty()) applyCategoryUpdate()
+                            else requestPersist(notes.map { if (it.category in removed) it.copy(category = fallback) else it }) {
+                                applyCategoryUpdate()
                             }
                         },
                         editorTextSize = editorTextSize,
@@ -1867,9 +1883,9 @@ internal fun NestNoteApp(
                     val next = if (existing == null) notes + updated else notes.map {
                         if (it.id == existing.id) updated.copy(id = existing.id) else it
                     }
-                    if (persist(next)) {
+                    requestPersist(next) {
                         // Clear the recovery snapshot only after durable note persistence.
-                        runCatching { DraftStore(context).clear(savedId) }
+                        coroutineScope.launch(Dispatchers.IO) { runCatching { DraftStore(context).clear(savedId) } }
                         commitVoiceChanges()
                         closeEditor()
                         coroutineScope.launch { snackbarHostState.showSnackbar("Note saved") }
