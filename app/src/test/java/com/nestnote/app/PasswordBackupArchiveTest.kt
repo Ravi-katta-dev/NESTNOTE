@@ -10,16 +10,16 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class PasswordBackupArchiveTest {
-    private fun validBackup(): String = NoteStore.encodeArchivePayload(
+    private fun validArchivePayload(): String = NoteStore.encodeArchivePayload(
         listOf(NestNote(id = 123, title = "Archive test", body = "private payload"))
     )
 
     @Test
     fun passwordArchiveRoundTripsAndRejectsWrongPassword() {
         val json = validBackup()
-        val archive = PasswordBackupArchive.encryptBackup(json, "correct horse battery".toCharArray())
+        val archive = PasswordBackupArchive.encryptArchive(json, "correct horse battery".toCharArray())
 
-        assertNotNull(PasswordBackupArchive.decryptBackup(archive, "correct horse battery".toCharArray()))
+        assertNotNull(PasswordBackupArchive.decryptArchive(archive, "correct horse battery".toCharArray()))
         assertNull(PasswordBackupArchive.decryptBackup(archive, "wrong password!".toCharArray()))
     }
 
