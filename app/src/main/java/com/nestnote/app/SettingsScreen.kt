@@ -992,9 +992,9 @@ internal fun SettingsScreen(
                     SwitchRow(
                         title = "Protect private screens",
                         summary = if (screenCaptureProtectionEnabled)
-                            "Blocks screenshots and hides the app preview in Recents while the Private Vault or a private note is open."
+                            "Blocks screenshots and hides the app preview in Recents across NESTNOTE while enabled."
                         else
-                            "Screenshots and app previews are allowed while private content is open.",
+                            "Screenshots and app previews are allowed across NESTNOTE.",
                         checked = screenCaptureProtectionEnabled,
                         onChange = onScreenCaptureProtectionChange
                     )
