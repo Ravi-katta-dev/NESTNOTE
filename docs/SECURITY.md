@@ -52,3 +52,8 @@ Avoid claims such as “separately encrypted vault,” “vault-password-encrypt
 Separate cryptographic isolation is a distinct security project, not a documentation toggle. At minimum, it requires a reviewed design for independent vault-key generation and protected key storage/wrapping; authorization by password/biometrics without storing the raw password; authenticated encryption; key rotation, password changes, biometric enrollment changes, and recovery; safe migration of existing private notes; explicit encrypted/plaintext backup policy; failure-safe rollback; and dedicated tests.
 
 Until that work is implemented and verified, product copy must describe Private Vault as a UI gate over notes protected by the app's general local-storage encryption.
+
+
+## Portable backup policy (2026-10-24)
+
+Plaintext JSON export/import and scheduled plaintext JSON backups are removed. The only user-facing portable note backup is a password-protected AES-GCM `.nestnote` archive. Its scope excludes Private Vault notes and voice attachments. JSON is still used internally for local persistence and the serialized payload inside the encrypted archive; this does not make a plaintext JSON backup available. Existing JSON files created by earlier versions are not automatically found or deleted.
