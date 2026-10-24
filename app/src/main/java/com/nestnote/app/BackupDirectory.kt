@@ -110,7 +110,9 @@ internal object BackupDirectory {
                 output.write(bytes)
                 output.flush()
             } ?: error("Cannot open temporary backup")
-            check(temporary.length() == bytes.size.toLong()) { "Temporary backup size mismatch" }
+            val verified = context.contentResolver.openInputStream(temporary.uri)?.use { it.readBytes() }
+                ?: error("Cannot verify temporary backup")
+            check(verified.contentEquals(bytes)) { "Temporary backup verification failed" }
 
             previous = folder.findFile(previousName)
             if (previous != null) check(previous.delete()) { "Cannot clear previous backup snapshot" }
