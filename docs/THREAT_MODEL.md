@@ -56,7 +56,7 @@ No claim is made to protect against a rooted or otherwise compromised device, pr
 Use this statement:
 
 
-> Private Vault uses a password gate and a separate encrypted private-record store; biometric unlock is implemented in source but remains disabled pending device validation. Private-note drafts are separately encrypted and classified. Portable archives are password-protected and exclude Private Vault notes.
+> Private Vault uses a password gate and a separate encrypted private-record store; biometric enrollment and automatic unlock are wired in source but remain pending exact-head CI and device validation. Private-note drafts are separately encrypted and classified. Portable archives are password-protected and exclude Private Vault notes.
 
 
 Do not claim that portable archives include Private Vault notes or voice attachments.
