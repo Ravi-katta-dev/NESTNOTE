@@ -21,20 +21,38 @@ import java.util.Locale
  */
 internal object MarkdownPreview {
     private val allowedLinkSchemes = setOf("http", "https", "mailto")
+
+    @Volatile
+    private var cachedRenderer: Markwon? = null
+
+    /**
+     * Markwon plugin registration is comparatively expensive. Reuse one application-scoped
+     * renderer instead of rebuilding it for every preview update or AndroidView recomposition.
+     */
+    private fun renderer(context: Context): Markwon {
+        cachedRenderer?.let { return it }
+        return synchronized(this) {
+            cachedRenderer ?: run {
+                val appContext = context.applicationContext
+                Markwon.builder(appContext)
+                    .usePlugin(StrikethroughPlugin.create())
+                    .usePlugin(TaskListPlugin.create(appContext))
+                    .usePlugin(TablePlugin.create())
+                    .build()
+                    .also { cachedRenderer = it }
+            }
+        }
+    }
+
     fun toSpanned(
         context: Context,
         markdown: String,
         foregroundColor: Int = Color.BLACK
     ): Spanned {
-        val renderer = Markwon.builder(context.applicationContext)
-            .usePlugin(StrikethroughPlugin.create())
-            .usePlugin(TaskListPlugin.create(context.applicationContext))
-            .usePlugin(TablePlugin.create(context.applicationContext))
-            .build()
         // Keep table blocks in Markwon's native rendering pipeline. Table cell content is
         // held by drawing spans, so tests should assert the table spans rather than rely on
         // Spanned.toString() to expose cell text.
-        val rendered = SpannableStringBuilder(renderer.toMarkdown(markdown))
+        val rendered = SpannableStringBuilder(renderer(context).toMarkdown(markdown))
 
         if (foregroundColor != Color.BLACK) {
             // Normalize every explicit foreground span to the active note color. Markdown
