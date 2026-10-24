@@ -111,19 +111,18 @@ internal fun InlineVoicePlayer(
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { notificationPermissionRevision++ }
-    val store = remember(context) { VoiceAttachmentStore(context) }
-    val manifest = remember(context) { VoiceAttachmentManifest(context) }
+    val voiceNotes = remember(context) { com.nestnote.app.voicenote.VoiceNoteRepository(context) }
     val audioManager = remember(context) {
         context.getSystemService(android.content.Context.AUDIO_SERVICE) as AudioManager
     }
 
     // File + metadata lookups recompute only when identity changes.
     val attachment = remember(noteId, attachmentId) {
-        runCatching { store.list(noteId).firstOrNull { it.attachmentId == attachmentId } }
+        runCatching { voiceNotes.listPayloads(noteId).firstOrNull { it.attachmentId == attachmentId } }
             .getOrNull()
     }
     val metadata = remember(noteId, attachmentId) {
-        runCatching { manifest.list(noteId, store).firstOrNull { it.attachmentId == attachmentId } }
+        runCatching { voiceNotes.list(noteId).firstOrNull { it.attachmentId == attachmentId } }
             .getOrNull()
     }
 
