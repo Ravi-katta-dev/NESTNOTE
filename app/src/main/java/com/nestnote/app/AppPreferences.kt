@@ -28,13 +28,7 @@ internal const val PREF_VOICE_PLAYER_COMPACT = "voice_player_compact"
 internal const val PREF_VOICE_PLAYER_SPEED = "voice_player_speed"
 internal val VoicePlayerSpeeds = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
 
-// Backup keys. The string values match what NestNoteApp already writes, so existing
-// user preferences keep working. The worker reads these same names — sharing them
-// here is what prevents the UI and the worker from drifting apart again.
-internal const val PREF_BACKUP_AUTOMATIC_ENABLED = "backup_automatic_enabled"
-internal const val PREF_BACKUP_AUTOMATIC_LAST_RUN = "backup_automatic_last_run"
-internal const val PREF_BACKUP_AUTOMATIC_STATUS = "backup_automatic_status"
-internal const val PREF_BACKUP_AUTOMATIC_LAST_COUNT = "backup_automatic_last_count"
+// Encrypted archive status keys.
 internal const val PREF_BACKUP_LAST_SUCCESS_AT = "backup_last_success_at"
 internal const val PREF_BACKUP_LAST_STATUS = "backup_last_status"
 internal const val PREF_PRIVATE_VAULT_SALT = "private_vault_password_salt"
