@@ -109,11 +109,7 @@ class DraftStore internal constructor(rootOverride: File, private val privateKey
                 out.flush()
                 out.fd.sync()
             }
-            // renameTo replaces the target atomically on Linux/Android. Only fall back to
-            // delete-then-rename where the platform refuses to overwrite.
-            if (temp.renameTo(target)) return true
-            if (target.delete() && temp.renameTo(target)) return true
-            temp.delete()
+            if (replaceDraftFile(temp, target)) return true
             false
         }.getOrDefault(false)
     }
@@ -240,6 +236,20 @@ class DraftStore internal constructor(rootOverride: File, private val privateKey
         private const val PRIVATE_PREFIX = "NESTNOTE_DRAFT_PRIVATE_V2:"
         private val PRIVATE_AAD = "com.nestnote.app|drafts|private|v2".toByteArray(Charsets.UTF_8)
         private val LOCK = Any()
+
+        /**
+         * Replaces a draft only when the same-directory rename succeeds. On failure the old
+         * draft must remain intact; deleting it as a fallback could lose the last recoverable edit.
+         */
+        internal fun replaceDraftFile(
+            temp: File,
+            target: File,
+            rename: (File, File) -> Boolean = { source, destination -> source.renameTo(destination) }
+        ): Boolean {
+            if (rename(temp, target)) return true
+            temp.delete()
+            return false
+        }
 
         private fun getOrCreatePrivateDraftKey(): SecretKey {
             val ks = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }

@@ -23,7 +23,7 @@ Therefore, the current Private Vault is a privacy/navigation boundary, **not a c
 
 ## Backup and data movement
 
-User-exported JSON backups are **plaintext** and may include private-note titles and bodies. The private-note flag is metadata, not encryption. Anyone with access to the exported file can read its contents without unlocking the in-app Private Vault. Do not describe exported JSON as encrypted unless a separately implemented and verified encrypted-export format exists.
+Portable note transfer uses password-protected `.nestnote` archives with AES-GCM authenticated encryption. Private Vault notes and voice attachments are excluded from these archives. The archive password is independent of the vault password; losing it makes that archive unrecoverable.
 
 ## Threat-model assumptions and residual risks
 
@@ -34,7 +34,7 @@ Relevant threats include:
 - A private editor remaining visible after backgrounding or activity recreation.
 - Screenshots and Recents previews exposing content.
 - Private notes leaking into ordinary lists, search, pinned/archived views, counts, links, or insights.
-- Plaintext backup disclosure.
+- Encrypted archive password handling and archive restore validation.
 - Repeated password guessing, including lockout persistence and clock changes.
 - Biometric cancellation/failure/unavailability incorrectly granting access.
 - Loss or invalidation of the local-storage Keystore key.
@@ -43,7 +43,7 @@ Relevant threats include:
 
 Prefer:
 
-> Private Vault adds a password/biometric gate to viewing private notes inside NESTNOTE. Private notes use NESTNOTE's general local-storage encryption, not a separate vault key. Exported JSON backups are plaintext and may include private notes.
+> Private Vault adds a password/biometric gate to viewing private notes inside NESTNOTE. Private notes use NESTNOTE's general local-storage encryption, not a separate vault key. Portable encrypted archives exclude private notes.
 
 Avoid claims such as “separately encrypted vault,” “vault-password-encrypted notes,” or “private notes remain encrypted in exported backups.”
 

@@ -1,10 +1,26 @@
 # NESTNOTE Changelog
 
-## v1.3.11 — Current repository release record (2026-10-22)
+## Unreleased — encrypted-only portability
+
+- Removed plaintext JSON backup/export and import controls and their file-handling paths.
+- Removed scheduled plaintext JSON backups and their WorkManager worker/scheduler.
+- Kept password-protected AES-GCM `.nestnote` archives as the only user-facing note portability option.
+- Archive payload serialization remains an internal implementation detail; Private Vault notes and voice attachments are excluded.
+
+
+## v1.4.6 — Release candidate
+
+- Align app release metadata and current documentation with version 1.4.6.
+- Carry forward native Markdown table rendering and pipe-table alignment.
+- Include the Private Vault strong-biometric CryptoObject path; device validation remains a release gate.
+- Bound SAF backup verification reads to the expected payload size.
+- Do not treat this entry as proof of publication, signing, or exact-head CI success.
+
+## v1.3.11 — Historical repository release record (2026-10-22)
 
 Versioned notes: [docs/release-notes/v1.3.11.md](release-notes/v1.3.11.md).
 
-This is the current release record on `main`, synchronized by merged PR #76. Publishing v1.3.11 still requires a stable tag and successful release workflow.
+This is a historical release record retained for traceability. The current candidate is v1.4.6; publishing it still requires a stable tag and successful release workflow.
 
 ### Fixed
 - Improve editor foreground contrast on dark surfaces using surface luminance and theme-provided colors.
@@ -269,3 +285,9 @@ Remaining open items are all low-priority UX gaps.
 - Editor and backup/release audit updates
 
 Full comparison: https://github.com/Ravi-katta-dev/NESTNOTE/compare/v1.2.4...v1.2.5
+
+## Candidate additions in PR #94 — not yet published
+- Home dashboard quick-create card with active and pinned note counts.
+- Offline Text Toolbox under More → Power tools (text statistics, reading-time estimate, case transforms, whitespace cleanup, copy, and clear).
+- Expandable note editor/reader zoom slider (50%–200%, 5% increments); display-only and does not change stored text.
+- Private Vault biometric enrollment/unlock flow and modernized settings/dialog UI remain subject to exact-head CI and device-level verification before release.

@@ -51,23 +51,11 @@ class NoteStoreTest {
     }
 
     @Test
-    fun plaintextBackupSelectionAlwaysExcludesPrivateNotesAndHonorsArchivedOption() {
-        val active = NestNote(id = 1L, title = "Public active", body = "visible")
-        val archived = NestNote(id = 2L, title = "Public archived", body = "visible", archived = true)
-        val privateActive = NestNote(id = 3L, title = "Private", body = "secret", privateNote = true)
-        val privateArchived = NestNote(id = 4L, title = "Private archived", body = "secret", archived = true, privateNote = true)
-        val notes = listOf(active, archived, privateActive, privateArchived)
-
-        assertEquals(listOf(active), NoteStore.notesForBackup(notes, includeArchived = false))
-        assertEquals(listOf(active, archived), NoteStore.notesForBackup(notes, includeArchived = true))
-    }
-
-    @Test
-    fun privateNoteFlagSurvivesSaveLoadAndBackupRoundTrip() {
+    fun privateNoteFlagSurvivesSaveLoadAndArchivePayloadRoundTrip() {
         val secret = NestNote(id = 999L, title = "Private", body = "Secret", privateNote = true)
         assertTrue(store.save(listOf(secret)))
         assertEquals(secret, store.load().single())
-        assertEquals(listOf(secret), NoteStore.decodeBackup(NoteStore.encodeBackup(listOf(secret))))
+        assertTrue(NoteStore.notesForArchive(listOf(secret), includeArchived = true).isEmpty())
     }
 
     @Test
@@ -141,17 +129,26 @@ class NoteStoreTest {
     }
 
     @Test
-    fun versionedBackupRoundTripsAndLegacyArrayRemainsImportable() {
+    fun archivePayloadRoundTripsAndLegacyPayloadRemainsReadable() {
         val notes = listOf(NestNote(id = 45, title = "Backup", body = "Version one"))
-        val versioned = NoteStore.encodeBackup(notes)
-        assertEquals(notes, NoteStore.decodeBackup(versioned))
-        assertEquals(notes, NoteStore.decodeBackup(NoteStore.encode(notes)))
+        val versioned = NoteStore.encodeArchivePayload(notes)
+        assertEquals(notes, NoteStore.decodeArchivePayload(versioned))
+        assertEquals(notes, NoteStore.decodeArchivePayload(NoteStore.encode(notes)))
     }
 
     @Test
-    fun backupRejectsUnknownSchemaVersion() {
-        val unknown = """{"schemaVersion":99,"notes":[]}"""
-        assertEquals(null, NoteStore.decodeBackup(unknown))
+    fun archivePayloadRejectsPrivateVaultRecords() {
+        val secret = NestNote(id = 901L, title = "Private", body = "Do not export", privateNote = true)
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            NoteStore.encodeArchivePayload(listOf(secret))
+        }
+        val forgedPayload = """{"format":"com.nestnote.archive-payload","schemaVersion":1,"notes":${NoteStore.encode(listOf(secret))}}"""
+        assertEquals(null, NoteStore.decodeArchivePayload(forgedPayload))
+    }
+    @Test
+    fun archivePayloadRejectsUnknownSchemaVersion() {
+        val unknown = """{"format":"com.nestnote.archive-payload","schemaVersion":99,"notes":[]}"""
+        assertEquals(null, NoteStore.decodeArchivePayload(unknown))
     }
 
     @Test
@@ -270,10 +267,10 @@ class NoteStoreTest {
     }
 
     @Test
-    fun backupRejectsMissingRequiredFieldsAndInvalidRecordValues() {
-        assertEquals(null, NoteStore.decodeBackup("""[{"title":"Missing ID","body":"No identity"}]"""))
-        assertEquals(null, NoteStore.decodeBackup("""{"schemaVersion":1,"notes":[{"id":-1,"title":"Invalid","body":"Bad ID"}]}"""))
-        assertEquals(null, NoteStore.decodeBackup("""{"schemaVersion":1}"""))
+    fun archivePayloadRejectsMissingRequiredFieldsAndInvalidRecordValues() {
+        assertEquals(null, NoteStore.decodeArchivePayload("""[{"title":"Missing ID","body":"No identity"}]"""))
+        assertEquals(null, NoteStore.decodeArchivePayload("""{"schemaVersion":1,"notes":[{"id":-1,"title":"Invalid","body":"Bad ID"}]}"""))
+        assertEquals(null, NoteStore.decodeArchivePayload("""{"schemaVersion":1}"""))
     }
 
     @Test
@@ -316,7 +313,7 @@ class NoteStoreTest {
     }
 
     @Test
-    fun decodeRejectsDuplicateIdsInImportedBackup() {
+    fun archivePayloadRejectsDuplicateIds() {
         val raw = """[{"id":7,"title":"One","body":"A"},{"id":7,"title":"Two","body":"B"}]"""
         assertEquals(null, NoteStore.decode(raw, requireFields = true))
     }
@@ -331,9 +328,69 @@ class NoteStoreTest {
     }
 
     @Test
-    fun decodeRejectsOversizedBackupBeforeParsing() {
-        val raw = " ".repeat(NoteStore.MAX_BACKUP_BYTES + 1)
+    fun archivePayloadRejectsOversizedPayloadBeforeParsing() {
+        val raw = " ".repeat(NoteStore.MAX_ARCHIVE_PAYLOAD_BYTES + 1)
         assertEquals(null, NoteStore.decode(raw, requireFields = true))
+    }
+
+    @Test
+    fun ordinaryEncryptionMetadataRoundTripsWithoutPlaintextContent() {
+        val encrypted = NestNote(
+            id = 904,
+            title = NoteStore.ENCRYPTED_NOTE_TITLE,
+            body = "",
+            category = "Encrypted",
+            encrypted = true,
+            encryptedPayload = "NESTNOTE_ORDINARY_NOTE_V1:authenticated-ciphertext"
+        )
+        val encoded = NoteStore.encode(listOf(encrypted))
+        val decoded = NoteStore.decode(encoded, requireFields = true)
+
+        assertEquals(listOf(encrypted), decoded)
+        assertFalse(encoded.contains("original secret title"))
+        assertFalse(encoded.contains("original secret body"))
+    }
+
+    @Test
+    fun deviceEncryptedNotesAreExcludedFromPortableArchives() {
+        val encrypted = NestNote(
+            id = 907,
+            title = NoteStore.ENCRYPTED_NOTE_TITLE,
+            body = "",
+            category = "Encrypted",
+            encrypted = true,
+            encryptedPayload = "NESTNOTE_ORDINARY_NOTE_V1:payload"
+        )
+        val plain = NestNote(id = 908, title = "Portable", body = "Backup me")
+        assertEquals(listOf(plain), NoteStore.notesForArchive(listOf(encrypted, plain), includeArchived = true))
+        var rejected = false
+        try {
+            NoteStore.encodeArchivePayload(listOf(encrypted))
+        } catch (_: IllegalArgumentException) {
+            rejected = true
+        }
+        assertTrue(rejected)
+    }
+
+    @Test
+    fun encryptedRecordCannotBePersistedWithPlaintextOrVaultClassification() {
+        val invalidPlaintext = NestNote(
+            id = 905,
+            title = "Still plaintext",
+            body = "",
+            encrypted = true,
+            encryptedPayload = "NESTNOTE_ORDINARY_NOTE_V1:payload"
+        )
+        val invalidVault = NestNote(
+            id = 906,
+            title = NoteStore.ENCRYPTED_NOTE_TITLE,
+            body = "",
+            privateNote = true,
+            encrypted = true,
+            encryptedPayload = "NESTNOTE_ORDINARY_NOTE_V1:payload"
+        )
+        assertFalse(NoteStore.isValidNoteCollection(listOf(invalidPlaintext)))
+        assertFalse(NoteStore.isValidNoteCollection(listOf(invalidVault)))
     }
 
     @Test
@@ -434,29 +491,5 @@ class NoteStoreTest {
     }
 
 
-    @Test
-    fun userFacingPlaintextBackupPayloadContainsNoPrivateTitlesOrBodies() {
-        val public = NestNote(id = 11L, title = "Public title", body = "Public body")
-        val secret = NestNote(
-            id = 12L, title = "UNIQUE_PRIVATE_TITLE_12", body = "UNIQUE_PRIVATE_BODY_12",
-            privateNote = true
-        )
-        val archivedSecret = secret.copy(
-            id = 13L, title = "UNIQUE_ARCHIVED_PRIVATE_TITLE_13",
-            body = "UNIQUE_ARCHIVED_PRIVATE_BODY_13", archived = true
-        )
-
-        listOf(false, true).forEach { includeArchived ->
-            val selected = NoteStore.notesForBackup(
-                listOf(public, secret, archivedSecret), includeArchived
-            )
-            val payload = NoteStore.encodeBackup(selected)
-            assertTrue(payload.contains("Public title"))
-            assertFalse(payload.contains("UNIQUE_PRIVATE_TITLE_12"))
-            assertFalse(payload.contains("UNIQUE_PRIVATE_BODY_12"))
-            assertFalse(payload.contains("UNIQUE_ARCHIVED_PRIVATE_TITLE_13"))
-            assertFalse(payload.contains("UNIQUE_ARCHIVED_PRIVATE_BODY_13"))
-        }
-    }
 
 }

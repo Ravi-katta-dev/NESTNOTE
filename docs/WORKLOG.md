@@ -1,3 +1,13 @@
+## 2026-10-24 — Remove plaintext JSON backup/import
+
+- Removed plaintext JSON export/import controls and file handling from the Backup & restore screen.
+- Removed the scheduled plaintext JSON worker/scheduler and its WorkManager dependency.
+- Retained password-protected AES-GCM `.nestnote` archives as the sole user-facing portability flow; Private Vault notes and voice attachments are excluded.
+- Renamed the serializer APIs to `encodeArchivePayload` / `decodeArchivePayload` to make their internal archive role explicit. Local storage continues using its existing JSON representation.
+- Deleted standalone tests for the removed user-facing JSON backup feature and updated archive payload tests and security/release documentation. Existing user-created `.json` files are not automatically deleted from storage.
+
+---
+
 ## 2026-10-23 — Private Vault security-critical path follow-up
 
 - Hardened `PrivateNoteCrypto.initialize` to fail if wrapped-key metadata cannot be committed.
@@ -951,3 +961,34 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Extracted cross-store password change compensation into `PrivateVaultPasswordChange` and added tests for key-rewrap failure, verifier-update failure with rollback, rollback failure requiring lock/recovery, and success. Added integration tests for real crypto rewrap preserving records and rejecting the old password after success.
 - Existing migration tests cover the boundary after isolated-store commit and before legacy-store cleanup by creating fresh store/crypto objects. Existing draft tests cover encrypted-at-rest recovery through a fresh store instance; backup tests cover private-note exclusion and restore round trips.
 - **Not yet verified:** a true Android process kill between migration phases, an Android device/emulator biometric prompt and key invalidation, process/activity recreation on device, restore followed by private-draft recovery, or exact-head CI. Robolectric object recreation is not a substitute for actual OS process termination. Keep PR #93 draft until CI and device/emulator evidence are available.
+
+
+## 2026-10-23 — Private Vault biometric enrollment and unlock wired into UI
+
+- Reused the existing AndroidX BiometricPrompt dependency and PrivateVaultBiometricKey Android Keystore AES-GCM wrapping primitive rather than adding a second biometric stack.
+- Settings opt-in now requests password authentication, then presents an explicit biometric enrollment prompt. The preference is persisted as enabled only after the authenticated CryptoObject cipher successfully wraps the current vault data key.
+- Vault unlock now exposes strong-biometric authentication only when the setting is enabled and a valid enrollment exists. Unlock consumes only the cipher returned by the successful BiometricPrompt.CryptoObject callback, unwraps the same vault data key, and uses the existing encrypted-store migration path. Password remains the fallback and recovery route.
+- Disabling biometric unlock deletes the stored wrapped-key enrollment and Android Keystore alias. Enrollment/prompt failures leave password access available and do not enable biometric unlock.
+- **Still required before release:** exact-head CI success and physical-device/emulator verification of enrollment, successful unlock, cancellation/failure, biometric-enrollment invalidation, and password fallback. The implementation is wired; these platform-specific checks must not be inferred from Robolectric tests.
+
+
+## 2026-10-23 — Private Vault UI polish
+
+- Refined the Privacy settings vault entry into a clearer hero card with consistent rounded icon containers, setup/protection state, private-note count, and a single primary action.
+- Added short fade/slide entrances, animated content-size changes, and animated biometric/password validation feedback. Motion uses Compose animation APIs so Android's system animation scale remains respected.
+- Improved the biometric status messaging and recovery-method hierarchy; made the backup warning easier to scan while retaining the important plain-text-export warning.
+- Refined password and enrollment dialogs with icon-led titles, consistent field shapes, better spacing, and animated inline errors. No security policy, key derivation, or vault data flow was changed by the visual pass.
+- Exact-head Android CI is pending; verify on small and large screens, dark/light themes, and with system animations reduced before release.
+
+## Power tools expansion — Text Toolbox
+- Added an offline Text Toolbox entry under More → Power tools.
+- Provides live word/character/line counts, estimated reading time, uppercase/lowercase/title-case transforms, whitespace cleanup, copy, and clear actions.
+- Uses the existing Material 3 card and rounded-control styling. Text is transient screen state and is not persisted by the tool.
+- Validation: Android CI must compile and test the updated branch before this addition is considered verified.
+
+## 2026-10-23 — Home UX, editor zoom, and documentation refresh
+- Refreshed Home with a Material 3 quick-create hero, active-note and pinned-note counts, and a direct new-note action. Existing filters, sorting, search, layout toggle, and note-card actions remain in place.
+- Added an expandable editor/reader text-size slider from 50% to 200% in 5% increments. It scales the displayed note body and preview only; saved note content is unchanged.
+- Documented the new zoom control, Home layout, and Text Toolbox in README, changelog, development guide, and roadmap.
+- Clarified version status: v1.3.10 remains the latest published stable release; v1.3.11 is the current repository candidate and is not published yet. The app Gradle defaults remain versionName 1.3.11/versionCode 1; release automation must set an increasing version code.
+- Validation not yet complete: wait for exact-head Android CI and manually check compact/expanded screens, light/dark themes, large text/accessibility, slider behavior in edit and read modes, and confirm zoom does not alter saved content.

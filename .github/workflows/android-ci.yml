@@ -41,12 +41,19 @@ jobs:
           name: unit-test-reports
           path: app/build/reports/tests/testDebugUnitTest/
           if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nestnote-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload release APK for inspection
+        uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: android-apk-inspection
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
+          name: nestnote-release-apk-inspection
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: warn
           retention-days: 14
