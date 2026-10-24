@@ -2202,7 +2202,6 @@ internal fun OverviewTile(
 
 // -------------------------------------------------------------------------------------------------
 // Dedicated encrypted Backup & Restore Screen
-// Plaintext JSON export/import has intentionally been removed.
 @Composable
 internal fun BackupRestoreScreen(
     totalNotes: Int,
