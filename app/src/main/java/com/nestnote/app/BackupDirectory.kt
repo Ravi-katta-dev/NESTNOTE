@@ -49,7 +49,7 @@ internal object BackupDirectory {
                 val count = input.read(buffer)
                 if (count < 0) break
                 total += count
-                if (total > NoteStore.MAX_BACKUP_BYTES) throw IOException("Encrypted backup is too large")
+                if (total > NoteStore.MAX_ARCHIVE_PAYLOAD_BYTES) throw IOException("Encrypted backup is too large")
                 output.write(buffer, 0, count)
             }
         } ?: return null
