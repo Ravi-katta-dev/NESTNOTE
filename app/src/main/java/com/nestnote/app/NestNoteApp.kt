@@ -1744,7 +1744,7 @@ internal fun NestNoteApp(
                         }
                     }
                 },
-                onBiometricUnlock = { authenticatedCipher ->
+                onBiometricUnlock = { authenticatedCipher, onBiometricResult ->
                     coroutineScope.launch {
                         val unlocked = withContext(Dispatchers.IO) {
                             val session = PrivateVaultBiometricKey(context).unlock(authenticatedCipher)
@@ -1757,6 +1757,7 @@ internal fun NestNoteApp(
                             }.getOrNull()
                         }
                         if (unlocked != null) {
+                            onBiometricResult(true)
                             privateVaultSession = unlocked.first
                             notes = notes.filterNot { it.privateNote } + unlocked.second
                             legacyPrivateNotes = emptyList()
@@ -1767,6 +1768,7 @@ internal fun NestNoteApp(
                             selectedNoteIds = emptySet()
                             showPrivateVaultGate = false
                         } else {
+                            onBiometricResult(false)
                             snackbarHostState.showSnackbar("Biometric unlock failed safely. Use your vault password.")
                         }
                     }
