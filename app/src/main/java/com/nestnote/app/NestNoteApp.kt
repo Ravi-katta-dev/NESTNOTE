@@ -943,6 +943,7 @@ internal fun NestNoteApp(
                         backupFolderConfigured = backupFolderConfigured,
                         onChooseBackupFolder = { backupFolderLauncher.launch(null) },
                         onExportEncryptedArchive = { includeArchived, password ->
+                            val encryptedExcluded = notes.count { it.encrypted && !it.privateNote }
                             val archiveNotes = NoteStore.notesForArchive(notes, includeArchived = includeArchived)
                             val encrypted = runCatching {
                                 PasswordBackupArchive.encryptArchive(
@@ -968,7 +969,7 @@ internal fun NestNoteApp(
                                 snackbarHostState.showSnackbar(
                                     when {
                                         encrypted == null -> "Encrypted archive could not be created. Check the password and archive size."
-                                        saved -> "Password-protected archive saved to Documents/NESTNOTE/NESTNOTE-backup.nestnote."
+                                        saved -> if (encryptedExcluded > 0) "Password-protected archive saved. $encryptedExcluded device-encrypted notes were excluded; decrypt them before backing them up." else "Password-protected archive saved to Documents/NESTNOTE/NESTNOTE-backup.nestnote."
                                         else -> "Encrypted archive could not be saved. Your notes were not changed."
                                     }
                                 )
