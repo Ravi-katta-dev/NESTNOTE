@@ -16,26 +16,26 @@ class PasswordBackupArchiveTest {
 
     @Test
     fun passwordArchiveRoundTripsAndRejectsWrongPassword() {
-        val json = validBackup()
+        val json = validArchivePayload()
         val archive = PasswordBackupArchive.encryptArchive(json, "correct horse battery".toCharArray())
 
         assertNotNull(PasswordBackupArchive.decryptArchive(archive, "correct horse battery".toCharArray()))
-        assertNull(PasswordBackupArchive.decryptBackup(archive, "wrong password!".toCharArray()))
+        assertNull(PasswordBackupArchive.decryptArchive(archive, "wrong password!".toCharArray()))
     }
 
     @Test
     fun tamperedArchiveAndShortPasswordAreRejected() {
-        val archive = PasswordBackupArchive.encryptBackup(validBackup(), "long enough password".toCharArray())
+        val archive = PasswordBackupArchive.encryptArchive(validArchivePayload(), "long enough password".toCharArray())
         archive[archive.lastIndex] = (archive.last().toInt() xor 0x01).toByte()
 
-        assertNull(PasswordBackupArchive.decryptBackup(archive, "long enough password".toCharArray()))
+        assertNull(PasswordBackupArchive.decryptArchive(archive, "long enough password".toCharArray()))
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            PasswordBackupArchive.encryptBackup(validBackup(), "short".toCharArray())
+            PasswordBackupArchive.encryptArchive(validArchivePayload(), "short".toCharArray())
         }
     }
 
     @Test
     fun randomBytesCannotBeImportedAsPasswordArchive() {
-        assertNull(PasswordBackupArchive.decryptBackup(ByteArray(80) { it.toByte() }, "password long enough".toCharArray()))
+        assertNull(PasswordBackupArchive.decryptArchive(ByteArray(80) { it.toByte() }, "password long enough".toCharArray()))
     }
 }
