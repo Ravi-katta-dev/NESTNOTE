@@ -38,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -203,7 +202,6 @@ internal fun PrivateVaultGateDialog(
     var error by remember { mutableStateOf("") }
     var submitting by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
-    val gateScope = rememberCoroutineScope()
 
     fun launchBiometricPrompt() {
         val host = activity ?: return
