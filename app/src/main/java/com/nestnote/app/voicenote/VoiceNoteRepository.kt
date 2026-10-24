@@ -27,6 +27,12 @@ class VoiceNoteRepository(context: Context) {
     fun list(noteId: Long): List<VoiceAttachmentMetadata> = manifest.list(noteId, store)
 
     /**
+     * Lists encrypted payloads even when metadata is missing, so startup recovery can attach
+     * legacy/orphaned files to their existing inline markers without exposing audio contents.
+     */
+    fun listPayloads(noteId: Long): List<VoiceAttachment> = store.list(noteId)
+
+    /**
      * Encrypt and persist the recording first, then publish metadata. If metadata publication
      * fails, remove only the newly-created payload so no unindexed partial save is left behind.
      */
