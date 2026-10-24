@@ -8,11 +8,11 @@
 - Bound SAF backup verification reads to the expected payload size.
 - Do not treat this entry as proof of publication, signing, or exact-head CI success.
 
-## v1.3.11 — Current repository release record (2026-10-22)
+## v1.3.11 — Historical repository release record (2026-10-22)
 
 Versioned notes: [docs/release-notes/v1.3.11.md](release-notes/v1.3.11.md).
 
-This is the current release record on `main`, synchronized by merged PR #76. Publishing v1.3.11 still requires a stable tag and successful release workflow.
+This is a historical release record retained for traceability. The current candidate is v1.4.6; publishing it still requires a stable tag and successful release workflow.
 
 ### Fixed
 - Improve editor foreground contrast on dark surfaces using surface luminance and theme-provided colors.
