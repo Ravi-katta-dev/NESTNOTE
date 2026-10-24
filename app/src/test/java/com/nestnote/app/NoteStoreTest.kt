@@ -334,6 +334,45 @@ class NoteStoreTest {
     }
 
     @Test
+    fun ordinaryEncryptionMetadataRoundTripsWithoutPlaintextContent() {
+        val encrypted = NestNote(
+            id = 904,
+            title = NoteStore.ENCRYPTED_NOTE_TITLE,
+            body = "",
+            category = "Encrypted",
+            encrypted = true,
+            encryptedPayload = "NESTNOTE_ORDINARY_NOTE_V1:authenticated-ciphertext"
+        )
+        val encoded = NoteStore.encode(listOf(encrypted))
+        val decoded = NoteStore.decode(encoded, requireFields = true)
+
+        assertEquals(listOf(encrypted), decoded)
+        assertFalse(encoded.contains("original secret title"))
+        assertFalse(encoded.contains("original secret body"))
+    }
+
+    @Test
+    fun encryptedRecordCannotBePersistedWithPlaintextOrVaultClassification() {
+        val invalidPlaintext = NestNote(
+            id = 905,
+            title = "Still plaintext",
+            body = "",
+            encrypted = true,
+            encryptedPayload = "NESTNOTE_ORDINARY_NOTE_V1:payload"
+        )
+        val invalidVault = NestNote(
+            id = 906,
+            title = NoteStore.ENCRYPTED_NOTE_TITLE,
+            body = "",
+            privateNote = true,
+            encrypted = true,
+            encryptedPayload = "NESTNOTE_ORDINARY_NOTE_V1:payload"
+        )
+        assertFalse(NoteStore.isValidNoteCollection(listOf(invalidPlaintext)))
+        assertFalse(NoteStore.isValidNoteCollection(listOf(invalidVault)))
+    }
+
+    @Test
     fun saveRejectsDuplicateIdsWithoutReplacingExistingNotes() {
         val original = NestNote(id = 81, title = "Keep me", body = "Existing data")
         assertTrue(store.save(listOf(original)))
