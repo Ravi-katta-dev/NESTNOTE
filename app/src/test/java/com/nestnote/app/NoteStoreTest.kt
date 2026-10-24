@@ -137,6 +137,15 @@ class NoteStoreTest {
     }
 
     @Test
+    fun archivePayloadRejectsPrivateVaultRecords() {
+        val secret = NestNote(id = 901L, title = "Private", body = "Do not export", privateNote = true)
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            NoteStore.encodeArchivePayload(listOf(secret))
+        }
+        val forgedPayload = """{"format":"com.nestnote.archive-payload","schemaVersion":1,"notes":${NoteStore.encode(listOf(secret))}}"""
+        assertEquals(null, NoteStore.decodeArchivePayload(forgedPayload))
+    }
+    @Test
     fun archivePayloadRejectsUnknownSchemaVersion() {
         val unknown = """{"format":"com.nestnote.archive-payload","schemaVersion":99,"notes":[]}"""
         assertEquals(null, NoteStore.decodeArchivePayload(unknown))
