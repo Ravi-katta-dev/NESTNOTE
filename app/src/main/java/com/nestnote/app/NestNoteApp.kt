@@ -168,7 +168,6 @@ internal enum class AccentPalette(val label: String, val primaryLight: Color, va
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 internal fun NestNoteApp(
     store: NoteStore,
