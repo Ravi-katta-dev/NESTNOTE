@@ -33,8 +33,11 @@ class AutomaticBackupWorker(
                     .apply()
                 return Result.failure()
             }
+            // Automatic backups are plaintext JSON inside app-private storage, not a
+            // separately encrypted vault archive. Never serialize Private Vault records here.
+            val backupNotes = NoteStore.notesForBackup(loaded.notes, includeArchived = true)
             val backupPayload = try {
-                NoteStore.encodeBackup(loaded.notes)
+                NoteStore.encodeBackup(backupNotes)
             } catch (_: IllegalArgumentException) {
                 prefs.edit()
                     .putLong(PREF_BACKUP_AUTOMATIC_LAST_RUN, System.currentTimeMillis())
@@ -62,7 +65,7 @@ class AutomaticBackupWorker(
             prefs.edit()
                 .putLong(PREF_BACKUP_AUTOMATIC_LAST_RUN, System.currentTimeMillis())
                 .putString(PREF_BACKUP_AUTOMATIC_STATUS, "Success")
-                .putInt(PREF_BACKUP_AUTOMATIC_LAST_COUNT, loaded.notes.size)
+                .putInt(PREF_BACKUP_AUTOMATIC_LAST_COUNT, backupNotes.size)
                 .apply()
             Result.success()
         } catch (_: Exception) {
