@@ -53,11 +53,14 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
@@ -2530,21 +2533,6 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.onSurfaceVariant
                 )
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VoicePlayerStyle.values().toList().chunked(2).forEach { rowStyles ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            rowStyles.forEach { style ->
-                                FilterChip(
-                                    selected = playerStyle == style,
-                                    onClick = { choosePlayerStyle(style) },
-                                    label = { Text("${style.label}") },
-                                    modifier = Modifier.weight(1f).testTag("voice_player_style_${style.name.lowercase()}")
-                                )
-                            }
-                            if (rowStyles.size == 1) Spacer(Modifier.weight(1f))
-                        }
-                    }
-                }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
@@ -2574,91 +2562,50 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
 
                 HorizontalDivider(color = colors.outlineVariant)
 
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            choosePlayerStyle(VoicePlayerStyle.COMPACT)
-                            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).putString(PREF_VOICE_PLAYER_STYLE, VoicePlayerStyle.COMPACT.name).apply()
-                        }
-                        .testTag("voice_player_style_compact"),
-                    shape = RoundedCornerShape(18.dp),
-                    color = if (playerStyle == VoicePlayerStyle.COMPACT) colors.secondaryContainer else colors.surfaceContainerLow,
-                    border = BorderStroke(1.dp, if (playerStyle == VoicePlayerStyle.COMPACT) colors.primary else colors.outlineVariant)
-                ) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        FilledIconButton(
-                            onClick = {
-                                choosePlayerStyle(VoicePlayerStyle.COMPACT)
-                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
-                            },
-                            modifier = Modifier.size(42.dp)
+                Text("Choose a player layout", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    VoicePlayerStyle.values().forEach { style ->
+                        val selected = playerStyle == style
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { choosePlayerStyle(style) }
+                                .testTag("voice_player_style_${style.name.lowercase()}"),
+                            shape = RoundedCornerShape(18.dp),
+                            color = if (selected) colors.secondaryContainer else colors.surfaceContainerLow,
+                            border = BorderStroke(1.dp, if (selected) colors.primary else colors.outlineVariant)
                         ) {
-                            Icon(Icons.Default.Mic, contentDescription = null)
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Compact", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text(
-                                "Round play/pause button, short waveform, minimal height.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colors.onSurfaceVariant
-                            )
-                        }
-                        RadioButton(
-                            selected = playerStyle == VoicePlayerStyle.COMPACT,
-                            onClick = {
-                                choosePlayerStyle(VoicePlayerStyle.COMPACT)
-                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
+                            Row(
+                                Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (selected) colors.primary else colors.surfaceVariant,
+                                    modifier = Modifier.size(44.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            when (style) {
+                                                VoicePlayerStyle.COMPACT -> Icons.Default.PlayArrow
+                                                VoicePlayerStyle.FULL -> Icons.Default.Mic
+                                                VoicePlayerStyle.WAVEFORM -> Icons.Default.GraphicEq
+                                                VoicePlayerStyle.MINIMAL -> Icons.Default.PlayArrow
+                                                VoicePlayerStyle.TRANSPORT -> Icons.Default.Forward10
+                                            },
+                                            contentDescription = null,
+                                            tint = if (selected) colors.onPrimary else colors.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    Text(style.label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                    Text(style.description, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                                }
+                                RadioButton(selected = selected, onClick = { choosePlayerStyle(style) })
                             }
-                        )
-                    }
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            choosePlayerStyle(VoicePlayerStyle.FULL)
-                            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).putString(PREF_VOICE_PLAYER_STYLE, VoicePlayerStyle.FULL.name).apply()
                         }
-                        .testTag("voice_player_style_full"),
-                    shape = RoundedCornerShape(18.dp),
-                    color = if (playerStyle == VoicePlayerStyle.FULL) colors.secondaryContainer else colors.surfaceContainerLow,
-                    border = BorderStroke(1.dp, if (playerStyle == VoicePlayerStyle.FULL) colors.primary else colors.outlineVariant)
-                ) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        FilledIconButton(
-                            onClick = {
-                                choosePlayerStyle(VoicePlayerStyle.FULL)
-                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
-                            },
-                            modifier = Modifier.size(42.dp)
-                        ) {
-                            Icon(Icons.Default.Mic, contentDescription = null)
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Full", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text(
-                                "Larger player with recording details and a seek control.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colors.onSurfaceVariant
-                            )
-                        }
-                        RadioButton(
-                            selected = playerStyle == VoicePlayerStyle.FULL,
-                            onClick = {
-                                choosePlayerStyle(VoicePlayerStyle.FULL)
-                                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                                    .putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
-                            }
-                        )
                     }
                 }
 
