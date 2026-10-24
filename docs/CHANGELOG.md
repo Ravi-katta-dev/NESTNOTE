@@ -1,5 +1,13 @@
 # NESTNOTE Changelog
 
+## v1.4.6 — Release candidate
+
+- Align app release metadata and current documentation with version 1.4.6.
+- Carry forward native Markdown table rendering and pipe-table alignment.
+- Include the Private Vault strong-biometric CryptoObject path; device validation remains a release gate.
+- Bound SAF backup verification reads to the expected payload size.
+- Do not treat this entry as proof of publication, signing, or exact-head CI success.
+
 ## v1.3.11 — Current repository release record (2026-10-22)
 
 Versioned notes: [docs/release-notes/v1.3.11.md](release-notes/v1.3.11.md).
