@@ -1,6 +1,12 @@
 package com.nestnote.app
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.media.AudioManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -95,6 +101,16 @@ internal fun InlineVoicePlayer(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    var notificationPermissionRevision by remember { mutableIntStateOf(0) }
+    var notificationPermissionAsked by remember(context) {
+        mutableStateOf(
+            context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+                .getBoolean(PREF_VOICE_NOTIFICATION_PERMISSION_ASKED, false)
+        )
+    }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { notificationPermissionRevision++ }
     val store = remember(context) { VoiceAttachmentStore(context) }
     val manifest = remember(context) { VoiceAttachmentManifest(context) }
     val audioManager = remember(context) {
@@ -244,25 +260,39 @@ internal fun InlineVoicePlayer(
 
     // Keep a compact media notification in the Android shade while this voice note is active.
     // The callback routes notification actions back to the same player instance.
-    LaunchedEffect(isActive, player, paused, positionMs, shownDuration, displayName) {
+    LaunchedEffect(
+        isActive, player, paused, positionMs, shownDuration, displayName, notificationPermissionRevision
+    ) {
         if (isActive && player != null) {
-            VoicePlaybackNotifications.show(
-                context = context,
-                attachmentId = attachmentId,
-                displayName = displayName,
-                positionMs = positionMs,
-                durationMs = shownDuration,
-                paused = paused
-            ) { action ->
-                when (action) {
-                    VoicePlaybackNotifications.Action.TOGGLE -> {
-                        if (paused) {
-                            runCatching { player?.resume() }.onSuccess { paused = false }
-                        } else {
-                            runCatching { player?.pause() }.onSuccess { paused = true }
+            val notificationPermissionGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                    PackageManager.PERMISSION_GRANTED
+            if (!notificationPermissionGranted) {
+                if (!notificationPermissionAsked) {
+                    notificationPermissionAsked = true
+                    context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit()
+                        .putBoolean(PREF_VOICE_NOTIFICATION_PERMISSION_ASKED, true).apply()
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            } else {
+                VoicePlaybackNotifications.show(
+                    context = context,
+                    attachmentId = attachmentId,
+                    displayName = displayName,
+                    positionMs = positionMs,
+                    durationMs = shownDuration,
+                    paused = paused
+                ) { action ->
+                    when (action) {
+                        VoicePlaybackNotifications.Action.TOGGLE -> {
+                            if (paused) {
+                                runCatching { player?.resume() }.onSuccess { paused = false }
+                            } else {
+                                runCatching { player?.pause() }.onSuccess { paused = true }
+                            }
                         }
+                        VoicePlaybackNotifications.Action.STOP -> onStopRequested()
                     }
-                    VoicePlaybackNotifications.Action.STOP -> onStopRequested()
                 }
             }
         } else {
