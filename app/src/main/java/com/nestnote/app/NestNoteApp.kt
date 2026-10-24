@@ -1078,7 +1078,14 @@ internal fun NestNoteApp(
                         themeMode = themeMode,
                         onThemeChange = { themeMode = it; saveString(PREF_THEME, it.name) },
                         dynamicColors = dynamicColors,
-                        onDynamicColorsChange = { dynamicColors = it; saveBoolean(PREF_DYNAMIC, it) },
+                        onDynamicColorsChange = { enabled ->
+                            dynamicColors = enabled
+                            saveBoolean(PREF_DYNAMIC, enabled)
+                            if (enabled) {
+                                accentPalette = AccentPalette.DEFAULT
+                                saveString("PREF_ACCENT_PALETTE", AccentPalette.DEFAULT.name)
+                            }
+                        },
                         amoled = amoled,
                         onAmoledChange = { amoled = it; saveBoolean(PREF_AMOLED, it) },
                         accentPalette = accentPalette,
