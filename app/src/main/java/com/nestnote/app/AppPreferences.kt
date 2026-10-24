@@ -34,7 +34,8 @@ internal enum class VoicePlayerStyle(val label: String, val description: String)
     COMPACT("Compact", "Small pill with play control and short waveform"),
     FULL("Full", "Expanded card with title, waveform and seek bar"),
     WAVEFORM("Waveform", "Prominent waveform with recording name and duration"),
-    MINIMAL("Minimal", "Small play control and duration with no waveform")
+    MINIMAL("Minimal", "Small play control and duration with no waveform"),
+    TRANSPORT("Transport", "Dedicated rewind, play/pause, forward and seek controls")
 }
 
 internal const val DEFAULT_VOICE_PLAYER_SIZE_PERCENT = 100
