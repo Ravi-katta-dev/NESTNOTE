@@ -1676,7 +1676,7 @@ internal fun NestNoteApp(
                 },
                 onSubmit = { password, confirmation, onResult ->
                     coroutineScope.launch {
-                        val (accepted, passwordAccepted) = withContext(Dispatchers.IO) {
+                        val result = withContext(Dispatchers.IO) {
                             val configured = PrivateVaultSecurity.isConfigured(context)
                             val passwordAccepted = if (configured) {
                                 when {
@@ -1699,7 +1699,7 @@ internal fun NestNoteApp(
                                     else privateNoteCrypto.initialize(password.toCharArray())
                                 if (keyReady) privateNoteCrypto.unlock(password.toCharArray()) else null
                             } else null
-                            val accepted = if (session == null) false else runCatching {
+                            val unlocked = if (session == null) null else runCatching {
                                 val encryptedExisting = if (privateNoteStore.hasStoredRecords()) {
                                     privateNoteStore.load(session)
                                 } else emptyList()
@@ -1707,13 +1707,15 @@ internal fun NestNoteApp(
                                 check(privateNoteStore.save(session, migrated)) { "Private vault encryption failed" }
                                 check(store.save(notes.filterNot { it.privateNote })) { "Public note store commit failed" }
                                 session to migrated
-                            }.getOrNull()?.let { (validSession, migrated) ->
-                                privateVaultSession = validSession
-                                notes = notes.filterNot { it.privateNote } + migrated
-                                legacyPrivateNotes = emptyList()
-                                true
-                            } ?: false
-                            accepted to passwordAccepted
+                            }.getOrNull()
+                            Triple(unlocked, passwordAccepted, session != null)
+                        }
+                        val unlocked = result.first
+                        val accepted = unlocked != null
+                        if (unlocked != null) {
+                            privateVaultSession = unlocked.first
+                            notes = notes.filterNot { it.privateNote } + unlocked.second
+                            legacyPrivateNotes = emptyList()
                         }
                         onResult(accepted)
                         if (accepted) {
@@ -1727,7 +1729,7 @@ internal fun NestNoteApp(
                                 pendingBiometricEnrollment = false
                                 showBiometricEnrollment = true
                             }
-                        } else if (passwordAccepted) {
+                        } else if (result.second) {
                             snackbarHostState.showSnackbar("Vault could not be safely unlocked or migrated. Existing data was preserved; try again.")
                         }
                     }
