@@ -2,13 +2,13 @@
 
 Last updated: 2026-10-23
 
-> Audit note: ordinary-view filters and the user-facing export selector exclude private notes, but private editor drafts are currently persisted separately by `DraftStore` as plaintext UTF-8/Properties files. Those draft files are inside app-private storage, but they do not inherit `NoteStore`'s AES-GCM encryption. Private draft encryption/classification and safe orphan recovery remain a release-blocking follow-up.
+> Audit note: ordinary-view filters and encrypted archive selection exclude private notes, but private editor drafts are currently persisted separately by `DraftStore` as plaintext UTF-8/Properties files. Those draft files are inside app-private storage, but they do not inherit `NoteStore`'s AES-GCM encryption. Private draft encryption/classification and safe orphan recovery remain a release-blocking follow-up.
 
 ## Scope and assets
 
-This threat model covers local note confidentiality, the Private Vault UI gate, private-note filtering, screenshot protection, lifecycle behavior, and user-exported backups.
+This threat model covers local note confidentiality, the Private Vault UI gate, private-note filtering, screenshot protection, lifecycle behavior, and password-protected encrypted archives.
 
-Assets include note titles, bodies and metadata; encrypted local note payloads and the Android Keystore-managed storage key; vault password-verification data and persisted backoff state; plaintext JSON backups; and private content rendered in the editor, lists, search results, or Recents/screenshot surfaces.
+Assets include note titles, bodies and metadata; encrypted local note payloads and the Android Keystore-managed storage key; vault password-verification data and persisted backoff state; password-protected encrypted archives; and private content rendered in the editor, lists, search results, or Recents/screenshot surfaces.
 
 ## Critical distinction: UI lock vs cryptographic isolation
 
@@ -23,7 +23,7 @@ The vault password does not derive, wrap, or unlock an independent key for priva
 | Independent encryption key for private notes | **No** | Yes, with reviewed generation, protection/wrapping, authorization, rotation and recovery |
 | Vault password is an encryption key | **No** | A reviewed password/key protocol; never store the raw password |
 
-| Private content encrypted in exported JSON | **No** | A separately designed and verified encrypted-export format |
+| Portable archive encryption | **Yes** | AES-GCM authenticated archive encryption; Private Vault notes are excluded |
 
 
 ## Controls and residual risks
@@ -34,7 +34,7 @@ The vault password does not derive, wrap, or unlock an independent key for priva
 - **Screenshot protection:** `FLAG_SECURE` requests capture protection for the protected window. It does not guarantee protection against external cameras, a compromised OS, every OEM path, or content already exported.
 - **Lifecycle:** backgrounding should relock and hide private editor UI. Activity/process recreation and saveable editor state require dedicated tests.
 
-- **Backups:** the current user-facing plaintext JSON export selector excludes private notes (including archived private notes). The backup serializer itself is not a security boundary: callers that pass private notes directly to `encodeBackup` can produce readable private-note titles and bodies. The flag is not encryption; anyone who obtains such a file can read it.
+- **Archives:** portable archives are password-protected and AES-GCM encrypted. Archive selection excludes Private Vault notes, including archived private notes. The serialized payload is only intended to be consumed inside the encrypted archive flow.
 - **Drafts:** `DraftStore` persists editor draft title/body and metadata in plaintext files. The files live in app-private storage, but are not encrypted by `NoteStore`; a private-note draft may therefore remain readable to an attacker with access to app-private files or a device/runtime compromise. Drafts currently do not persist a private/public classification, so orphan recovery cannot reliably apply the vault boundary. Encrypt and classify private drafts, or prevent them from being written in plaintext, before release.
 - **Lockout:** persisted cooldown/backoff slows repeated attempts through the app flow. Restart, boundary, maximum delay, and clock-change behavior require tests.
 - **Biometrics:** cancellation, failure, unavailable hardware, enrollment changes, and fallback must never grant access except after explicit successful authentication.
@@ -44,7 +44,7 @@ The vault password does not derive, wrap, or unlock an independent key for priva
 
 - **App UI boundary:** authentication, navigation, editor visibility and filtering. It is not a cryptographic boundary.
 - **Local-storage boundary:** encrypted payloads protected by Android Keystore while the key remains protected.
-- **Export boundary:** JSON backups leave the encrypted-storage boundary as plaintext; subsequent copies and recipients are outside the app's control.
+- **Archive boundary:** archive files remain encrypted at rest outside NESTNOTE, but password disclosure or weak passwords can compromise confidentiality. Voice attachments and Private Vault notes are not included.
 - **OS boundary:** Android lifecycle, biometric APIs, screenshot restrictions and Keystore are trusted platform services. A compromised OS is outside these controls' guarantees.
 
 ## Out of scope / not guaranteed
@@ -56,12 +56,12 @@ No claim is made to protect against a rooted or otherwise compromised device, pr
 Use this statement:
 
 
-> Private Vault adds a password/biometric gate to viewing private notes inside NESTNOTE. Private notes use NESTNOTE's general local-storage encryption, not a separate vault key. Exported JSON backups are plaintext and may include private notes.
+> Private Vault adds a password/biometric gate to viewing private notes inside NESTNOTE. Private notes use NESTNOTE's general local-storage encryption, not a separate vault key. portable archives are password-protected and exclude Private Vault notes.
 
 
-Do not claim a separately encrypted vault, vault-password-encrypted notes, or encrypted JSON backups.
+Do not claim that portable archives include Private Vault notes or voice attachments.
 
-Before release, verify lifecycle and activity/process recreation, biometric outcomes, screenshot/Recents behavior, backup round trips, all ordinary note-derived surfaces, lockout boundaries and clock changes. Source inspection or a successful build alone does not establish device behavior.
+Before release, verify lifecycle and activity/process recreation, biometric outcomes, screenshot/Recents behavior, encrypted archive round trips, all ordinary note-derived surfaces, lockout boundaries and clock changes. Source inspection or a successful build alone does not establish device behavior.
 
 ## Future cryptographic-isolation review questions
 
@@ -69,7 +69,7 @@ Before release, verify lifecycle and activity/process recreation, biometric outc
 2. How is key use authorized after password or biometric authentication without storing the raw password?
 3. How do password changes, biometric enrollment changes, key rotation, and recovery work?
 4. What happens on migration failure or key loss, and how is existing data preserved?
-5. Are backups explicitly encrypted, or clearly disclosed as plaintext?
+5. Are portable archives encrypted and is their content scope clearly disclosed?
 6. Which automated and device tests demonstrate each security claim?
 
 The isolated-store integration is now wired into the app's password unlock, load, save, migration, and lock paths on branch `feat/private-vault-crypto-isolation`. While locked, the app's active note list contains only public notes; existing private records remain in the old general encrypted blob until a successful password unlock migrates them. Migration commits the isolated encrypted private store before replacing the general store with public notes only. If either step fails, unlock is denied and the legacy encrypted blob is retained where possible.
