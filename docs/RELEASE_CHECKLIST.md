@@ -35,7 +35,7 @@ Use this checklist for every candidate. A successful build is necessary but does
 - [ ] Record exact-head CI and device/emulator results; do not mark unchecked items complete without evidence.
 
 ## Private Vault release gate
-- [ ] **Release blocker:** private editor drafts must not be persisted as plaintext. `DraftStore` currently writes UTF-8/Properties draft files without `NoteStore` encryption and does not preserve a private/public classification. Implement encrypted private drafts with a dedicated classification-aware path (or safely disable disk persistence for private drafts), plus orphan-recovery tests proving private content never reappears outside the authenticated vault. Do not mark this gate complete until exact-head CI passes.
+- [ ] **Release blocker:** validate the current schema-v2 `DraftStore` envelope implementation on the exact candidate: private drafts must use the dedicated Android Keystore AES-GCM key and explicit classification; missing/invalidated keys, tampered envelopes, and classification mismatches must fail closed; legacy plaintext must never be reclassified as public. Automated tests and exact-head CI must pass, and process-death/device recovery still needs recorded evidence.
 - [ ] Background the app while the vault list is open; verify return requires authentication.
 - [ ] Background the app while a private note editor is visible; verify no editor content reappears before reauthentication.
 - [ ] Recreate the activity/process during vault/editor use; verify private content is not restored into a visible editor while locked.
