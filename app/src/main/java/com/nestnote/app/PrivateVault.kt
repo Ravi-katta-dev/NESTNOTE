@@ -26,6 +26,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -197,6 +202,7 @@ internal fun PrivateVaultGateDialog(
     var confirmation by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     var submitting by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
     val gateScope = rememberCoroutineScope()
 
     fun launchBiometricPrompt() {
@@ -243,7 +249,7 @@ internal fun PrivateVaultGateDialog(
     }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!submitting) onDismiss() },
         title = {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primaryContainer) {
@@ -254,7 +260,10 @@ internal fun PrivateVaultGateDialog(
                         modifier = Modifier.padding(10.dp).size(24.dp)
                     )
                 }
-                Text(if (passwordConfigured) "Unlock Private Vault" else "Set up Private Vault")
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(if (passwordConfigured) "Welcome back" else "Secure your private notes")
+                    Text(if (passwordConfigured) "PRIVATE VAULT" else "FIRST-TIME SETUP", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                }
             }
         },
         text = {
@@ -272,8 +281,14 @@ internal fun PrivateVaultGateDialog(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Password") },
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, contentDescription = if (passwordVisible) "Hide password" else "Show password")
+                        }
+                    },
+                    enabled = !submitting,
                     shape = RoundedCornerShape(14.dp)
                 )
                 if (!passwordConfigured) {
@@ -283,8 +298,9 @@ internal fun PrivateVaultGateDialog(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Confirm password") },
                         singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        enabled = !submitting,
                         shape = RoundedCornerShape(14.dp)
                     )
                 }
@@ -312,18 +328,25 @@ internal fun PrivateVaultGateDialog(
                         }
                     }
                 }
-            }) { Text(if (submitting) "Unlocking…" else if (passwordConfigured) "Unlock with password" else "Create password") }
+            }) {
+                if (submitting) {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Text("Unlocking…")
+                    }
+                } else Text(if (passwordConfigured) "Unlock vault" else "Create vault")
+            }
         },
         dismissButton = {
             Column {
                 if (biometricAvailable && PrivateVaultBiometricKey(context).isEnrolled()) {
-                    TextButton(onClick = ::launchBiometricPrompt) {
+                    TextButton(enabled = !submitting, onClick = ::launchBiometricPrompt) {
                         Icon(Icons.Default.Fingerprint, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.size(7.dp))
                         Text("Unlock with fingerprint")
                     }
                 }
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(enabled = !submitting, onClick = onDismiss) { Text("Cancel") }
             }
         }
     )
