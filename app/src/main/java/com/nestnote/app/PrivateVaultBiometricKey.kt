@@ -5,6 +5,7 @@ import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import android.util.Log
 import androidx.biometric.BiometricPrompt
 import java.nio.ByteBuffer
 import java.security.KeyStore
@@ -54,6 +55,15 @@ internal class PrivateVaultBiometricKey(context: Context) {
             val ciphertext = try {
                 cipher.doFinal(keyBytes)
             } catch (error: Exception) {
+                // Log provider diagnostics without logging key material or ciphertext. The UI
+                // intentionally shows only a safe summary, so this helps diagnose OEM failures.
+                Log.e(
+                    LOG_TAG,
+                    "Biometric key wrapping failed: cipher=${cipher.algorithm}, " +
+                        "inputBytes=${keyBytes.size}, exception=${error.javaClass.name}, " +
+                        "message=${error.message}",
+                    error
+                )
                 return enrollmentFailed(
                     when (error) {
                         is android.security.keystore.UserNotAuthenticatedException ->
@@ -73,6 +83,12 @@ internal class PrivateVaultBiometricKey(context: Context) {
             if (!saved) return enrollmentFailed("Android could not save the secure enrollment record.")
             true
         } catch (error: Exception) {
+            Log.e(
+                LOG_TAG,
+                "Biometric enrollment persistence/setup failed: " +
+                    "${error.javaClass.name}: ${error.message}",
+                error
+            )
             enrollmentFailed("Secure enrollment failed (${error.javaClass.simpleName}).")
         }
     }
@@ -156,6 +172,7 @@ internal class PrivateVaultBiometricKey(context: Context) {
     }
 
     companion object {
+        private const val LOG_TAG = "NestNoteBiometric"
         private const val PREFS = "nestnote_private_vault_biometric"
         private const val VERSION = "schema_version"
         private const val WRAPPED_KEY = "wrapped_vault_key"
