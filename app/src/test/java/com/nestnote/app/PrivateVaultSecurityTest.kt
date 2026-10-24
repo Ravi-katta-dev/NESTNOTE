@@ -104,7 +104,7 @@ class PrivateVaultSecurityTest {
     }
 
     @Test
-    fun mixedBackupRoundTripPreservesPrivateFlagAndOrdinaryViewsExcludePrivateNotes() {
+    fun privateFlagSurvivesPayloadSerializationAndOrdinaryViewsExcludePrivateNotes() {
         val public = NestNote(id = 101L, title = "Public", body = "visible", pinned = true)
         val private = NestNote(id = 102L, title = "Secret", body = "hidden searchable text",
             pinned = true, archived = false, privateNote = true, reminder = "2030-01-01")
