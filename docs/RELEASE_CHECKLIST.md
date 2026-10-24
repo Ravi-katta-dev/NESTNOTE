@@ -1,6 +1,6 @@
 # NESTNOTE Release & Validation Checklist
 
-Last updated: 2026-10-23
+Last updated: 2026-10-24
 
 Use this checklist for every candidate. A successful build is necessary but does not establish release readiness. Record the exact commit, CI run, device, results, and accepted risks in WORKLOG.md. Do not mark a check complete without evidence.
 
