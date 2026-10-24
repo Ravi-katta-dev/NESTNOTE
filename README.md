@@ -1,6 +1,6 @@
 # NESTNOTE
 
-NESTNOTE is a local-first Android notes app built with Kotlin, Jetpack Compose, and Material 3. It focuses on quick note capture, flexible editing and reading, offline use, and user-controlled backups.
+NESTNOTE is a local-first Android notes app built with Kotlin, Jetpack Compose, and Material 3. It focuses on quick note capture, flexible editing and reading, offline use, and password-protected encrypted archives.
 
 ## Current release: 1.4.6
 
@@ -28,14 +28,13 @@ Version **1.4.6** is the current release candidate baseline; publish only after 
 - Offline Text Toolbox under More → Power tools: word/character/line counts, estimated reading time, case conversion, whitespace cleanup, copy, and clear.
 
 ### Backup and privacy
-- Validated JSON backup and restore through Android's system file picker.
-- Password-protected `.nestnote` backup archives use authenticated AES-GCM encryption and are saved under `Documents/NESTNOTE` after the user grants folder access.
+- Password-protected `.nestnote` archives use authenticated AES-GCM encryption and are stored under `Documents/NESTNOTE` after folder access is granted.
 - Private Vault access from More or Settings → Privacy, with password protection and biometric enrollment/unlock via an authentication-bound Android Keystore key and BiometricPrompt CryptoObject; physical-device validation remains a release gate.
 - Private Vault is an app-level access gate, not a guarantee of independent cryptographic isolation.
-- Exported JSON backups are plaintext and may contain private-note titles and bodies. Voice-note audio attachments are excluded from backup and restore.
+- Plaintext JSON backup/import and scheduled automatic backups are not offered. Private Vault notes and voice-note audio attachments are excluded from portable archives.
 
 ## Security boundaries
-Local encryption at rest does not protect content on a compromised device while the app is running, through clipboard sharing, or in plaintext exports. Private-note classification is metadata, not encryption. Keystore loss may prevent local decryption; keep a secure export before uninstalling or clearing app data if recovery matters.
+Local encryption at rest does not protect content on a compromised device while the app is running or through clipboard sharing. Private-note classification is metadata, not encryption. Portable archives are separately password-protected and exclude Private Vault notes. Keystore loss may prevent local decryption; understand the archive limitations before uninstalling or clearing app data.
 
 Biometric authentication must authorize the actual cryptographic operation through an authenticated BiometricPrompt CryptoObject. Missing, invalidated, or corrupt biometric key material must fail closed while password recovery remains available. See [Security Model](docs/SECURITY.md) and [Threat Model](docs/THREAT_MODEL.md).
 
@@ -72,7 +71,7 @@ Use [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for v
 ## Known limitations
 - Reminder fields are metadata only; scheduling and notifications are not implemented.
 - Rich-text editing and cloud sync are not included.
-- JSON exports are plaintext; audio attachments are excluded.
+- Portable archives are password-protected and encrypted; private notes and audio attachments are excluded.
 - Device migration/key-loss recovery, biometric edge cases, TalkBack, large-font/narrow-screen, and keyboard/insets checks must be recorded separately from automated builds.
 
 ## License
