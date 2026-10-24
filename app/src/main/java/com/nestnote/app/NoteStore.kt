@@ -27,7 +27,9 @@ data class NestNote(
     val background: Int = 0,
     val wallpaperUri: String = "",
     val format: String = "plain",
-    val privateNote: Boolean = false
+    val privateNote: Boolean = false,
+    val encrypted: Boolean = false,
+    val encryptedPayload: String = ""
 )
 
 data class MergeResult(val notes: List<NestNote>, val added: Int, val updated: Int)
@@ -221,6 +223,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         const val MAX_BODY_LENGTH = 1_000_000
         const val MAX_CATEGORY_LENGTH = 256
         const val MAX_REMINDER_LENGTH = 512
+        const val ENCRYPTED_NOTE_TITLE = "Encrypted note"
         const val CURRENT_ARCHIVE_PAYLOAD_SCHEMA_VERSION = 1
 
         /** Serializes note records for encrypted local storage and the authenticated archive payload. */
@@ -235,6 +238,8 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
                     put("background", n.background.coerceIn(0, 9)); put("wallpaperUri", n.wallpaperUri)
                     put("format", if (n.format == "markdown") "markdown" else "plain")
                     put("privateNote", n.privateNote)
+                    put("encrypted", n.encrypted)
+                    put("encryptedPayload", n.encryptedPayload)
                 })
             }
             return array.toString()
@@ -306,7 +311,9 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
                     background = o.optInt("background", 0).coerceIn(0, 9),
                     wallpaperUri = o.optString("wallpaperUri", ""),
                     format = if (o.optString("format", "plain") == "markdown") "markdown" else "plain",
-                    privateNote = o.optBoolean("privateNote", false)
+                    privateNote = o.optBoolean("privateNote", false),
+                    encrypted = o.optBoolean("encrypted", false),
+                    encryptedPayload = o.optString("encryptedPayload", "")
                 )
             }
             require(isValidNoteCollection(decoded)) { "invalid note records" }
@@ -387,6 +394,9 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
                         note.body.length > MAX_BODY_LENGTH ||
                         note.category.length > MAX_CATEGORY_LENGTH ||
                         note.reminder.length > MAX_REMINDER_LENGTH ||
+                        note.encryptedPayload.length > MAX_BODY_LENGTH * 2 ||
+                        (note.encrypted && (note.privateNote || note.encryptedPayload.isBlank() || note.title != ENCRYPTED_NOTE_TITLE || note.body.isNotBlank())) ||
+                        (!note.encrypted && note.encryptedPayload.isNotEmpty()) ||
                         note.updated < 0L || note.created < 0L
                 }) return false
             return notes.map { it.id }.distinct().size == notes.size
