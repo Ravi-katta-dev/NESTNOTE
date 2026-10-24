@@ -352,6 +352,27 @@ class NoteStoreTest {
     }
 
     @Test
+    fun deviceEncryptedNotesAreExcludedFromPortableArchives() {
+        val encrypted = NestNote(
+            id = 907,
+            title = NoteStore.ENCRYPTED_NOTE_TITLE,
+            body = "",
+            category = "Encrypted",
+            encrypted = true,
+            encryptedPayload = "NESTNOTE_ORDINARY_NOTE_V1:payload"
+        )
+        val plain = NestNote(id = 908, title = "Portable", body = "Backup me")
+        assertEquals(listOf(plain), NoteStore.notesForArchive(listOf(encrypted, plain), includeArchived = true))
+        var rejected = false
+        try {
+            NoteStore.encodeArchivePayload(listOf(encrypted))
+        } catch (_: IllegalArgumentException) {
+            rejected = true
+        }
+        assertTrue(rejected)
+    }
+
+    @Test
     fun encryptedRecordCannotBePersistedWithPlaintextOrVaultClassification() {
         val invalidPlaintext = NestNote(
             id = 905,
