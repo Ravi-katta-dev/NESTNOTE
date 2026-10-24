@@ -28,10 +28,13 @@ import java.util.Properties
  * All instances share one lock. The editor creates a new DraftStore per call, so a
  * per-instance lock would not stop a write and a clear from interleaving.
  *
- * Storage format: Java [Properties] text (UTF-8). Schema version 1. Fields added after
- * version 1 (such as `format`) are optional on read, so older drafts still decode.
+ * Storage uses versioned envelopes: ordinary drafts contain a Base64-encoded Properties
+ * payload, while private drafts use AES-GCM with a dedicated Android Keystore key and
+ * authenticated context. The inner Properties payload is schema version 2; legacy plaintext
+ * files are rejected and removed rather than reclassified as ordinary drafts.
  *
- * The class never deletes notes; it only manages draft snapshots.
+ * Private drafts fail closed when the Keystore key is missing, invalidated, or cannot decrypt
+ * the envelope. The class never deletes saved notes; it only manages draft snapshots.
  */
 class DraftStore internal constructor(rootOverride: File, private val privateKeyProvider: (() -> SecretKey)? = null) {
 
