@@ -1,7 +1,5 @@
 package com.nestnote.app
 
-private const val PREF_PRIVATE_SCREEN_PROTECTION = "private_screen_protection_enabled"
-
 import java.io.ByteArrayOutputStream
 import android.app.Activity
 import android.app.DatePickerDialog
@@ -137,6 +135,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+private const val PREF_PRIVATE_SCREEN_PROTECTION = "private_screen_protection_enabled"
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
