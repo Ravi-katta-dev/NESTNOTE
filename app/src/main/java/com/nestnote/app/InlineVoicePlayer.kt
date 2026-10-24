@@ -248,6 +248,7 @@ internal fun InlineVoicePlayer(
         if (isActive && player != null) {
             VoicePlaybackNotifications.show(
                 context = context,
+                attachmentId = attachmentId,
                 displayName = displayName,
                 positionMs = positionMs,
                 durationMs = shownDuration,
@@ -265,7 +266,7 @@ internal fun InlineVoicePlayer(
                 }
             }
         } else {
-            VoicePlaybackNotifications.clear(context)
+            VoicePlaybackNotifications.clear(context, attachmentId)
         }
     }
     var selected by remember(attachmentId) { mutableStateOf(false) }
