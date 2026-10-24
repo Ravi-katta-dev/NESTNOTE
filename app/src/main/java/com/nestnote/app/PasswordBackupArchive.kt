@@ -30,16 +30,17 @@ internal object PasswordBackupArchive {
     private const val KEY_BITS = 256
     private const val PBKDF2_ITERATIONS = 210_000
     private const val MAX_ARCHIVE_BYTES = NoteStore.MAX_ARCHIVE_PAYLOAD_BYTES
-    private const val BACKUP_ENTRY = "backup.json"
+    private const val ARCHIVE_PAYLOAD_ENTRY = "archive-payload.json"
+    private const val LEGACY_BACKUP_ENTRY = "backup.json"
     private const val MANIFEST_ENTRY = "manifest.txt"
 
-    fun encryptBackup(backupJson: String, password: CharArray): ByteArray {
+    fun encryptArchive(archivePayload: String, password: CharArray): ByteArray {
         require(password.size >= 10) { "Use a password with at least 10 characters" }
-        require(backupJson.toByteArray(Charsets.UTF_8).size <= MAX_ARCHIVE_BYTES) { "Backup is too large" }
-        require(NoteStore.decodeArchivePayload(backupJson) != null) { "Invalid NESTNOTE backup" }
+        require(archivePayload.toByteArray(Charsets.UTF_8).size <= MAX_ARCHIVE_BYTES) { "Archive payload is too large" }
+        require(NoteStore.decodeArchivePayload(backupJson) != null) { "Invalid NESTNOTE archive payload" }
 
         val zipBytes = makeZip(backupJson)
-        require(zipBytes.size <= MAX_ARCHIVE_BYTES) { "Backup archive is too large" }
+        require(zipBytes.size <= MAX_ARCHIVE_BYTES) { "Encrypted archive is too large" }
         val salt = ByteArray(SALT_BYTES).also(SecureRandom()::nextBytes)
         val nonce = ByteArray(NONCE_BYTES).also(SecureRandom()::nextBytes)
         val key = deriveKey(password, salt)
@@ -56,8 +57,8 @@ internal object PasswordBackupArchive {
         }
     }
 
-    /** Returns null for wrong passwords, tampered archives, malformed ZIPs or invalid backups. */
-    fun decryptBackup(archive: ByteArray, password: CharArray): String? {
+    /** Returns null for wrong passwords, tampered archives, malformed ZIPs or invalid archive payloads. */
+    fun decryptArchive(archive: ByteArray, password: CharArray): String? {
         if (password.size < 10 || archive.size > MAX_ARCHIVE_BYTES) return null
         val headerSize = MAGIC.size + SALT_BYTES + NONCE_BYTES
         if (archive.size < headerSize + 16) return null
@@ -82,7 +83,7 @@ internal object PasswordBackupArchive {
         }
         if (zipBytes.size > MAX_ARCHIVE_BYTES) return null
         val entries = runCatching { readZip(zipBytes) }.getOrNull() ?: return null
-        val json = entries[BACKUP_ENTRY] ?: return null
+        val json = entries[ARCHIVE_PAYLOAD_ENTRY] ?: entries[LEGACY_BACKUP_ENTRY] ?: return null
         // Manifest is required so arbitrary ZIPs cannot masquerade as NESTNOTE exports.
         if (entries[MANIFEST_ENTRY] != "format=com.nestnote.password-backup\nschema=1") return null
         return json.takeIf { NoteStore.decodeArchivePayload(it) != null }
@@ -94,7 +95,7 @@ internal object PasswordBackupArchive {
             zip.putNextEntry(ZipEntry(MANIFEST_ENTRY))
             zip.write("format=com.nestnote.password-backup\nschema=1".toByteArray(Charsets.UTF_8))
             zip.closeEntry()
-            zip.putNextEntry(ZipEntry(BACKUP_ENTRY))
+            zip.putNextEntry(ZipEntry(ARCHIVE_PAYLOAD_ENTRY))
             zip.write(json.toByteArray(Charsets.UTF_8))
             zip.closeEntry()
         }
@@ -107,7 +108,7 @@ internal object PasswordBackupArchive {
         ZipInputStream(ByteArrayInputStream(bytes)).use { zip ->
             while (true) {
                 val entry = zip.nextEntry ?: break
-                require(!entry.isDirectory && entry.name in setOf(BACKUP_ENTRY, MANIFEST_ENTRY)) {
+                require(!entry.isDirectory && entry.name in setOf(ARCHIVE_PAYLOAD_ENTRY, LEGACY_BACKUP_ENTRY, MANIFEST_ENTRY)) {
                     "Unexpected archive entry"
                 }
                 require(!entries.containsKey(entry.name)) { "Duplicate archive entry" }
