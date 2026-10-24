@@ -1,4 +1,4 @@
-name: PR Approval
+name: PR Review Policy
 
 on:
   pull_request:
@@ -11,30 +11,40 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: pr-approval-${{ github.event.pull_request.number }}
+  group: pr-review-policy-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  approval:
-    name: Require independent approval
+  review-policy:
+    name: Solo maintainer review policy
     runs-on: ubuntu-latest
     steps:
-      - name: Check approval for current commit
+      - name: Check review policy
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           REPOSITORY: ${{ github.repository }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
 
-          approvals="$(gh api --paginate "repos/$REPOSITORY/pulls/$PR_NUMBER/reviews"             --jq "[.[] | select(.commit_id == \"$PR_HEAD_SHA\" and .user.login != \"$PR_AUTHOR\") | {user: .user.login, state: .state, submitted_at: .submitted_at}] | sort_by(.submitted_at) | group_by(.user) | map(last) | map(select(.state == \"APPROVED\")) | length")"
+          # The repository owner is the solo maintainer and may review their own changes
+          # using the PR checklist and CI checks; GitHub does not allow self-approval.
+          if [ "$PR_AUTHOR" = "$REPOSITORY_OWNER" ]; then
+            echo "Solo maintainer PR: independent approval is not required. Ensure the PR self-review checklist and CI checks are complete."
+            exit 0
+          fi
+
+          # Contributions from anyone else require an approval by someone other than
+          # the contributor, attached to the current head commit.
+          approvals="$(gh api --paginate "repos/$REPOSITORY/pulls/$PR_NUMBER/reviews" \
+            --jq "[.[] | select(.commit_id == \"$PR_HEAD_SHA\" and .user.login != \"$PR_AUTHOR\") | {user: .user.login, state: .state, submitted_at: .submitted_at}] | sort_by(.submitted_at) | group_by(.user) | map(last) | map(select(.state == \"APPROVED\")) | length")"
 
           if [ "$approvals" -lt 1 ]; then
-            echo "::error::This pull request needs at least one approval from someone other than its author on the current head commit."
-            echo "Request a review, then submit an approval after the latest commit. A new commit requires a fresh approval."
+            echo "::error::External contributions require an approval from someone other than the PR author for the current head commit."
             exit 1
           fi
 
-          echo "Found $approvals independent approval(s) for the current head commit."
+          echo "Found $approvals independent approval(s) for this contribution."
