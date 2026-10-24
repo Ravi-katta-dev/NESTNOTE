@@ -41,7 +41,7 @@
 
 - Rechecked `NoteFilters.visibleNotes`: Home, All notes, Pinned, Reminders, category views, Archived, and query terms/operators apply the private-note exclusion for ordinary views; Private view is the only intended list view that includes active private notes.
 - Rechecked insights defense-in-depth and Settings archived counts: calculations/counts now use public notes only.
-- Rechecked the user-facing JSON export path: it calls `NoteStore.notesForBackup`, excluding private notes regardless of the archived-note option. Regression tests cover active/archived public and private records.
+- Historical audit note: the former JSON export selector excluded private notes. Plaintext JSON export/import has since been removed; current portability uses password-protected encrypted `.nestnote` archives.
 - **New release-blocking finding:** `DraftStore` writes editor draft text as plaintext files and does not persist `privateNote`. Private editor drafts therefore do not inherit `NoteStore` AES-GCM encryption and orphan recovery cannot reliably retain the vault boundary. This needs a dedicated code fix and regression tests; this documentation update does not claim it is fixed.
 - Serializer boundary: `encodeBackup` itself can serialize private records if a caller passes them directly. Keep all user-facing exports routed through the filtering selector and test this call boundary; do not claim the serializer encrypts or filters by itself.
 - Exact-head CI must be rerun after these test/documentation updates. Device-only lifecycle/biometric/screenshot checks remain outstanding.
