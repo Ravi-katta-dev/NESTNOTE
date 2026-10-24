@@ -43,7 +43,7 @@ Use this checklist for every candidate. A successful build is necessary but does
 - [ ] Round-trip archive payloads; verify archive selection excludes Private Vault notes and private notes stay excluded from ordinary views/search/insights. Also verify private drafts are not written/read as plaintext.
 - [ ] Verify lockout escalation, cooldown boundary, persistence after restart, 15-minute cap, monotonic behavior under forward/backward wall-clock changes, and bounded behavior after device reboot. Automated regression coverage exists; device verification remains required.
 - [ ] Verify FLAG_SECURE on vault and private editor through Recents snapshots, rapid navigation, and lifecycle transitions on supported Android versions.
-- [ ] Confirm security copy says the vault password is a UI gate, not a separate encryption key, and portable archives are password-protected and exclude Private Vault notes.
+- [ ] Confirm security copy accurately explains that the vault password derives a wrapping key for the independent Private Vault data key, and that portable archives are password-protected and exclude Private Vault notes.
 - [ ] Record exact-head CI result and device/emulator evidence; source inspection alone is not sufficient.
 
 ## 3. Backup, encryption, and recovery
