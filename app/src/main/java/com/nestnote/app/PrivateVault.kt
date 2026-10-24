@@ -380,9 +380,14 @@ internal fun PrivateVaultBiometricEnrollmentDialog(
                                 val enrolled = authenticatedCipher != null &&
                                     biometric.completeEnrollment(session, authenticatedCipher)
                                 if (enrolled) onComplete(true) else {
+                                    val reason = if (authenticatedCipher == null) {
+                                        "Android did not return the authenticated encryption cipher."
+                                    } else {
+                                        biometric.lastEnrollmentFailure ?: "The secure enrollment step did not complete."
+                                    }
                                     biometric.deleteEnrollment()
                                     promptLaunched = false
-                                    message = "Enrollment failed. Biometric unlock was not enabled; use your vault password."
+                                    message = "$reason Biometric unlock was not enabled; use your vault password."
                                 }
                             }
 
