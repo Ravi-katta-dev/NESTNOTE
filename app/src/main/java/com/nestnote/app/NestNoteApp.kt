@@ -1887,12 +1887,14 @@ internal fun NestNoteApp(
                         !NoteStore.isSameNoteVersion(draft.updated, currentSaved.updated)
                     )
                 if (isStale) {
+                    pendingLinkedNoteAfterSave = null
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar("This note changed elsewhere. Reopen it before saving to avoid overwriting newer content.")
                     }
                 } else {
                     val savedId = existing?.id ?: editorDraftId ?: NoteStore.allocateNoteId(notes)
                     if (existing == null && NoteStore.hasDraftIdCollision(notes, savedId)) {
+                        pendingLinkedNoteAfterSave = null
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar(
                                 "This draft ID is now in use. Your draft and recordings are preserved; close and reopen a new note to continue."
