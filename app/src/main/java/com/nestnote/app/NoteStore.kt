@@ -249,7 +249,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
          * Selects notes for an encrypted archive. Private Vault records are excluded from portability archives.
          */
         fun notesForArchive(notes: List<NestNote>, includeArchived: Boolean): List<NestNote> =
-            notes.filter { !it.privateNote && (includeArchived || !it.archived) }
+            notes.filter { !it.privateNote && !it.encrypted && (includeArchived || !it.archived) }
 
         /** Encodes the serialized payload that is placed inside an authenticated encrypted archive. */
         fun encodeArchivePayload(notes: List<NestNote>): String {
