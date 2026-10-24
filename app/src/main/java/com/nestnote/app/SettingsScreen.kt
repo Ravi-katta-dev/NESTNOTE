@@ -944,7 +944,7 @@ internal fun SettingsScreen(
                             selected = compactVoicePlayer,
                             onClick = {
                                 compactVoicePlayer = true
-                                playerPrefs.edit().putBoolean(PREF_VOICE_PLAYER_COMPACT, true).apply()
+                                playerPrefs.edit().putBoolean(PREF_VOICE_PLAYER_COMPACT, true).putString(PREF_VOICE_PLAYER_STYLE, VoicePlayerStyle.COMPACT.name).apply()
                             },
                             modifier = Modifier.weight(1f),
                             reducedMotion = reducedMotion
@@ -957,7 +957,7 @@ internal fun SettingsScreen(
                             selected = !compactVoicePlayer,
                             onClick = {
                                 compactVoicePlayer = false
-                                playerPrefs.edit().putBoolean(PREF_VOICE_PLAYER_COMPACT, false).apply()
+                                playerPrefs.edit().putBoolean(PREF_VOICE_PLAYER_COMPACT, false).putString(PREF_VOICE_PLAYER_STYLE, VoicePlayerStyle.FULL.name).apply()
                             },
                             modifier = Modifier.weight(1f),
                             reducedMotion = reducedMotion
@@ -2439,6 +2439,27 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                 .getFloat(PREF_VOICE_PLAYER_SPEED, 1f)
         )
     }
+    val playerPreferences = remember(context) { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
+    var playerStyle by rememberSaveable {
+        mutableStateOf(
+            playerPreferences.getString(PREF_VOICE_PLAYER_STYLE, null)
+                ?.let { runCatching { VoicePlayerStyle.valueOf(it) }.getOrNull() }
+                ?: if (compactVoicePlayer) VoicePlayerStyle.COMPACT else VoicePlayerStyle.FULL
+        )
+    }
+    var playerSizePercent by rememberSaveable {
+        mutableIntStateOf(playerPreferences.getInt(PREF_VOICE_PLAYER_SIZE_PERCENT, DEFAULT_VOICE_PLAYER_SIZE_PERCENT)
+            .coerceIn(MIN_VOICE_PLAYER_SIZE_PERCENT, MAX_VOICE_PLAYER_SIZE_PERCENT))
+    }
+
+    fun choosePlayerStyle(style: VoicePlayerStyle) {
+        playerStyle = style
+        compactVoicePlayer = style == VoicePlayerStyle.COMPACT || style == VoicePlayerStyle.MINIMAL
+        playerPreferences.edit()
+            .putString(PREF_VOICE_PLAYER_STYLE, style.name)
+            .putBoolean(PREF_VOICE_PLAYER_COMPACT, compactVoicePlayer)
+            .apply()
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -2504,6 +2525,54 @@ private fun VoicePlayerSettingsDialog(onDismiss: () -> Unit) {
                 HorizontalDivider(color = colors.outlineVariant)
 
                 Text("Player style", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Choose a layout that suits each note. The size control scales the player without changing the audio.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VoicePlayerStyle.values().toList().chunked(2).forEach { rowStyles ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            rowStyles.forEach { style ->
+                                FilterChip(
+                                    selected = playerStyle == style,
+                                    onClick = { choosePlayerStyle(style) },
+                                    label = { Text(\${style.label}) },
+                                    modifier = Modifier.weight(1f).testTag("voice_player_style_\${style.name.lowercase()}")
+                                )
+                            }
+                            if (rowStyles.size == 1) Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Player size", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("\${playerSizePercent}%", style = MaterialTheme.typography.labelLarge, color = colors.primary)
+                    }
+                    TextButton(onClick = {
+                        playerSizePercent = DEFAULT_VOICE_PLAYER_SIZE_PERCENT
+                        playerPreferences.edit().putInt(PREF_VOICE_PLAYER_SIZE_PERCENT, playerSizePercent).apply()
+                    }) { Text("Reset") }
+                }
+                Slider(
+                    value = playerSizePercent.toFloat(),
+                    onValueChange = { value ->
+                        playerSizePercent = value.roundToInt().coerceIn(MIN_VOICE_PLAYER_SIZE_PERCENT, MAX_VOICE_PLAYER_SIZE_PERCENT)
+                        playerPreferences.edit().putInt(PREF_VOICE_PLAYER_SIZE_PERCENT, playerSizePercent).apply()
+                    },
+                    valueRange = MIN_VOICE_PLAYER_SIZE_PERCENT.toFloat()..MAX_VOICE_PLAYER_SIZE_PERCENT.toFloat(),
+                    steps = 14,
+                    modifier = Modifier.fillMaxWidth().testTag("voice_player_size_slider")
+                )
+                Text(
+                    "75% compact  ·  100% default  ·  150% large",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant
+                )
+
+                HorizontalDivider(color = colors.outlineVariant)
 
                 Surface(
                     modifier = Modifier
