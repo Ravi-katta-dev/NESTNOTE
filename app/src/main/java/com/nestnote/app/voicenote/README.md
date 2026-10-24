@@ -17,6 +17,13 @@ Audio payload encryption uses its own Android Keystore alias and is separate fro
 note encryption and Private Vault encryption. A note's encrypted text payload does not implicitly
 encrypt or include its audio attachments.
 
+## Voice-player presentation
+
+The inline voice player supports four saved presentation styles: Compact, Full, Waveform, and
+Minimal. Settings also provides a custom player-size control from 75% to 150% in 5% increments.
+These preferences affect presentation only; they do not resample or rewrite the encrypted audio.
+Existing installs retain their previous Compact/Full choice when no newer style preference exists.
+
 ## Follow-up plan
 
 1. Migrate editor and note lifecycle call sites to `VoiceNoteRepository` in a dedicated change;
