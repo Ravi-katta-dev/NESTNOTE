@@ -30,7 +30,7 @@ Version **1.4.6** is the current release candidate baseline; publish only after 
 ### Backup and privacy
 - Validated JSON backup and restore through Android's system file picker.
 - Password-protected `.nestnote` backup archives use authenticated AES-GCM encryption and are saved under `Documents/NESTNOTE` after the user grants folder access.
-- Private Vault access from More or Settings → Privacy, with password protection and optional biometric unlock subject to platform and security validation.
+- Private Vault access from More or Settings → Privacy, with password protection and biometric enrollment/unlock via an authentication-bound Android Keystore key and BiometricPrompt CryptoObject; physical-device validation remains a release gate.
 - Private Vault is an app-level access gate, not a guarantee of independent cryptographic isolation.
 - Exported JSON backups are plaintext and may contain private-note titles and bodies. Voice-note audio attachments are excluded from backup and restore.
 
