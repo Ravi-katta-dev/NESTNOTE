@@ -169,9 +169,6 @@ internal fun NestNoteApp(
     var storageLoaded by remember { mutableStateOf(false) }
     var lastBackupAt by remember { mutableLongStateOf(preferences.getLong(PREF_BACKUP_LAST_SUCCESS_AT, 0L)) }
     var backupStatus by remember { mutableStateOf(preferences.getString(PREF_BACKUP_LAST_STATUS, "Not yet backed up") ?: "Not yet backed up") }
-    var automaticBackupEnabled by remember { mutableStateOf(preferences.getBoolean(PREF_BACKUP_AUTOMATIC_ENABLED, false)) }
-    var automaticBackupLastRun by remember { mutableLongStateOf(preferences.getLong(PREF_BACKUP_AUTOMATIC_LAST_RUN, 0L)) }
-    var automaticBackupStatus by remember { mutableStateOf(preferences.getString(PREF_BACKUP_AUTOMATIC_STATUS, "Not run yet") ?: "Not run yet") }
     var storageRecoveryRequired by remember { mutableStateOf(false) }
     var showStorageRecoveryDialog by remember { mutableStateOf(false) }
     var openedExternalMarkdownTitle by remember { mutableStateOf("") }
@@ -274,10 +271,6 @@ internal fun NestNoteApp(
     fun requestPrivateVault() { showPrivateVaultGate = true }
     LaunchedEffect(selectedView) {
         if (selectedView != "Private") lockPrivateVault()
-        if (selectedView == "Backup") {
-            automaticBackupLastRun = preferences.getLong(PREF_BACKUP_AUTOMATIC_LAST_RUN, 0L)
-            automaticBackupStatus = preferences.getString(PREF_BACKUP_AUTOMATIC_STATUS, "Not run yet") ?: "Not run yet"
-        }
     }
     var search by remember { mutableStateOf("") }
     var selectedNoteIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -442,9 +435,6 @@ internal fun NestNoteApp(
         showEditorCounts = true
         categoryOptions = categories
         defaultNoteCategory = "Ideas"
-        automaticBackupEnabled = false
-        automaticBackupLastRun = 0L
-        automaticBackupStatus = "Not run yet"
         AutomaticBackupScheduler.cancel(context)
         coroutineScope.launch { snackbarHostState.showSnackbar("Settings reset to defaults") }
     }
@@ -546,93 +536,13 @@ internal fun NestNoteApp(
             onExternalMarkdownHandled()
         }
     }
-    var exportArchivedNotes by remember { mutableStateOf(true) }
     var backupFolderConfigured by remember { mutableStateOf(BackupDirectory.configuredTreeUri(context) != null) }
-    var pendingFolderExportPayload by remember { mutableStateOf<String?>(null) }
-    var pendingFolderImport by remember { mutableStateOf(false) }
     val backupFolderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { treeUri ->
         if (treeUri != null && BackupDirectory.persistTreeGrant(context, treeUri)) {
             backupFolderConfigured = true
-            val savedTree = BackupDirectory.configuredTreeUri(context)
-            if (savedTree != null) {
-                pendingFolderExportPayload?.let { payload ->
-                    val exportNotes = NoteStore.decodeBackup(payload).orEmpty()
-                    val saved = BackupDirectory.writeLatest(context, savedTree, payload.toByteArray(Charsets.UTF_8))
-                    if (saved) {
-                        lastBackupAt = System.currentTimeMillis()
-                        backupStatus = "Success"
-                        preferences.edit()
-                            .putLong(PREF_BACKUP_LAST_SUCCESS_AT, lastBackupAt)
-                            .putString(PREF_BACKUP_LAST_STATUS, backupStatus)
-                            .apply()
-                    } else {
-                        backupStatus = "Failed"
-                        saveString(PREF_BACKUP_LAST_STATUS, backupStatus)
-                    }
-                    pendingFolderExportPayload = null
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(
-                            if (saved) "Backup saved to Documents/NESTNOTE (" + exportNotes.size + " notes). Voice recordings are not included."
-                            else "Backup could not be saved. Your notes were not changed."
-                        )
-                    }
-                }
-                if (pendingFolderImport) {
-                    val raw = BackupDirectory.readLatest(context, savedTree)?.toString(Charsets.UTF_8)
-                    val incoming = raw?.let(NoteStore::decodeBackup)
-                    if (incoming != null && incoming.isNotEmpty()) {
-                        pendingRestore = incoming
-                        coroutineScope.launch { snackbarHostState.showSnackbar("Backup loaded from Documents/NESTNOTE. Review the restore before applying it.") }
-                    } else {
-                        coroutineScope.launch { snackbarHostState.showSnackbar("No valid NESTNOTE-backup.json found in Documents/NESTNOTE.") }
-                    }
-                    pendingFolderImport = false
-                }
-            }
+            coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted archive folder access saved.") }
         } else if (treeUri != null) {
-            pendingFolderExportPayload = null
-            pendingFolderImport = false
-            coroutineScope.launch { snackbarHostState.showSnackbar("Folder access could not be saved. Choose Documents again.") }
-        } else {
-            // A cancelled picker must not leave a stale export/import queued for a later selection.
-            pendingFolderExportPayload = null
-            pendingFolderImport = false
-        }
-    }
-    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        if (uris.isNotEmpty()) {
-            // Validate every selected file before opening the restore preview; never apply a partial batch.
-            val batches = uris.map { uri ->
-                runCatching {
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        // Bound memory use for untrusted document-provider input.
-                        val output = ByteArrayOutputStream()
-                        val buffer = ByteArray(8 * 1024)
-                        var total = 0
-                        while (true) {
-                            val count = input.read(buffer)
-                            if (count < 0) break
-                            total += count
-                            require(total <= NoteStore.MAX_BACKUP_BYTES) { "Backup file is too large" }
-                            output.write(buffer, 0, count)
-                        }
-                        NoteStore.decodeBackup(output.toByteArray().toString(Charsets.UTF_8))
-                    }
-                }.getOrNull()
-            }
-            val incoming = if (batches.all { it != null }) {
-                batches.filterNotNull().flatten().takeIf { it.isNotEmpty() }
-            } else null
-            val message = if (incoming == null) {
-                "One or more selected files aren't valid NESTNOTE backups. Nothing was imported."
-            } else {
-                // Deduplicate IDs across files using the same newest-update-wins rule as restore.
-                pendingRestore = incoming.fold(emptyList()) { accumulated, batchNote ->
-                    NoteStore.merge(accumulated, listOf(batchNote)).notes
-                }
-                "Validated ${uris.size} backup file(s). Review the combined restore before applying it."
-            }
-            coroutineScope.launch { snackbarHostState.showSnackbar(message) }
+            coroutineScope.launch { snackbarHostState.showSnackbar("Folder access could not be saved. Choose a folder again.") }
         }
     }
     val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
@@ -944,71 +854,13 @@ internal fun NestNoteApp(
                         pinnedNotes = notes.count { it.pinned && !it.archived && !it.privateNote },
                         lastBackupAt = lastBackupAt,
                         backupStatus = backupStatus,
-                        automaticBackupEnabled = automaticBackupEnabled,
-                        automaticBackupLastRun = automaticBackupLastRun,
-                        automaticBackupStatus = automaticBackupStatus,
-                        onAutomaticBackupChange = { enabled ->
-                            automaticBackupEnabled = enabled
-                            saveBoolean(PREF_BACKUP_AUTOMATIC_ENABLED, enabled)
-                            if (enabled) AutomaticBackupScheduler.schedule(context)
-                            else AutomaticBackupScheduler.cancel(context)
-                        },
                         backupFolderConfigured = backupFolderConfigured,
                         onChooseBackupFolder = { backupFolderLauncher.launch(null) },
-                        onExportNotes = { includeArchived ->
-                            exportArchivedNotes = includeArchived
-                            val exportNotes = NoteStore.notesForBackup(notes, includeArchived = includeArchived)
-                            val payload = runCatching { NoteStore.encodeBackup(exportNotes) }.getOrNull()
-                            if (payload == null) {
-                                coroutineScope.launch { snackbarHostState.showSnackbar("Backup could not be created. Your notes were not changed.") }
-                            } else {
-                                val savedTree = BackupDirectory.configuredTreeUri(context)
-                                if (savedTree != null) {
-                                    val saved = BackupDirectory.writeLatest(context, savedTree, payload.toByteArray(Charsets.UTF_8))
-                                    if (saved) {
-                                        lastBackupAt = System.currentTimeMillis()
-                                        backupStatus = "Success"
-                                        preferences.edit()
-                                            .putLong(PREF_BACKUP_LAST_SUCCESS_AT, lastBackupAt)
-                                            .putString(PREF_BACKUP_LAST_STATUS, backupStatus)
-                                            .apply()
-                                    } else {
-                                        backupStatus = "Failed"
-                                        saveString(PREF_BACKUP_LAST_STATUS, backupStatus)
-                                    }
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            if (saved) "Backup saved to Documents/NESTNOTE (" + exportNotes.size + " notes). Voice recordings are not included."
-                                            else "Backup could not be saved. Your notes were not changed."
-                                        )
-                                    }
-                                } else {
-                                    pendingFolderExportPayload = payload
-                                    backupFolderLauncher.launch(null)
-                                }
-                            }
-                        },
-                        onImportNotes = {
-                            val savedTree = BackupDirectory.configuredTreeUri(context)
-                            if (savedTree != null) {
-                                val raw = BackupDirectory.readLatest(context, savedTree)?.toString(Charsets.UTF_8)
-                                val incoming = raw?.let(NoteStore::decodeBackup)
-                                if (incoming != null && incoming.isNotEmpty()) {
-                                    pendingRestore = incoming
-                                    coroutineScope.launch { snackbarHostState.showSnackbar("Backup loaded from Documents/NESTNOTE. Review the restore before applying it.") }
-                                } else {
-                                    coroutineScope.launch { snackbarHostState.showSnackbar("No valid NESTNOTE-backup.json found in Documents/NESTNOTE.") }
-                                }
-                            } else {
-                                pendingFolderImport = true
-                                backupFolderLauncher.launch(null)
-                            }
-                        },
                         onExportEncryptedArchive = { includeArchived, password ->
-                            val exportNotes = NoteStore.notesForBackup(notes, includeArchived = includeArchived)
+                            val archiveNotes = NoteStore.notesForArchive(notes, includeArchived = includeArchived)
                             val encrypted = runCatching {
                                 PasswordBackupArchive.encryptBackup(
-                                    NoteStore.encodeBackup(exportNotes),
+                                    NoteStore.encodeArchivePayload(archiveNotes),
                                     password.toCharArray()
                                 )
                             }.getOrNull()
@@ -1029,7 +881,7 @@ internal fun NestNoteApp(
                             coroutineScope.launch {
                                 snackbarHostState.showSnackbar(
                                     when {
-                                        encrypted == null -> "Encrypted archive could not be created. Check the password and backup size."
+                                        encrypted == null -> "Encrypted archive could not be created. Check the password and archive size."
                                         saved -> "Password-protected archive saved to Documents/NESTNOTE/NESTNOTE-backup.nestnote."
                                         else -> "Encrypted archive could not be saved. Your notes were not changed."
                                     }
@@ -1040,7 +892,7 @@ internal fun NestNoteApp(
                             val savedTree = BackupDirectory.configuredTreeUri(context)
                             val archive = savedTree?.let { BackupDirectory.readEncryptedLatest(context, it) }
                             val raw = archive?.let { PasswordBackupArchive.decryptBackup(it, password.toCharArray()) }
-                            val incoming = raw?.let(NoteStore::decodeBackup)
+                            val incoming = raw?.let(NoteStore::decodeArchivePayload)
                             if (incoming != null && incoming.isNotEmpty()) {
                                 pendingRestore = incoming
                                 coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted archive unlocked. Review the restore before applying it.") }
