@@ -51,7 +51,7 @@ class NoteStoreTest {
     }
 
     @Test
-    fun privateNoteFlagSurvivesSaveLoadAndBackupRoundTrip() {
+    fun privateNoteFlagSurvivesSaveLoadAndArchivePayloadRoundTrip() {
         val secret = NestNote(id = 999L, title = "Private", body = "Secret", privateNote = true)
         assertTrue(store.save(listOf(secret)))
         assertEquals(secret, store.load().single())
@@ -129,7 +129,7 @@ class NoteStoreTest {
     }
 
     @Test
-    fun versionedBackupRoundTripsAndLegacyArrayRemainsImportable() {
+    fun archivePayloadRoundTripsAndLegacyPayloadRemainsReadable() {
         val notes = listOf(NestNote(id = 45, title = "Backup", body = "Version one"))
         val versioned = NoteStore.encodeArchivePayload(notes)
         assertEquals(notes, NoteStore.decodeArchivePayload(versioned))
@@ -137,7 +137,7 @@ class NoteStoreTest {
     }
 
     @Test
-    fun backupRejectsUnknownSchemaVersion() {
+    fun archivePayloadRejectsUnknownSchemaVersion() {
         val unknown = """{"schemaVersion":99,"notes":[]}"""
         assertEquals(null, NoteStore.decodeArchivePayload(unknown))
     }
@@ -258,7 +258,7 @@ class NoteStoreTest {
     }
 
     @Test
-    fun backupRejectsMissingRequiredFieldsAndInvalidRecordValues() {
+    fun archivePayloadRejectsMissingRequiredFieldsAndInvalidRecordValues() {
         assertEquals(null, NoteStore.decodeArchivePayload("""[{"title":"Missing ID","body":"No identity"}]"""))
         assertEquals(null, NoteStore.decodeArchivePayload("""{"schemaVersion":1,"notes":[{"id":-1,"title":"Invalid","body":"Bad ID"}]}"""))
         assertEquals(null, NoteStore.decodeArchivePayload("""{"schemaVersion":1}"""))
@@ -304,7 +304,7 @@ class NoteStoreTest {
     }
 
     @Test
-    fun decodeRejectsDuplicateIdsInImportedBackup() {
+    fun archivePayloadRejectsDuplicateIds() {
         val raw = """[{"id":7,"title":"One","body":"A"},{"id":7,"title":"Two","body":"B"}]"""
         assertEquals(null, NoteStore.decode(raw, requireFields = true))
     }
@@ -319,7 +319,7 @@ class NoteStoreTest {
     }
 
     @Test
-    fun decodeRejectsOversizedBackupBeforeParsing() {
+    fun archivePayloadRejectsOversizedPayloadBeforeParsing() {
         val raw = " ".repeat(NoteStore.MAX_ARCHIVE_PAYLOAD_BYTES + 1)
         assertEquals(null, NoteStore.decode(raw, requireFields = true))
     }
