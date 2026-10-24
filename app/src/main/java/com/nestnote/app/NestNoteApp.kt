@@ -435,7 +435,6 @@ internal fun NestNoteApp(
         showEditorCounts = true
         categoryOptions = categories
         defaultNoteCategory = "Ideas"
-        AutomaticBackupScheduler.cancel(context)
         coroutineScope.launch { snackbarHostState.showSnackbar("Settings reset to defaults") }
     }
     suspend fun importMarkdownUris(uris: List<android.net.Uri>) {
