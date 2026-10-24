@@ -112,6 +112,8 @@ internal fun InlineVoicePlayer(
         ActivityResultContracts.RequestPermission()
     ) { notificationPermissionRevision++ }
     val voiceNotes = remember(context) { com.nestnote.app.voicenote.VoiceNoteRepository(context) }
+    // Playback still reads through the existing encrypted store; discovery is repository-owned.
+    val store = remember(context) { VoiceAttachmentStore(context) }
     val audioManager = remember(context) {
         context.getSystemService(android.content.Context.AUDIO_SERVICE) as AudioManager
     }
