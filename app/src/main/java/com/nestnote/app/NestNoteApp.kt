@@ -136,6 +136,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
@@ -155,6 +156,7 @@ internal fun NestNoteApp(
         windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
     val preferences = remember { context.getSharedPreferences(PREFS, 0) }
     var notes by remember { mutableStateOf<List<NestNote>>(emptyList()) }
+    var filteredNotes by remember { mutableStateOf<List<NestNote>>(emptyList()) }
     // Private records are held in the general encrypted blob only until the first authenticated
     // vault unlock can migrate them. Never expose them to ordinary views or overwrite them while
     // migration is pending.
@@ -639,8 +641,16 @@ internal fun NestNoteApp(
     } else if (dark) nestNoteDarkScheme
     else nestNoteLightScheme
 
-    val filteredNotes = remember(notes, selectedView, search, sortByTitle, sortByCreated, privateVaultUnlocked) {
-        NoteFilters.visibleNotes(notes, if (selectedView == "Private" && privateVaultUnlocked) "Private" else selectedView, search, sortByTitle, sortByCreated)
+    // Keep query parsing, full-body matching, and sorting off the UI thread. A short debounce
+    // prevents rebuilding the result list for every intermediate keystroke while preserving
+    // immediate text-field feedback.
+    LaunchedEffect(notes, selectedView, search, sortByTitle, sortByCreated, privateVaultUnlocked) {
+        delay(100)
+        val view = if (selectedView == "Private" && privateVaultUnlocked) "Private" else selectedView
+        val result = withContext(Dispatchers.Default) {
+            NoteFilters.visibleNotes(notes, view, search, sortByTitle, sortByCreated)
+        }
+        filteredNotes = result
     }
 
     PredictiveBackHandler(enabled = !editorVisible && selectedView != "Home") { progress ->
