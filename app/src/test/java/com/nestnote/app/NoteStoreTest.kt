@@ -133,13 +133,13 @@ class NoteStoreTest {
         val notes = listOf(NestNote(id = 45, title = "Backup", body = "Version one"))
         val versioned = NoteStore.encodeArchivePayload(notes)
         assertEquals(notes, NoteStore.decodeArchivePayload(versioned))
-        assertEquals(notes, NoteStore.decodeBackup(NoteStore.encode(notes)))
+        assertEquals(notes, NoteStore.decodeArchivePayload(NoteStore.encode(notes)))
     }
 
     @Test
     fun backupRejectsUnknownSchemaVersion() {
         val unknown = """{"schemaVersion":99,"notes":[]}"""
-        assertEquals(null, NoteStore.decodeBackup(unknown))
+        assertEquals(null, NoteStore.decodeArchivePayload(unknown))
     }
 
     @Test
@@ -259,9 +259,9 @@ class NoteStoreTest {
 
     @Test
     fun backupRejectsMissingRequiredFieldsAndInvalidRecordValues() {
-        assertEquals(null, NoteStore.decodeBackup("""[{"title":"Missing ID","body":"No identity"}]"""))
-        assertEquals(null, NoteStore.decodeBackup("""{"schemaVersion":1,"notes":[{"id":-1,"title":"Invalid","body":"Bad ID"}]}"""))
-        assertEquals(null, NoteStore.decodeBackup("""{"schemaVersion":1}"""))
+        assertEquals(null, NoteStore.decodeArchivePayload("""[{"title":"Missing ID","body":"No identity"}]"""))
+        assertEquals(null, NoteStore.decodeArchivePayload("""{"schemaVersion":1,"notes":[{"id":-1,"title":"Invalid","body":"Bad ID"}]}"""))
+        assertEquals(null, NoteStore.decodeArchivePayload("""{"schemaVersion":1}"""))
     }
 
     @Test
