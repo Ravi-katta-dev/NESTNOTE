@@ -1735,26 +1735,30 @@ internal fun NestNoteApp(
                     }
                 },
                 onBiometricUnlock = { authenticatedCipher ->
-                    val session = PrivateVaultBiometricKey(context).unlock(authenticatedCipher)
-                    val accepted = if (session == null) false else runCatching {
-                        val encryptedExisting = if (privateNoteStore.hasStoredRecords()) privateNoteStore.load(session) else emptyList()
-                        val migrated = NoteStore.merge(encryptedExisting, legacyPrivateNotes).notes
-                        check(privateNoteStore.save(session, migrated)) { "Private vault encryption failed" }
-                        check(store.save(notes.filterNot { it.privateNote })) { "Public note store commit failed" }
-                        legacyPrivateNotes = emptyList()
-                        privateVaultSession = session
-                        notes = notes.filterNot { it.privateNote } + migrated
-                        true
-                    }.getOrDefault(false)
-                    if (accepted) {
-                        privateVaultUnlocked = true
-                        selectedView = "Private"
-                        search = ""
-                        searchVisible = false
-                        selectedNoteIds = emptySet()
-                        showPrivateVaultGate = false
-                    } else {
-                        coroutineScope.launch { snackbarHostState.showSnackbar("Biometric unlock failed safely. Use your vault password.") }
+                    coroutineScope.launch {
+                        val unlocked = withContext(Dispatchers.IO) {
+                            val session = PrivateVaultBiometricKey(context).unlock(authenticatedCipher)
+                            if (session == null) null else runCatching {
+                                val encryptedExisting = if (privateNoteStore.hasStoredRecords()) privateNoteStore.load(session) else emptyList()
+                                val migrated = NoteStore.merge(encryptedExisting, legacyPrivateNotes).notes
+                                check(privateNoteStore.save(session, migrated)) { "Private vault encryption failed" }
+                                check(store.save(notes.filterNot { it.privateNote })) { "Public note store commit failed" }
+                                session to migrated
+                            }.getOrNull()
+                        }
+                        if (unlocked != null) {
+                            privateVaultSession = unlocked.first
+                            notes = notes.filterNot { it.privateNote } + unlocked.second
+                            legacyPrivateNotes = emptyList()
+                            privateVaultUnlocked = true
+                            selectedView = "Private"
+                            search = ""
+                            searchVisible = false
+                            selectedNoteIds = emptySet()
+                            showPrivateVaultGate = false
+                        } else {
+                            snackbarHostState.showSnackbar("Biometric unlock failed safely. Use your vault password.")
+                        }
                     }
                 }
             )
