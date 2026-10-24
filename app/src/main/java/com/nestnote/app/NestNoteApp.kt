@@ -307,6 +307,7 @@ internal fun NestNoteApp(
     var searchVisible by remember { mutableStateOf(false) }
     var editorNoteId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editorDraftId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var pendingLinkedNoteAfterSave by remember { mutableStateOf<Long?>(null) }
     var editorTemplate by remember { mutableStateOf<NoteTemplate?>(null) }
     var editorVisible by rememberSaveable { mutableStateOf(false) }
     var editorHasUnsavedChanges by rememberSaveable { mutableStateOf(false) }
@@ -368,12 +369,16 @@ internal fun NestNoteApp(
     fun saveBoolean(key: String, value: Boolean) = preferences.edit().putBoolean(key, value).apply()
     fun saveLong(key: String, value: Long) = preferences.edit().putLong(key, value).apply()
     var persistenceBusy by remember { mutableStateOf(false) }
-    suspend fun persist(next: List<NestNote>, allowRecovery: Boolean = false): Boolean {
-        if (persistenceBusy) {
-            snackbarHostState.showSnackbar("A save is already in progress. Please try again.")
+    suspend fun persist(next: List<NestNote>, allowRecovery: Boolean = false, claimHeld: Boolean = false): Boolean {
+        if (!claimHeld) {
+            if (persistenceBusy) {
+                snackbarHostState.showSnackbar("A save is already in progress. Please try again.")
+                return false
+            }
+            persistenceBusy = true
+        } else if (!persistenceBusy) {
             return false
         }
-        persistenceBusy = true
         try {
             if (!storageLoaded) {
                 snackbarHostState.showSnackbar("Notes are still loading. Try again in a moment.")
@@ -436,9 +441,26 @@ internal fun NestNoteApp(
             persistenceBusy = false
         }
     }
-    fun requestPersist(next: List<NestNote>, allowRecovery: Boolean = false, onSuccess: () -> Unit = {}) {
+    fun requestPersist(
+        next: List<NestNote>,
+        allowRecovery: Boolean = false,
+        onSuccess: () -> Unit = {},
+        onFailure: () -> Unit = {}
+    ) {
+        if (persistenceBusy) {
+            onFailure()
+            coroutineScope.launch { snackbarHostState.showSnackbar("A save is already in progress. Please try again.") }
+            return
+        }
+        // Claim on the UI thread before launching so two rapid taps cannot queue stale snapshots.
+        persistenceBusy = true
         coroutineScope.launch {
-            if (persist(next, allowRecovery)) onSuccess()
+            try {
+                if (persist(next, allowRecovery, claimHeld = true)) onSuccess() else onFailure()
+            } finally {
+                // Also release the claim if this coroutine is cancelled before persist starts.
+                if (persistenceBusy) persistenceBusy = false
+            }
         }
     }
     fun encryptOrdinaryNote(note: NestNote): NestNote {
@@ -1886,13 +1908,25 @@ internal fun NestNoteApp(
                     val next = if (existing == null) notes + updated else notes.map {
                         if (it.id == existing.id) updated.copy(id = existing.id) else it
                     }
-                    requestPersist(next) {
-                        // Clear the recovery snapshot only after durable note persistence.
-                        coroutineScope.launch(Dispatchers.IO) { runCatching { DraftStore(context).clear(savedId) } }
-                        commitVoiceChanges()
-                        closeEditor()
-                        coroutineScope.launch { snackbarHostState.showSnackbar("Note saved") }
-                    }
+                    requestPersist(
+                        next,
+                        onSuccess = {
+                            // Clear the recovery snapshot only after durable note persistence.
+                            coroutineScope.launch(Dispatchers.IO) { runCatching { DraftStore(context).clear(savedId) } }
+                            commitVoiceChanges()
+                            closeEditor()
+                            val linkedId = pendingLinkedNoteAfterSave
+                            if (linkedId != null) {
+                                pendingLinkedNoteAfterSave = null
+                                editorNoteId = linkedId
+                                editorDraftId = linkedId
+                                editorTemplate = null
+                                editorVisible = true
+                            }
+                            coroutineScope.launch { snackbarHostState.showSnackbar("Note saved") }
+                        },
+                        onFailure = { pendingLinkedNoteAfterSave = null }
+                    )
                 }
             }
             val openLinkedNote: (NestNote, NestNote) -> Unit = { current, target ->
@@ -1902,13 +1936,8 @@ internal fun NestNoteApp(
                 if (target.privateNote && !privateVaultUnlocked) {
                     requestPrivateVault()
                 } else if (current != editorNote) {
+                    pendingLinkedNoteAfterSave = target.id
                     saveNote(current)
-                    if (!editorVisible) {
-                        editorNoteId = target.id
-                        editorDraftId = target.id
-                        editorTemplate = null
-                        editorVisible = true
-                    }
                 } else {
                     editorNoteId = target.id
                     editorDraftId = target.id
