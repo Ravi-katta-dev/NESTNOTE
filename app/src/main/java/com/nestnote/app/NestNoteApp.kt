@@ -1,5 +1,7 @@
 package com.nestnote.app
 
+private const val PREF_PRIVATE_SCREEN_PROTECTION = "private_screen_protection_enabled"
+
 import java.io.ByteArrayOutputStream
 import android.app.Activity
 import android.app.DatePickerDialog
