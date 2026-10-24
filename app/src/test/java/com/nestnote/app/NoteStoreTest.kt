@@ -58,7 +58,7 @@ class NoteStoreTest {
         val privateArchived = NestNote(id = 4L, title = "Private archived", body = "secret", archived = true, privateNote = true)
         val notes = listOf(active, archived, privateActive, privateArchived)
 
-        assertEquals(listOf(active), NoteStore.notesForBackup(notes, includeArchived = false))
+        assertEquals(listOf(active), NoteStore.notesForArchive(notes, includeArchived = false))
         assertEquals(listOf(active, archived), NoteStore.notesForBackup(notes, includeArchived = true))
     }
 
@@ -67,7 +67,7 @@ class NoteStoreTest {
         val secret = NestNote(id = 999L, title = "Private", body = "Secret", privateNote = true)
         assertTrue(store.save(listOf(secret)))
         assertEquals(secret, store.load().single())
-        assertEquals(listOf(secret), NoteStore.decodeBackup(NoteStore.encodeBackup(listOf(secret))))
+        assertEquals(listOf(secret), NoteStore.decodeArchivePayload(NoteStore.encodeArchivePayload(listOf(secret))))
     }
 
     @Test
@@ -332,7 +332,7 @@ class NoteStoreTest {
 
     @Test
     fun decodeRejectsOversizedBackupBeforeParsing() {
-        val raw = " ".repeat(NoteStore.MAX_BACKUP_BYTES + 1)
+        val raw = " ".repeat(NoteStore.MAX_ARCHIVE_PAYLOAD_BYTES + 1)
         assertEquals(null, NoteStore.decode(raw, requireFields = true))
     }
 
