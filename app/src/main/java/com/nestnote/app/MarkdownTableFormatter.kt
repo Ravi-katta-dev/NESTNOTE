@@ -49,8 +49,16 @@ internal object MarkdownTableFormatter {
             val normalized = table.map { row ->
                 (0 until columnCount).map { col -> row.getOrElse(col) { "" }.trim() }
             }
+            // The separator row occupies the same visual width as its column. Include
+            // alignment colons in the width calculation; otherwise right/center-aligned
+            // separators can become wider than their data columns.
             val widths = (0 until columnCount).map { col ->
-                maxOf(3, normalized.indices.filter { it != 1 }.maxOfOrNull { normalized[it][col].length } ?: 0)
+                val contentWidth = normalized.indices.filter { it != 1 }
+                    .maxOfOrNull { normalized[it][col].length } ?: 0
+                val separator = normalized.getOrNull(1)?.getOrNull(col).orEmpty()
+                val markerWidth = (if (separator.startsWith(":")) 1 else 0) +
+                    (if (separator.endsWith(":")) 1 else 0)
+                maxOf(contentWidth, 3 + markerWidth)
             }
             for (rowIndex in normalized.indices) {
                 val row = normalized[rowIndex]
@@ -59,7 +67,7 @@ internal object MarkdownTableFormatter {
                         val width = widths[col]
                         val left = cell.startsWith(":")
                         val right = cell.endsWith(":")
-                        val dashCount = (width - (if (left) 1 else 0) - (if (right) 1 else 0)).coerceAtLeast(3)
+                        val dashCount = width - (if (left) 1 else 0) - (if (right) 1 else 0)
                         "-".repeat(dashCount).let { dashes ->
                             when {
                                 left && right -> ":" + dashes + ":"
