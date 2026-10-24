@@ -55,7 +55,7 @@ class NoteStoreTest {
         val secret = NestNote(id = 999L, title = "Private", body = "Secret", privateNote = true)
         assertTrue(store.save(listOf(secret)))
         assertEquals(secret, store.load().single())
-        assertEquals(listOf(secret), NoteStore.decodeArchivePayload(NoteStore.encodeArchivePayload(listOf(secret))))
+        assertTrue(NoteStore.notesForArchive(listOf(secret), includeArchived = true).isEmpty())
     }
 
     @Test
@@ -138,7 +138,7 @@ class NoteStoreTest {
 
     @Test
     fun archivePayloadRejectsUnknownSchemaVersion() {
-        val unknown = """{"schemaVersion":99,"notes":[]}"""
+        val unknown = """{"format":"com.nestnote.archive-payload","schemaVersion":99,"notes":[]}"""
         assertEquals(null, NoteStore.decodeArchivePayload(unknown))
     }
 
