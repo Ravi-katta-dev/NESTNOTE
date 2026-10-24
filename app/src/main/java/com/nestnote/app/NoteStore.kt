@@ -223,7 +223,7 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         const val MAX_REMINDER_LENGTH = 512
         const val CURRENT_ARCHIVE_PAYLOAD_SCHEMA_VERSION = 1
 
-        /** Serializes notes to the same JSON array used for local storage and backups. */
+        /** Serializes note records for encrypted local storage and the authenticated archive payload. */
         fun encode(notes: List<NestNote>): String {
             val array = JSONArray()
             notes.forEach { n ->
