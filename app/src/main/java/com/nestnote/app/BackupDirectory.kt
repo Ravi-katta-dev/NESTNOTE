@@ -37,13 +37,7 @@ internal object BackupDirectory {
     fun writeLatest(context: Context, treeUri: Uri, bytes: ByteArray): Boolean = runCatching {
         require(bytes.isNotEmpty() && bytes.size <= NoteStore.MAX_BACKUP_BYTES)
         val folder = nestNoteFolder(context, treeUri, create = true) ?: error("Cannot access Documents/NESTNOTE")
-        val existing = folder.findFile(BACKUP_NAME)
-        val target = existing ?: folder.createFile(MIME_JSON, BACKUP_NAME) ?: error("Cannot create backup file")
-        context.contentResolver.openOutputStream(target.uri, "rwt")?.use { output ->
-            output.write(bytes)
-            output.flush()
-        } ?: error("Cannot open backup destination")
-        true
+        writeSafely(context, folder, BACKUP_NAME, MIME_JSON, bytes)
     }.getOrDefault(false)
 
     fun readLatest(context: Context, treeUri: Uri): ByteArray? = runCatching {
@@ -67,14 +61,7 @@ internal object BackupDirectory {
     fun writeEncryptedLatest(context: Context, treeUri: Uri, bytes: ByteArray): Boolean = runCatching {
         require(bytes.isNotEmpty() && bytes.size <= NoteStore.MAX_BACKUP_BYTES)
         val folder = nestNoteFolder(context, treeUri, create = true) ?: error("Cannot access Documents/NESTNOTE")
-        val existing = folder.findFile(ENCRYPTED_BACKUP_NAME)
-        val target = existing ?: folder.createFile(MIME_ENCRYPTED, ENCRYPTED_BACKUP_NAME)
-            ?: error("Cannot create encrypted backup file")
-        context.contentResolver.openOutputStream(target.uri, "wt")?.use { output ->
-            output.write(bytes)
-            output.flush()
-        } ?: error("Cannot open encrypted backup destination")
-        true
+        writeSafely(context, folder, ENCRYPTED_BACKUP_NAME, MIME_ENCRYPTED, bytes)
     }.getOrDefault(false)
 
     fun readEncryptedLatest(context: Context, treeUri: Uri): ByteArray? = runCatching {
@@ -94,6 +81,60 @@ internal object BackupDirectory {
         } ?: return null
         output.toByteArray()
     }.getOrNull()
+
+
+    /**
+     * Stage a complete replacement before touching the last good backup. SAF providers do not
+     * promise atomic output streams, so write to a sibling temporary document, then rotate names.
+     * If the final rename fails, attempt to restore the previous document.
+     */
+    private fun writeSafely(
+        context: Context,
+        folder: DocumentFile,
+        fileName: String,
+        mimeType: String,
+        bytes: ByteArray
+    ): Boolean {
+        val temporaryName = "$fileName.tmp"
+        val previousName = "$fileName.previous"
+        var temporary: DocumentFile? = null
+        var previous: DocumentFile? = null
+        var oldMoved = false
+        try {
+            folder.findFile(temporaryName)?.let {
+                check(it.delete()) { "Cannot clear stale temporary backup" }
+            }
+            temporary = folder.createFile(mimeType, temporaryName)
+                ?: error("Cannot create temporary backup")
+            context.contentResolver.openOutputStream(temporary.uri, "wt")?.use { output ->
+                output.write(bytes)
+                output.flush()
+            } ?: error("Cannot open temporary backup")
+            check(temporary.length() == bytes.size.toLong()) { "Temporary backup size mismatch" }
+
+            previous = folder.findFile(previousName)
+            if (previous != null) check(previous.delete()) { "Cannot clear previous backup snapshot" }
+            val existing = folder.findFile(fileName)
+            if (existing != null) {
+                check(existing.renameTo(previousName)) { "Cannot preserve previous backup" }
+                oldMoved = true
+                previous = folder.findFile(previousName)
+            }
+
+            check(temporary.renameTo(fileName)) { "Cannot publish completed backup" }
+            temporary = null
+            // The newly published file is now the good copy; old cleanup is best effort.
+            previous?.delete()
+            previous = null
+            return true
+        } catch (failure: Exception) {
+            temporary?.delete()
+            if (oldMoved && folder.findFile(fileName) == null) {
+                previous?.renameTo(fileName)
+            }
+            throw failure
+        }
+    }
 
     fun encryptedBackupName(): String = ENCRYPTED_BACKUP_NAME
 
