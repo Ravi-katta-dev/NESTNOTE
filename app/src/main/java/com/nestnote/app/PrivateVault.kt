@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +51,7 @@ import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.Cipher
+import kotlinx.coroutines.launch
 
 internal object PrivateVaultSecurity {
     const val MIN_PASSWORD_LENGTH = 6
@@ -181,7 +183,7 @@ internal fun PrivateVaultGateDialog(
     passwordConfigured: Boolean,
     biometricEnabled: Boolean,
     onDismiss: () -> Unit,
-    onSubmit: (password: String, confirmation: String) -> Boolean,
+    onSubmit: (password: String, confirmation: String, onResult: (Boolean) -> Unit) -> Unit,
     onBiometricUnlock: (Cipher) -> Unit
 ) {
     val context = LocalContext.current
@@ -194,6 +196,8 @@ internal fun PrivateVaultGateDialog(
     var password by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
+    var submitting by remember { mutableStateOf(false) }
+    val gateScope = rememberCoroutineScope()
 
     fun launchBiometricPrompt() {
         val host = activity ?: return
@@ -254,7 +258,7 @@ internal fun PrivateVaultGateDialog(
             }
         },
         text = {
-            Column(modifier = Modifier.animateContentSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     if (passwordConfigured) {
                         "Enter your vault password to reveal hidden notes, or use an enrolled strong biometric."
@@ -290,19 +294,25 @@ internal fun PrivateVaultGateDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                if (!onSubmit(password, confirmation)) {
-                    val retryAt = PrivateVaultSecurity.retryAtMillis(context)
-                    error = when {
-                        passwordConfigured && retryAt > SystemClock.elapsedRealtime() -> {
-                            val seconds = ((retryAt - SystemClock.elapsedRealtime() + 999L) / 1_000L)
-                            "Too many attempts. Try again in $seconds seconds."
+            TextButton(enabled = !submitting, onClick = {
+                if (submitting) return@TextButton
+                submitting = true
+                error = ""
+                onSubmit(password, confirmation) { accepted ->
+                    submitting = false
+                    if (!accepted) {
+                        val retryAt = PrivateVaultSecurity.retryAtMillis(context)
+                        error = when {
+                            passwordConfigured && retryAt > SystemClock.elapsedRealtime() -> {
+                                val seconds = ((retryAt - SystemClock.elapsedRealtime() + 999L) / 1_000L)
+                                "Too many attempts. Try again in $seconds seconds."
+                            }
+                            passwordConfigured -> "Incorrect password."
+                            else -> "Passwords must match and contain at least ${PrivateVaultSecurity.MIN_PASSWORD_LENGTH} characters."
                         }
-                        passwordConfigured -> "Incorrect password."
-                        else -> "Passwords must match and contain at least ${PrivateVaultSecurity.MIN_PASSWORD_LENGTH} characters."
                     }
                 }
-            }) { Text(if (passwordConfigured) "Unlock with password" else "Create password") }
+            }) { Text(if (submitting) "Unlocking…" else if (passwordConfigured) "Unlock with password" else "Create password") }
         },
         dismissButton = {
             Column {
