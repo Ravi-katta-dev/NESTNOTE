@@ -13,7 +13,7 @@ This version updates release metadata to 1.4.6 and carries forward the current f
 
 ## [1.4.5] — Previous release baseline
 
-Version 1.4.5 is the current release version supplied by the project maintainer. Consult [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for the authoritative release asset and publication metadata.
+Version 1.4.5 is the previous release baseline. Consult [GitHub Releases](https://github.com/Ravi-katta-dev/NESTNOTE/releases) for the authoritative published release asset and metadata.
 
 ### Product capabilities
 - Markdown pipe tables render as tables in note preview; pasted Markdown tables are automatically column-aligned, while fenced code and ordinary pipe text remain unchanged.
