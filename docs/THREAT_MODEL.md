@@ -1,6 +1,6 @@
 # NESTNOTE Threat Model
 
-Last updated: 2026-10-23
+Last updated: 2026-10-24
 
 > Implementation status (source audit, 2026-10-24): `DraftStore` uses schema-v2 envelopes with explicit `privateNote` classification. Private drafts use AES-GCM with a dedicated Android Keystore key and purpose-bound AAD; missing keys, malformed/authentication-failed envelopes, and classification mismatches are rejected without plaintext fallback. Legacy plaintext/unknown envelopes are rejected and may be deleted when discovered. This source-level assessment is not a substitute for exact-head CI and device/process-death validation.
 
@@ -25,6 +25,10 @@ The Private Vault uses a random vault data key for private records. The vault pa
 
 | Portable archive encryption | **Yes** | AES-GCM authenticated archive encryption; Private Vault notes are excluded |
 
+
+## Portability policy
+
+Plaintext JSON export/import and scheduled plaintext JSON backups are not supported user-facing features. JSON remains an internal serialization format for local persistence and the payload inside password-protected encrypted archives. Portable archives use AES-GCM authentication and exclude Private Vault notes and voice attachments. Historical JSON files users created with older app versions are not automatically located or deleted by this change.
 
 ## Controls and residual risks
 
