@@ -105,7 +105,6 @@ internal class PrivateVaultBiometricKey(context: Context) {
         ByteBuffer.wrap(payload).get(iv)
         Cipher.getInstance(TRANSFORMATION).apply {
             init(Cipher.DECRYPT_MODE, existingKey(), GCMParameterSpec(TAG_BITS, iv))
-            updateAAD(AAD)
         }
     }.getOrNull()
 
