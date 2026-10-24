@@ -1514,7 +1514,9 @@ internal fun NestNoteApp(
         }
 
         pendingRestore?.let { incoming ->
-            val restoreIncoming = NoteStore.remapDraftIdCollisionForRestore(notes, incoming, editorDraftId)
+            // Plain JSON backups are never a supported transport for Private Vault records.
+            val publicIncoming = incoming.filterNot { it.privateNote }
+            val restoreIncoming = NoteStore.remapDraftIdCollisionForRestore(notes, publicIncoming, editorDraftId)
             val preview = NoteStore.merge(notes, restoreIncoming)
             val withinNoteLimit = NoteStore.isValidNoteCollection(preview.notes)
             AlertDialog(
