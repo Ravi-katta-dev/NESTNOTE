@@ -1674,60 +1674,63 @@ internal fun NestNoteApp(
                     showPrivateVaultGate = false
                     pendingBiometricEnrollment = false
                 },
-                onSubmit = { password, confirmation ->
-                    val configured = PrivateVaultSecurity.isConfigured(context)
-                    val passwordAccepted = if (configured) {
-                        when {
-                            PrivateVaultSecurity.isLockedOut(context) -> false
-                            PrivateVaultSecurity.verify(context, password) -> {
-                                PrivateVaultSecurity.clearFailedAttempts(context)
+                onSubmit = { password, confirmation, onResult ->
+                    coroutineScope.launch {
+                        val (accepted, passwordAccepted) = withContext(Dispatchers.IO) {
+                            val configured = PrivateVaultSecurity.isConfigured(context)
+                            val passwordAccepted = if (configured) {
+                                when {
+                                    PrivateVaultSecurity.isLockedOut(context) -> false
+                                    PrivateVaultSecurity.verify(context, password) -> {
+                                        PrivateVaultSecurity.clearFailedAttempts(context)
+                                        true
+                                    }
+                                    else -> {
+                                        PrivateVaultSecurity.recordFailedAttempt(context)
+                                        false
+                                    }
+                                }
+                            } else {
+                                password.length >= PrivateVaultSecurity.MIN_PASSWORD_LENGTH &&
+                                    password == confirmation && PrivateVaultSecurity.configure(context, password)
+                            }
+                            val session = if (passwordAccepted) {
+                                val keyReady = if (privateNoteCrypto.isInitialized()) true
+                                    else privateNoteCrypto.initialize(password.toCharArray())
+                                if (keyReady) privateNoteCrypto.unlock(password.toCharArray()) else null
+                            } else null
+                            val accepted = if (session == null) false else runCatching {
+                                val encryptedExisting = if (privateNoteStore.hasStoredRecords()) {
+                                    privateNoteStore.load(session)
+                                } else emptyList()
+                                val migrated = NoteStore.merge(encryptedExisting, legacyPrivateNotes).notes
+                                check(privateNoteStore.save(session, migrated)) { "Private vault encryption failed" }
+                                check(store.save(notes.filterNot { it.privateNote })) { "Public note store commit failed" }
+                                session to migrated
+                            }.getOrNull()?.let { (validSession, migrated) ->
+                                privateVaultSession = validSession
+                                notes = notes.filterNot { it.privateNote } + migrated
+                                legacyPrivateNotes = emptyList()
                                 true
-                            }
-                            else -> {
-                                PrivateVaultSecurity.recordFailedAttempt(context)
-                                false
-                            }
+                            } ?: false
+                            accepted to passwordAccepted
                         }
-                    } else {
-                        password.length >= PrivateVaultSecurity.MIN_PASSWORD_LENGTH &&
-                            password == confirmation && PrivateVaultSecurity.configure(context, password)
-                    }
-                    val session = if (passwordAccepted) {
-                        val keyReady = if (privateNoteCrypto.isInitialized()) true
-                            else privateNoteCrypto.initialize(password.toCharArray())
-                        if (keyReady) privateNoteCrypto.unlock(password.toCharArray()) else null
-                    } else null
-                    val accepted = if (session == null) false else runCatching {
-                        val encryptedExisting = if (privateNoteStore.hasStoredRecords()) {
-                            privateNoteStore.load(session)
-                        } else emptyList()
-                        val migrated = NoteStore.merge(encryptedExisting, legacyPrivateNotes).notes
-                        // Commit encrypted private records first. Only then remove legacy private
-                        // records from the general store. Any failure leaves the vault locked.
-                        check(privateNoteStore.save(session, migrated)) { "Private vault encryption failed" }
-                        check(store.save(notes.filterNot { it.privateNote })) { "Public note store commit failed" }
-                        legacyPrivateNotes = emptyList()
-                        privateVaultSession = session
-                        notes = notes.filterNot { it.privateNote } + migrated
-                        true
-                    }.getOrDefault(false)
-                    if (accepted) {
-                        privateVaultUnlocked = true
-                        selectedView = "Private"
-                        search = ""
-                        searchVisible = false
-                        selectedNoteIds = emptySet()
-                        showPrivateVaultGate = false
-                        if (pendingBiometricEnrollment) {
-                            pendingBiometricEnrollment = false
-                            showBiometricEnrollment = true
-                        }
-                    } else if (passwordAccepted) {
-                        coroutineScope.launch {
+                        onResult(accepted)
+                        if (accepted) {
+                            privateVaultUnlocked = true
+                            selectedView = "Private"
+                            search = ""
+                            searchVisible = false
+                            selectedNoteIds = emptySet()
+                            showPrivateVaultGate = false
+                            if (pendingBiometricEnrollment) {
+                                pendingBiometricEnrollment = false
+                                showBiometricEnrollment = true
+                            }
+                        } else if (passwordAccepted) {
                             snackbarHostState.showSnackbar("Vault could not be safely unlocked or migrated. Existing data was preserved; try again.")
                         }
                     }
-                    accepted
                 },
                 onBiometricUnlock = { authenticatedCipher ->
                     val session = PrivateVaultBiometricKey(context).unlock(authenticatedCipher)
