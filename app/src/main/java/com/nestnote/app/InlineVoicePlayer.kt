@@ -479,6 +479,45 @@ internal fun InlineVoicePlayer(
                     }
                 }
             }
+                if (playerStyle == VoicePlayerStyle.TRANSPORT) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = (16 * sizeScale).dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        IconButton(
+                            enabled = isActive && shownDuration > 0,
+                            onClick = {
+                                val target = (positionMs - 10_000).coerceAtLeast(0)
+                                pendingSeekMs = target
+                                positionMs = target
+                                runCatching { player?.seekTo(target.toLong()) }
+                            },
+                            modifier = Modifier.semantics { contentDescription = "Rewind 10 seconds" }
+                        ) {
+                            Icon(Icons.Default.Replay10, contentDescription = null)
+                        }
+                        Text(
+                            if (isActive && paused) "Paused" else if (isActive) "Playing" else "Ready to play",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = (12 * sizeScale).dp)
+                        )
+                        IconButton(
+                            enabled = isActive && shownDuration > 0,
+                            onClick = {
+                                val target = (positionMs + 10_000).coerceAtMost(shownDuration)
+                                pendingSeekMs = target
+                                positionMs = target
+                                runCatching { player?.seekTo(target.toLong()) }
+                            },
+                            modifier = Modifier.semantics { contentDescription = "Forward 10 seconds" }
+                        ) {
+                            Icon(Icons.Default.Forward10, contentDescription = null)
+                        }
+                    }
+                }
+
                 // Seeking must be available for short clips too; hiding the slider below
                 // one minute made recordings under 60 seconds impossible to scrub.
                 if (shownDuration > 0) {
