@@ -992,3 +992,12 @@ Tracking issue: [#28](https://github.com/Ravi-katta-dev/NESTNOTE/issues/28).
 - Documented the new zoom control, Home layout, and Text Toolbox in README, changelog, development guide, and roadmap.
 - Clarified version status: v1.3.10 remains the latest published stable release; v1.3.11 is the current repository candidate and is not published yet. The app Gradle defaults remain versionName 1.3.11/versionCode 1; release automation must set an increasing version code.
 - Validation not yet complete: wait for exact-head Android CI and manually check compact/expanded screens, light/dark themes, large text/accessibility, slider behavior in edit and read modes, and confirm zoom does not alter saved content.
+
+
+## 2026-10-25 — Delayed storage-backend migration safety follow-up
+
+- Added regression tests for the SQLCipher-to-Android-Keystore migration path using the latest source-note snapshot: a newer edit and a newly created note must both be present after the target copy is verified and selected.
+- Added fail-closed tests for an unavailable/wrong Keystore key, corrupted stored ciphertext, and invalid source records. Each asserts that the active backend selection and original stored ciphertext remain unchanged.
+- CI can validate the migration logic and failure preservation, but it cannot prove Android OS process/device-reboot behavior or simulate every real Keystore/database I/O failure. Those remain device/emulator release gates.
+- Device test procedure: schedule a backend switch and confirm the active backend stays unchanged; inspect WorkManager's unique work nestnote_delayed_storage_backend_switch and verify its initial delay is five hours; force-stop/relaunch the app and reboot the device while the work is pending; edit an existing note and create a new one before the delay expires; after execution, verify both records and their latest content in the target backend. Repeat with missing Keystore alias, tampered ciphertext, unreadable SQLCipher database, and a simulated failed target write; confirm the worker fails without changing the active backend or deleting/overwriting source artifacts.
+- Status: automated regression tests added; exact-head CI and physical-device/emulator checks pending. Do not mark reboot persistence or injected storage failures as device-verified until observed.
