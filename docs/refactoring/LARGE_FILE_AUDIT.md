@@ -10,7 +10,7 @@ The audit identified these primary candidates on `main`:
 
 | Priority | File | Approx. lines | First responsibility boundaries |
 |---|---|---:|---|
-| `NestNoteApp.kt` | ~2,150 | 1,522 | -628 lines (-29.2%) | In progress: destination actions, accent palette, Markdown preview, recovery dialogs, confirmation dialogs, dashboard filters/header, category screen, empty state, and note collection extracted; stateful app-root pass remains before CI |
+| `NestNoteApp.kt` | ~2,150 | 1,489 | -661 lines (-30.7%) | UI extraction pass completed to current safe boundaries; remaining app-root state/persistence/vault/editor orchestration retained intentionally; approval-gated CI pending |
 | P0 | `SettingsScreen.kt` | 2,652 | Settings composition, appearance, voice-player preferences, privacy settings, backup/restore, shared controls |
 | P1 | `VoiceNoteAudio.kt` | 1,097 | Recording lifecycle, audio focus, WAV/PCM decoder, importer UI, recording controls |
 | P1 | `NoteEditor.kt` | 1,034 | Editor state/undo, actions, draft recovery, save coordination |
@@ -169,3 +169,12 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Added `AppCategoriesScreen.kt`; category counts exclude archived and Private Vault notes as before, and navigation remains a parent callback.
 - [x] Removed imports from `NestNoteApp.kt` whose only usages moved to extracted UI files.
 - [ ] Verify the complete source tree compiles and existing UI behavior is unchanged; no CI/build result is claimed yet.
+
+
+### Storage recovery presentation extraction
+
+- [x] Extracted the persistent storage-recovery warning and recovery explanation dialog into `AppStorageRecoveryUi.kt`.
+- [x] Kept recovery flags, navigation to Settings, storage loading, and restore/persistence operations owned by `NestNoteApp.kt` callbacks.
+- [x] Preserved existing copy and the dismiss/open-settings actions.
+- [x] Removed imports used only by the moved banner.
+- [ ] Run targeted tests and Android CI for the exact latest PR head after the approval-gated workflow is authorized; source edits alone do not establish a successful build.
