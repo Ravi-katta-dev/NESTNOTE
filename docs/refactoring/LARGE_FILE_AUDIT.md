@@ -115,3 +115,12 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Kept URI reading, all-or-nothing read failure handling, persistence, route selection, and snackbar feedback in `NestNoteApp.kt`.
 - [ ] Build and run targeted tests after the current `NestNoteApp.kt` refactor pass is complete; no CI has been started for these commits.
 - Next: inspect remaining app-root responsibilities and continue only with another behavior-preserving boundary; persistence ordering and encryption verification remain intentionally in place.
+
+
+### VoiceNoteAudio refactor — current pass
+
+- [x] Extracted encrypted PCM capture, encrypted repository streaming, worker shutdown, and discard coordination into `EncryptedPcmRecording.kt`. The recording continues to stream into encrypted storage without creating a plaintext recording file.
+- [x] Extracted WAV validation, PCM parsing, stereo-to-mono conversion, and resampling into `PcmWavDecoder.kt`; the UI calls the same decoder entry point.
+- [x] Added `PcmWavDecoderTest.kt` coverage for 16-bit mono samples, stereo averaging, and malformed input.
+- [ ] Run targeted tests and Android CI only after the current file-level refactor is complete, following the project's per-file validation rule. No CI was started by this pass.
+- Current `VoiceNoteAudio.kt` size after these extractions: 890 lines (source line count). Recording UI, permission flow, review state, and audio-focus orchestration remain in the original file for the next safe extraction pass.
