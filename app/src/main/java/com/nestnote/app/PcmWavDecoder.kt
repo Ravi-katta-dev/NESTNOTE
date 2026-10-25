@@ -42,10 +42,12 @@ internal fun decodePcmWav(bytes: ByteArray): ByteArray {
         throw IOException("Unsupported WAV format. Use uncompressed 16-bit mono or stereo WAV.")
     }
     val frames = dataLength / (channels * 2)
-    val outFrames = (frames.toLong() * WAV_OUTPUT_SAMPLE_RATE / sampleRate)
-        .coerceAtLeast(1L)
-        .coerceAtMost((Int.MAX_VALUE / 2).toLong())
-        .toInt()
+    val requestedOutputFrames = (frames.toLong() * WAV_OUTPUT_SAMPLE_RATE / sampleRate).coerceAtLeast(1L)
+    val maxOutputFrames = com.nestnote.app.voicenote.VoiceNoteRepository.MAX_RECORDING_BYTES / 2
+    if (requestedOutputFrames > maxOutputFrames) {
+        throw IOException("Decoded audio exceeds the 25 MiB attachment limit.")
+    }
+    val outFrames = requestedOutputFrames.toInt()
     val input = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
     val output = java.nio.ByteBuffer.allocate(outFrames * 2).order(java.nio.ByteOrder.LITTLE_ENDIAN)
     repeat(outFrames) { i ->
