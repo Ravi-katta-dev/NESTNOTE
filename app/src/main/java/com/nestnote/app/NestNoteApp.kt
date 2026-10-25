@@ -1274,48 +1274,47 @@ internal fun NestNoteApp(
                             categoryOptions = categoryOptions,
                             onClearSearch = { search = "" }
                         )
-                    } else if (dashboardLayout == DashboardLayout.GRID) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 155.dp),
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 100.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            gridItems(filteredNotes, key = { it.id }) { note ->
-                                NoteCard(note, compact = dashboardDensity == DashboardDensity.COMPACT, colorStyle = noteColorStyle, showPreview = showNotePreviews, showTimestamp = showNoteTimestamps,
-                                    onOpen = {
-                                        if (selectedNoteIds.isNotEmpty()) {
-                                            selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id
-                                        } else if (note.encrypted) { toggleNoteEncryption(note.id) } else { editorNoteId = note.id; editorDraftId = note.id; editorTemplate = null; editorVisible = true }
-                                    },
-                                    onSelect = { selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id },
-                                    isSelected = note.id in selectedNoteIds,
-                                    onPin = { if (!note.encrypted) requestPersist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { deleteNote(note) }, onArchive = { if (!note.encrypted) requestPersist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) }, onToggleEncryption = { toggleNoteEncryption(note.id) },
-                                    modifier = Modifier.animateItem())
-                            }
-                        }
                     } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 100.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            items(filteredNotes, key = { it.id }) { note ->
-                                NoteCard(note, compact = dashboardDensity == DashboardDensity.COMPACT, colorStyle = noteColorStyle, showPreview = showNotePreviews, showTimestamp = showNoteTimestamps,
-                                    onOpen = {
-                                        if (selectedNoteIds.isNotEmpty()) {
-                                            selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id
-                                        } else if (note.encrypted) { toggleNoteEncryption(note.id) } else { editorNoteId = note.id; editorDraftId = note.id; editorTemplate = null; editorVisible = true }
-                                    },
-                                    onSelect = { selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id },
-                                    isSelected = note.id in selectedNoteIds,
-                                    onPin = { requestPersist(notes.map { if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it }) },
-                                    onDelete = { deleteNote(note) }, onArchive = { if (!note.encrypted) requestPersist(notes.map { if (it.id == note.id) it.copy(archived = !it.archived, pinned = if (it.archived) it.pinned else false, updated = System.currentTimeMillis()) else it }) }, onToggleEncryption = { toggleNoteEncryption(note.id) },
-                                    modifier = Modifier.animateItem())
-                            }
-                        }
+                        AppNoteCollection(
+                            notes = filteredNotes,
+                            layout = dashboardLayout,
+                            compact = dashboardDensity == DashboardDensity.COMPACT,
+                            colorStyle = noteColorStyle,
+                            showPreview = showNotePreviews,
+                            showTimestamp = showNoteTimestamps,
+                            selectedNoteIds = selectedNoteIds,
+                            onOpen = { note ->
+                                if (selectedNoteIds.isNotEmpty()) {
+                                    selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id
+                                } else if (note.encrypted) {
+                                    toggleNoteEncryption(note.id)
+                                } else {
+                                    editorNoteId = note.id
+                                    editorDraftId = note.id
+                                    editorTemplate = null
+                                    editorVisible = true
+                                }
+                            },
+                            onSelect = { note ->
+                                selectedNoteIds = if (note.id in selectedNoteIds) selectedNoteIds - note.id else selectedNoteIds + note.id
+                            },
+                            onPin = { note ->
+                                requestPersist(notes.map {
+                                    if (it.id == note.id) it.copy(pinned = !it.pinned, updated = System.currentTimeMillis()) else it
+                                })
+                            },
+                            onDelete = { note -> deleteNote(note) },
+                            onArchive = { note ->
+                                if (!note.encrypted) requestPersist(notes.map {
+                                    if (it.id == note.id) it.copy(
+                                        archived = !it.archived,
+                                        pinned = if (it.archived) it.pinned else false,
+                                        updated = System.currentTimeMillis()
+                                    ) else it
+                                })
+                            },
+                            onToggleEncryption = { note -> toggleNoteEncryption(note.id) }
+                        )
                     }
                 }
                 }
