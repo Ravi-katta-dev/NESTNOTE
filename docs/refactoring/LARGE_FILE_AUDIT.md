@@ -99,3 +99,8 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Added JVM regression coverage for private-note exclusion, already-encrypted exclusion, selected-note ordering, replacement ordering, and empty replacements.
 - [ ] Confirm the latest Android CI run includes this exact commit and passes; the previously reported successful run predates this extraction unless its SHA matches the new head.
 - Next: wait for/inspect CI on the updated head before selecting another extraction.
+
+
+- [x] Extracted ordinary-note locked-record field mapping into `OrdinaryNoteRecordTransform.kt`; encryption, authenticated decrypt verification, and persistence remain with the app workflow.
+- [x] Added regression tests for sensitive-field clearing, metadata preservation, and rejection of private/already-encrypted notes.
+- [ ] CI for this exact refactor commit must pass before starting the next file extraction.
