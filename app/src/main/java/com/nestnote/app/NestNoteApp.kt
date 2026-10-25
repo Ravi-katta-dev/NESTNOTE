@@ -725,15 +725,12 @@ internal fun NestNoteApp(
                         }
                     },
                     navigationIcon = {
-                        if (selectedView == "Private") {
-                            IconButton(onClick = { lockPrivateVault() }) {
-                                Icon(Icons.Default.LockOpen, contentDescription = "Lock Private Vault")
-                            }
-                        } else if (selectedView in moreSubViews) {
-                            IconButton(onClick = { selectedView = "More" }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to More")
-                            }
-                        }
+                        AppDestinationNavigationIcon(
+                            destination = selectedView,
+                            isMoreSubDestination = selectedView in moreSubViews,
+                            onLockPrivateVault = { lockPrivateVault() },
+                            onBackToMore = { selectedView = "More" }
+                        )
                     },
                     actions = {
                         if (selectedView == "Home" || selectedView == "All notes") {
