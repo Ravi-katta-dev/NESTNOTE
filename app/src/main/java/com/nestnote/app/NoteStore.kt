@@ -54,7 +54,21 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
             throw NoteStorageException("SQLCipher backend is unavailable in injected-key test mode")
         }
         val targetStore = if (target == NoteStorageBackend.SQLCIPHER) SqlCipherNoteStore(appContext) else null
-        val result = if (targetStore == null) loadKeyStoreSafely() else {
+        val result = if (targetStore == null) {
+            if (!isValidNoteCollection(currentNotes)) {
+                throw NoteStorageException("Current notes failed validation; the active store was not changed")
+            }
+            val hasKeystoreArtifacts = prefs.contains(ENCRYPTED_NOTES_V2_KEY) ||
+                prefs.contains(ENCRYPTED_NOTES_V1_KEY) || prefs.contains(LEGACY_NOTES_KEY)
+            val keystoreNotes = if (hasKeystoreArtifacts) loadKeyStoreSafely().also {
+                if (it.recoveryRequired) throw NoteStorageException("The Android Keystore store is unreadable; the active store was not changed")
+            }.notes else emptyList()
+            val merged = merge(keystoreNotes, currentNotes).notes
+            if (!saveKeyStore(merged)) {
+                throw NoteStorageException("Could not verify the Android Keystore copy; the active store was not changed")
+            }
+            NoteLoadResult(merged, false)
+        } else {
             if (targetStore.hasStorageArtifacts()) {
                 // Existing database/key material must be treated as authoritative. Never
                 // seed over it merely because its key is missing or its database is unreadable.
