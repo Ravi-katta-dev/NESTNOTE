@@ -58,13 +58,13 @@ Counts are current source line counts, not estimates; line counts may vary sligh
 | File | Initial audit baseline | Current branch | Change | Status |
 |---|---:|---:|---:|---|
 | `SettingsScreen.kt` | 2,652 | 551 | -2,101 lines (-79.2%) | Section extraction pass complete; parent remains composition/state owner |
-| `NestNoteApp.kt` | ~2,150 | 1783 | -367 lines (-17.1%) | In progress: destination header/actions, accent palette, Markdown preview, and confirmation dialog presentation extracted; continue app-root pass before CI |
+| `NestNoteApp.kt` | ~2,150 | 1,522 | -628 lines (-29.2%) | In progress: safe UI extractions complete to date; stateful persistence, vault, encryption, draft recovery and editor lifecycle remain in the composition root; CI pending file-pass completion |
 
 The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 additions, which is a net reduction of 2,101 lines. Extracted settings sections/dialogs/components are now in focused files; no claim is made that build or tests pass until they are run.
 
 ### Next-file boundary audit: `NestNoteApp.kt`
 
-- Current size at the latest checkpoint: 1,888 lines; the initial audit estimated ~2,150 lines. Counts are refreshed after each completed extraction.
+- Current size at the latest checkpoint: 1,522 lines; the initial audit estimated ~2,150 lines. The later UI-extraction checkpoint below supersedes earlier intermediate counts.
 - Existing boot landing UI has already moved to `BootLandingScreen.kt` (the app-root diff removes 65 lines and adds one replacement line).
 - [x] Extracted the shared `AccentPalette` enum and color-scheme mapping into `AppAccentPalette.kt`; `SettingsScreen` and `NestNoteApp` continue to use the same enum values and preference key.
 - [x] Extracted the external Markdown preview dialog into `ExternalMarkdownPreviewDialog.kt`, passing route/content/zoom/menu state through explicit callbacks; URI loading, route state, and default zoom preference remain owned by `NestNoteApp`.
