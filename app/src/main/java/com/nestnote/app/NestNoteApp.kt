@@ -607,21 +607,12 @@ internal fun NestNoteApp(
             snackbarHostState.showSnackbar("Couldn't read one or more Markdown files. Nothing was imported.")
             return
         }
-        val now = System.currentTimeMillis()
-        val usedNotes = notes.toMutableList()
-        val imported = parsed.filterNotNull().mapIndexed { index, (title, body) ->
-            val timestamp = now + index
-            val note = NestNote(
-                id = NoteStore.allocateNoteId(usedNotes, timestamp),
-                title = title,
-                body = body,
-                category = defaultNoteCategory,
-                updated = timestamp,
-                created = timestamp
-            )
-            usedNotes += note
-            note
-        }
+        val imported = MarkdownNoteFactory.create(
+            parsedNotes = parsed.filterNotNull(),
+            existingNotes = notes,
+            category = defaultNoteCategory,
+            now = System.currentTimeMillis()
+        )
         if (persist(imported + notes)) {
             selectedView = "Home"
             snackbarHostState.showSnackbar(
