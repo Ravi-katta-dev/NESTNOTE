@@ -10,7 +10,7 @@ The audit identified these primary candidates on `main`:
 
 | Priority | File | Approx. lines | First responsibility boundaries |
 |---|---|---:|---|
-| P0 | `NestNoteApp.kt` | 2,150 | App state, note actions, persistence coordination, ordinary-note encryption actions, Markdown import orchestration |
+| `NestNoteApp.kt` | ~2,150 | 1660 | -490 lines (-22.8%) | In progress: destination header/actions, accent palette, Markdown preview, confirmation dialogs, and note-collection toolbar extracted; continue app-root pass before CI |
 | P0 | `SettingsScreen.kt` | 2,652 | Settings composition, appearance, voice-player preferences, privacy settings, backup/restore, shared controls |
 | P1 | `VoiceNoteAudio.kt` | 1,097 | Recording lifecycle, audio focus, WAV/PCM decoder, importer UI, recording controls |
 | P1 | `NoteEditor.kt` | 1,034 | Editor state/undo, actions, draft recovery, save coordination |
@@ -141,3 +141,10 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Kept eligible-note selection, encryption and authenticated verification, persistence ordering, voice-record deletion, selected-ID cleanup, snackbar feedback, and editor/voice-discard actions in `NestNoteApp.kt` callbacks.
 - [x] Preserved the existing confirmation text and button labels; the extracted components accept explicit callbacks and do not own app state.
 - [ ] Run the full Android CI and targeted regression tests after the `NestNoteApp.kt` extraction pass is complete; this source-only change is not yet verified by CI.
+
+### Note collection toolbar extraction
+
+- [x] Extracted the sort/theme/layout/Markdown-import toolbar presentation into `AppNoteCollectionToolbar.kt`.
+- [x] Kept preference writes, selected destination, Markdown picker launch, and encrypt-all confirmation ownership in `NestNoteApp.kt` through callbacks.
+- [x] Preserved the Markdown import test tag, sort labels/order, theme toggle labels, encrypt-all eligibility, and layout toggle behavior.
+- [ ] Compile/test the extraction with the complete `NestNoteApp.kt` pass; no CI result is claimed yet.
