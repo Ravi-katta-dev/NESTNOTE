@@ -1041,28 +1041,11 @@ internal fun NestNoteApp(
                 } else if (selectedView == "About") {
                     AboutScreen(version = appVersion)
                 } else if (selectedView == "Categories") {
-                    val activeCategoryCounts = remember(notes) {
-                        categoryOptions.associateWith { category -> notes.count { it.category == category && !it.archived && !it.privateNote } }
-                    }
-                    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Categories", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        categoryOptions.chunked(2).forEach { pair ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                pair.forEach { category ->
-                                    Card(
-                                        modifier = Modifier.weight(1f).clickable { selectedView = category },
-                                        border = BorderStroke(1.dp, colors.outlineVariant)
-                                    ) {
-                                        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                                            Text(category, style = MaterialTheme.typography.titleMedium)
-                                            Text("${activeCategoryCounts[category] ?: 0} active notes", color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                                        }
-                                    }
-                                }
-                                if (pair.size == 1) Spacer(Modifier.weight(1f))
-                            }
-                        }
-                    }
+                    AppCategoriesScreen(
+                        notes = notes,
+                        categories = categoryOptions,
+                        onSelectCategory = { selectedView = it }
+                    )
                 } else {
                     Column(
                         Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp),
