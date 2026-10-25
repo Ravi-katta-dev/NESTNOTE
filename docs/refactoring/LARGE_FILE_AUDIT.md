@@ -58,7 +58,7 @@ Counts are current source line counts, not estimates; line counts may vary sligh
 | File | Initial audit baseline | Current branch | Change | Status |
 |---|---:|---:|---:|---|
 | `SettingsScreen.kt` | 2,652 | 551 | -2,101 lines (-79.2%) | Section extraction pass complete; parent remains composition/state owner |
-| `NestNoteApp.kt` | ~2,150 | 1,888 | -262 lines (-12.2%) | In progress: destination header/actions, accent palette, and external Markdown preview dialog extracted; continue cohesive app-root pass before CI |
+| `NestNoteApp.kt` | ~2,150 | 1783 | -367 lines (-17.1%) | In progress: destination header/actions, accent palette, Markdown preview, and confirmation dialog presentation extracted; continue app-root pass before CI |
 
 The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 additions, which is a net reduction of 2,101 lines. Extracted settings sections/dialogs/components are now in focused files; no claim is made that build or tests pass until they are run.
 
@@ -133,3 +133,11 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Extracted recording progress, idle record/import actions, review-card presentation, and discard confirmation into `VoiceRecordingControlsUi.kt`; playback, permission, persistence, and lifecycle decisions remain owned by `VoiceNoteControls`.
 - [x] Consolidated presentation-only UI into the extracted file and removed stale imports and the duplicate recording-dot/time-format helpers.
 - [x] Measured `VoiceNoteAudio.kt` at 506 lines at this checkpoint (from 1,097-line initial audit baseline: -591 lines, about -53.9%). This file-level refactor pass is complete; run the targeted tests and Android CI against the latest PR head before starting another file.
+
+
+### App confirmation dialog extraction
+
+- [x] Extracted encrypt-all, bulk-delete, and editor-discard confirmation presentation into `AppConfirmationDialogs.kt`.
+- [x] Kept eligible-note selection, encryption and authenticated verification, persistence ordering, voice-record deletion, selected-ID cleanup, snackbar feedback, and editor/voice-discard actions in `NestNoteApp.kt` callbacks.
+- [x] Preserved the existing confirmation text and button labels; the extracted components accept explicit callbacks and do not own app state.
+- [ ] Run the full Android CI and targeted regression tests after the `NestNoteApp.kt` extraction pass is complete; this source-only change is not yet verified by CI.
