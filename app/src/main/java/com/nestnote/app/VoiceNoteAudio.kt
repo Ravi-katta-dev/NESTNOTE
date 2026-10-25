@@ -429,7 +429,7 @@ internal fun VoiceNoteControls(
         ) {
             val cursor = cursorAtRecordStart()
             startVoiceRecording(
-                context, audioManager, attachmentStore, attachmentManifest,
+                context, audioManager, voiceNotes,
                 noteId, addedThisSession,
                 onStarted = { session, listener ->
                     startingRecording = false
@@ -685,7 +685,7 @@ internal fun VoiceNoteControls(
             val reviewId = pendingReviewId!!
             val reviewAttachment = remember(reviewId) {
                 runCatching {
-                    attachmentStore.list(noteId).firstOrNull { it.attachmentId == reviewId }
+                    voiceNotes.listPayloads(noteId).firstOrNull { it.attachmentId == reviewId }
                 }.getOrNull()
             }
             val shownDuration = if (reviewDurationMs > 0) reviewDurationMs else pendingReviewDurationMs
