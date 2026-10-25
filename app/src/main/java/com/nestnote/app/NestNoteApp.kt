@@ -1721,70 +1721,52 @@ internal fun NestNoteApp(
                 }
             }
             if (confirmSystemDiscard) {
-                AlertDialog(
-                    onDismissRequest = { confirmSystemDiscard = false },
-                    title = { Text("Discard changes?") },
-                    text = {
-                        Text(
-                            if (editorNote == null) {
-                                "Your unsaved note and any voice recordings attached to this new draft will be discarded."
-                            } else {
-                                "Your unsaved changes and newly staged voice recordings will be discarded. Voice recordings already saved to this note will be kept."
-                            }
-                        )
-                    },
-                    confirmButton = { TextButton(onClick = discardEditor) { Text("Discard") } },
-                    dismissButton = { TextButton(onClick = { confirmSystemDiscard = false }) { Text("Keep editing") } }
+                ConfirmSystemDiscardDialog(
+                    isNewNote = editorNote == null,
+                    onDiscard = discardEditor,
+                    onKeepEditing = { confirmSystemDiscard = false }
                 )
             }
         }
         if (confirmEncryptAll) {
             val eligible = OrdinaryNoteSelection.eligibleForEncryption(notes)
-            AlertDialog(
-                onDismissRequest = { confirmEncryptAll = false },
-                title = { Text("Encrypt all ordinary notes?") },
-                text = { Text("This will encrypt and verify ${eligible.size} ordinary notes using a dedicated device-bound Android Keystore key. Private Vault notes are excluded. If the device Keystore key is permanently lost, these notes may be unrecoverable. Continue only after considering that risk.") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        confirmEncryptAll = false
-                        val replacements = runCatching { eligible.associate { it.id to encryptOrdinaryNote(it) } }.getOrElse { error ->
-                            coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Encrypt all failed; original notes were preserved.") }
-                            emptyMap()
+            ConfirmEncryptAllDialog(
+                eligibleCount = eligible.size,
+                onDismiss = { confirmEncryptAll = false },
+                onConfirm = {
+                    confirmEncryptAll = false
+                    val replacements = runCatching { eligible.associate { it.id to encryptOrdinaryNote(it) } }.getOrElse { error ->
+                        coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Encrypt all failed; original notes were preserved.") }
+                        emptyMap()
+                    }
+                    if (replacements.isNotEmpty()) {
+                        requestPersist(OrdinaryNoteSelection.applyReplacements(notes, replacements)) {
+                            selectedNoteIds = emptySet()
+                            coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted and verified ${replacements.size} ordinary notes") }
                         }
-                        if (replacements.isNotEmpty()) {
-                            requestPersist(OrdinaryNoteSelection.applyReplacements(notes, replacements)) {
-                                selectedNoteIds = emptySet()
-                                coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted and verified ${replacements.size} ordinary notes") }
-                            }
-                        } else if (eligible.isEmpty()) {
-                            coroutineScope.launch { snackbarHostState.showSnackbar("There are no unencrypted ordinary notes.") }
-                        }
-                    }) { Text("Encrypt all") }
-                },
-                dismissButton = { TextButton(onClick = { confirmEncryptAll = false }) { Text("Cancel") } }
+                    } else if (eligible.isEmpty()) {
+                        coroutineScope.launch { snackbarHostState.showSnackbar("There are no unencrypted ordinary notes.") }
+                    }
+                }
             )
         }
         if (confirmBulkDelete) {
             val deleting = notes.filter { it.id in selectedNoteIds }
-            AlertDialog(
-                onDismissRequest = { confirmBulkDelete = false },
-                title = { Text("Delete ${deleting.size} notes?") },
-                text = { Text("This permanently removes the selected notes and their voice recordings.") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        confirmBulkDelete = false
-                        requestPersist(notes.filterNot { it.id in selectedNoteIds }) {
-                            coroutineScope.launch(Dispatchers.IO) {
-                                deleting.forEach { note ->
-                                    runCatching { com.nestnote.app.voicenote.VoiceNoteRepository(context).deleteAllForNote(note.id) }
-                                }
+            ConfirmBulkDeleteDialog(
+                count = deleting.size,
+                onDismiss = { confirmBulkDelete = false },
+                onConfirm = {
+                    confirmBulkDelete = false
+                    requestPersist(notes.filterNot { it.id in selectedNoteIds }) {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            deleting.forEach { note ->
+                                runCatching { com.nestnote.app.voicenote.VoiceNoteRepository(context).deleteAllForNote(note.id) }
                             }
-                            selectedNoteIds = emptySet()
-                            coroutineScope.launch { snackbarHostState.showSnackbar("Selected notes deleted") }
                         }
-                    }) { Text("Delete", color = colors.error) }
-                },
-                dismissButton = { TextButton(onClick = { confirmBulkDelete = false }) { Text("Cancel") } }
+                        selectedNoteIds = emptySet()
+                        coroutineScope.launch { snackbarHostState.showSnackbar("Selected notes deleted") }
+                    }
+                }
             )
         }
         }
