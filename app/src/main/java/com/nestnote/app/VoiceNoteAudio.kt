@@ -2,12 +2,9 @@ package com.nestnote.app
 
 import android.Manifest
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioManager
-import android.net.Uri
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.RepeatMode
@@ -703,22 +700,12 @@ internal fun VoiceNoteControls(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        if (showPermissionSettings) {
-            TextButton(onClick = { beginRecordingFlow() }) { Text("Try again") }
-            OutlinedButton(onClick = {
-                showPermissionSettings = false
-                runCatching {
-                    context.startActivity(
-                        Intent(
-                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.parse("package:${context.packageName}")
-                        )
-                    )
-                }.onFailure {
-                    status = "Open Android Settings and allow microphone access for NESTNOTE."
-                }
-            }) { Text("Open app settings") }
-        }
+        VoicePermissionSettingsActions(
+            visible = showPermissionSettings,
+            onRetry = { beginRecordingFlow() },
+            onDismiss = { showPermissionSettings = false },
+            onStatus = { status = it }
+        )
     }
 
     // ---------- Review discard confirmation ----------
