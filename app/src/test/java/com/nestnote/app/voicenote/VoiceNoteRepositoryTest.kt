@@ -135,4 +135,76 @@ class VoiceNoteRepositoryTest {
         }
     }
 
+
+    @Test
+    fun duplicateAttachmentIdDoesNotReplaceExistingCiphertext() {
+        val root = Files.createTempDirectory("nestnote-voice-duplicate-id").toFile()
+        val repository = repository(root)
+        val original = "original recording".toByteArray()
+        repository.save(57L, "same_id", ByteArrayInputStream(original), 1L, 1L, "Original")
+
+        try {
+            repository.save(57L, "same_id", ByteArrayInputStream("replacement".toByteArray()), 2L, 2L, "Replacement")
+            throw AssertionError("Duplicate attachment identity must be rejected")
+        } catch (expected: IOException) {
+            assertTrue(expected.message!!.contains("already exists"))
+        }
+
+        assertArrayEquals(original, repository.read(57L, "same_id"))
+        assertEquals("Original", repository.list(57L).single().displayName)
+    }
+
+    @Test
+    fun missingKeystoreKeyFailsClosedAndPreservesCiphertext() {
+        val root = Files.createTempDirectory("nestnote-voice-missing-key").toFile()
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val originalKey = newKey()
+        val writer = repository(root, originalKey)
+        writer.save(58L, "key_lost", ByteArrayInputStream(byteArrayOf(4, 5, 6)), 1L, 1L, "Key lost")
+        val payload = File(File(root, "58"), "key_lost.nva")
+        val before = payload.readBytes()
+        val missingKeyStore = VoiceAttachmentStore(context, {
+            throw IOException("Voice-note encryption key is missing")
+        }, root)
+        val reader = VoiceNoteRepository(missingKeyStore, VoiceAttachmentManifest(context, root))
+
+        try {
+            reader.read(58L, "key_lost")
+            throw AssertionError("A missing key must not be recreated or return plaintext")
+        } catch (expected: IOException) {
+            assertTrue(expected.message!!.contains("key is missing"))
+        }
+
+        assertArrayEquals(before, payload.readBytes())
+    }
+
+    @Test
+    fun reconciliationNeverDeletesUnindexedCiphertext() {
+        val root = Files.createTempDirectory("nestnote-voice-safe-reconcile").toFile()
+        val repository = repository(root)
+        repository.save(59L, "recover_me", ByteArrayInputStream(byteArrayOf(7, 8, 9)), 1L, 1L, "Recovery")
+        File(root, "manifest_v1.json").writeText("""{"schemaVersion":1,"attachments":[]}""")
+        val payload = File(File(root, "59"), "recover_me.nva")
+        val before = payload.readBytes()
+
+        assertEquals(0, repository.reconcile(setOf(59L)))
+        assertArrayEquals(before, payload.readBytes())
+        assertEquals(listOf("recover_me"), repository.listPayloads(59L).map { it.attachmentId })
+    }
+
+    @Test
+    fun interruptedSaveTemporaryFileIsCleanedWithoutTouchingCommittedPayloads() {
+        val root = Files.createTempDirectory("nestnote-voice-interrupted-save").toFile()
+        val noteDir = File(root, "60").apply { mkdirs() }
+        val committed = File(noteDir, "committed.nva").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        val staleTemp = File(root, ".60_interrupted.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.tmp").apply { writeText("partial ciphertext") }
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        VoiceAttachmentStore(context, { newKey() }, root)
+
+        assertFalse(staleTemp.exists())
+        assertTrue(committed.exists())
+        assertArrayEquals(byteArrayOf(1, 2, 3), committed.readBytes())
+    }
+
 }
