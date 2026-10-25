@@ -465,19 +465,7 @@ internal fun NestNoteApp(
     fun encryptOrdinaryNote(note: NestNote): NestNote {
         require(!note.privateNote && !note.encrypted) { "Only unencrypted ordinary notes can be encrypted here." }
         val payload = ordinaryNoteCrypto.encrypt(note)
-        val locked = note.copy(
-            title = NoteStore.ENCRYPTED_NOTE_TITLE,
-            body = "",
-            category = "Encrypted",
-            color = 0,
-            pinned = false,
-            reminder = "",
-            background = 0,
-            wallpaperUri = "",
-            format = "plain",
-            encrypted = true,
-            encryptedPayload = payload
-        )
+        val locked = OrdinaryNoteRecordTransform.lockedRecord(note, payload)
         // Verify authenticated decryption and identity before the source record can be replaced.
         val verified = ordinaryNoteCrypto.decrypt(locked)
         check(verified == note) { "Encrypted note verification failed." }
