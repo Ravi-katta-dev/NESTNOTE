@@ -174,6 +174,7 @@ internal fun SettingsScreen(
     val context = LocalContext.current
     val reducedMotion = rememberSystemReducedMotion()
     var confirmReset by rememberSaveable { mutableStateOf(false) }
+    var pendingStorageBackend by remember { mutableStateOf<NoteStorageBackend?>(null) }
     var settingsSearch by rememberSaveable { mutableStateOf("") }
     var showVoicePlayerSettings by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -1136,13 +1137,13 @@ internal fun SettingsScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
-                                .clickable { if (storageBackend != NoteStorageBackend.KEYSTORE) onStorageBackendChange(NoteStorageBackend.KEYSTORE) }
+                                .clickable { if (storageBackend != NoteStorageBackend.KEYSTORE) pendingStorageBackend = NoteStorageBackend.KEYSTORE }
                                 .padding(horizontal = 4.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
                                 selected = storageBackend == NoteStorageBackend.KEYSTORE,
-                                onClick = { if (storageBackend != NoteStorageBackend.KEYSTORE) onStorageBackendChange(NoteStorageBackend.KEYSTORE) }
+                                onClick = { if (storageBackend != NoteStorageBackend.KEYSTORE) pendingStorageBackend = NoteStorageBackend.KEYSTORE }
                             )
                             Column(Modifier.weight(1f).padding(start = 8.dp)) {
                                 Text("Android Keystore encrypted storage", style = MaterialTheme.typography.titleSmall)
@@ -1151,13 +1152,13 @@ internal fun SettingsScreen(
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
-                                .clickable { if (storageBackend != NoteStorageBackend.SQLCIPHER) onStorageBackendChange(NoteStorageBackend.SQLCIPHER) }
+                                .clickable { if (storageBackend != NoteStorageBackend.SQLCIPHER) pendingStorageBackend = NoteStorageBackend.SQLCIPHER }
                                 .padding(horizontal = 4.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
                                 selected = storageBackend == NoteStorageBackend.SQLCIPHER,
-                                onClick = { if (storageBackend != NoteStorageBackend.SQLCIPHER) onStorageBackendChange(NoteStorageBackend.SQLCIPHER) }
+                                onClick = { if (storageBackend != NoteStorageBackend.SQLCIPHER) pendingStorageBackend = NoteStorageBackend.SQLCIPHER }
                             )
                             Column(Modifier.weight(1f).padding(start = 8.dp)) {
                                 Text("Encrypted SQL database (SQLCipher)", style = MaterialTheme.typography.titleSmall)
@@ -1256,6 +1257,26 @@ internal fun SettingsScreen(
     if (showVoicePlayerSettings) {
         VoicePlayerSettingsDialog(
             onDismiss = { showVoicePlayerSettings = false }
+        )
+    }
+
+    pendingStorageBackend?.let { target ->
+        val targetLabel = if (target == NoteStorageBackend.KEYSTORE) "AES-256 Android Keystore encryption" else "SQLCipher encrypted database"
+        AlertDialog(
+            onDismissRequest = { pendingStorageBackend = null },
+            title = { Text("Are you sure you want to change?") },
+            text = {
+                Text("Switch to $targetLabel in 5 hours? Your current storage stays active until then. The switch will only complete if stored notes can be read and verified. You can cancel now by choosing Cancel.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingStorageBackend = null
+                    onStorageBackendChange(target)
+                }) { Text("Schedule change") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingStorageBackend = null }) { Text("Cancel") }
+            }
         )
     }
 
