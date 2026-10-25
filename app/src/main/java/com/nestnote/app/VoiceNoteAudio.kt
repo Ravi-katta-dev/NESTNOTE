@@ -399,297 +399,106 @@ internal fun VoiceNoteControls(
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // ---------- Recording pill (in progress) ----------
         if (recording || startingRecording || pendingPermission) {
-            val minutes = elapsedRecordingSeconds / 60
-            val seconds = elapsedRecordingSeconds % 60
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    RecordingDot(active = recording && !recordingPaused, reducedMotion = reducedMotion)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                        Text(
-                            when {
-                                startingRecording || pendingPermission -> "Preparing microphone…"
-                                recordingPaused -> "Paused · %02d:%02d".format(minutes, seconds)
-                                else -> "Recording · %02d:%02d".format(minutes, seconds)
-                            },
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            "Encrypted on this device · will attach at cursor",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f)
-                        )
+            VoiceRecordingStatusPill(
+                recording = recording, starting = startingRecording,
+                permissionPending = pendingPermission, paused = recordingPaused,
+                elapsedSeconds = elapsedRecordingSeconds, reducedMotion = reducedMotion,
+                onTogglePause = {
+                    if (recordingPaused) {
+                        runCatching { recordingSession?.resume() }
+                            .onSuccess { recordingPaused = false; status = "Recording…" }
+                            .onFailure { stopRecording(); status = it.message ?: "Couldn't resume recording" }
+                    } else {
+                        recordingSession?.pause()
+                        recordingPaused = true
+                        status = "Recording paused."
                     }
-                    FilledIconButton(
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            contentColor = MaterialTheme.colorScheme.primaryContainer
-                        ),
-                        enabled = recording,
-                        onClick = {
-                            if (recordingPaused) {
-                                runCatching { recordingSession?.resume() }
-                                    .onSuccess { recordingPaused = false; status = "Recording…" }
-                                    .onFailure { stopRecording(); status = it.message ?: "Couldn't resume recording" }
-                            } else {
-                                recordingSession?.pause()
-                                recordingPaused = true
-                                status = "Recording paused."
-                            }
-                        },
-                        modifier = Modifier.semantics {
-                            contentDescription = if (recordingPaused) "Resume voice recording" else "Pause voice recording"
-                            stateDescription = when {
-                                !recording -> "Unavailable when not recording"
-                                recordingPaused -> "Recording paused"
-                                else -> "Recording in progress"
-                            }
-                        }
-                    ) {
-                        Icon(
-                            if (recordingPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                            contentDescription = null
-                        )
-                    }
-                    FilledIconButton(
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            contentColor = MaterialTheme.colorScheme.primaryContainer
-                        ),
-                        enabled = recording,
-                        onClick = { stopRecording() },
-                        modifier = Modifier.semantics {
-                            contentDescription = "Stop voice recording"
-                            stateDescription = if (recording) "Available" else "Unavailable when not recording"
-                        }
-                    ) { Icon(Icons.Default.Stop, contentDescription = null) }
-                }
-            }
+                },
+                onStop = { stopRecording() }
+            )
         } else if (pendingReviewId == null) {
-            // ---------- Idle: Record here / Attach WAV ----------
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    enabled = !importingAudio,
-                    onClick = { beginRecordingFlow() },
-                    modifier = Modifier.semantics {
-                        contentDescription = "Record voice note at cursor position"
-                    }
-                ) {
-                    Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Record here")
+            VoiceRecordingIdleActions(
+                importing = importingAudio,
+                onRecord = { beginRecordingFlow() },
+                onAttachWav = {
+                    keyboardController?.hide()
+                    audioFileLauncher.launch(arrayOf("audio/wav", "audio/x-wav", "audio/wave", "audio/vnd.wave"))
                 }
-                OutlinedButton(
-                    enabled = !importingAudio,
-                    onClick = {
-                        keyboardController?.hide()
-                        audioFileLauncher.launch(
-                            arrayOf("audio/wav", "audio/x-wav", "audio/wave", "audio/vnd.wave")
-                        )
-                    },
-                    modifier = Modifier.semantics {
-                        contentDescription = "Attach WAV audio file at cursor position"
-                    }
-                ) {
-                    Icon(Icons.Default.AttachFile, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(if (importingAudio) "Importing…" else "Attach WAV")
-                }
-            }
+            )
         }
 
         // ---------- Review card ----------
         if (pendingReviewId != null) {
             val reviewId = pendingReviewId!!
             val reviewAttachment = remember(reviewId) {
-                runCatching {
-                    voiceNotes.listPayloads(noteId).firstOrNull { it.attachmentId == reviewId }
-                }.getOrNull()
+                runCatching { voiceNotes.listPayloads(noteId).firstOrNull { it.attachmentId == reviewId } }.getOrNull()
             }
-            val shownDuration = if (reviewDurationMs > 0) reviewDurationMs else pendingReviewDurationMs
-            val progress = if (shownDuration > 0) {
-                (reviewPositionMs.toFloat() / shownDuration).coerceIn(0f, 1f)
-            } else 0f
-
-            Card(
-                modifier = Modifier.fillMaxWidth().semantics {
-                    contentDescription = "Recording review"
+            VoiceRecordingReviewCard(
+                hasAttachment = reviewAttachment != null,
+                name = pendingReviewName,
+                onNameChange = { pendingReviewName = it.take(160) },
+                durationMs = if (reviewDurationMs > 0) reviewDurationMs else pendingReviewDurationMs,
+                positionMs = reviewPositionMs, seekPositionMs = pendingReviewSeekMs,
+                seeking = seekingReview, previewing = previewingReview, paused = reviewPaused,
+                onSeekChange = { pendingReviewSeekMs = it; seekingReview = true },
+                onSeekFinished = {
+                    val target = pendingReviewSeekMs.coerceIn(0, (if (reviewDurationMs > 0) reviewDurationMs else pendingReviewDurationMs))
+                    reviewPositionMs = target
+                    reviewSession?.seekTo(target.toLong())
+                    seekingReview = false
                 },
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            ) {
-                Column(
-                    Modifier.fillMaxWidth().padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Review recording",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            if (previewingReview) {
-                                "${formatPlaybackTime(reviewPositionMs)} / ${formatPlaybackTime(shownDuration)}"
-                            } else {
-                                formatPlaybackTime(pendingReviewDurationMs)
-                            },
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.72f)
-                        )
-                    }
-                    OutlinedTextField(
-                        value = pendingReviewName,
-                        onValueChange = { pendingReviewName = it.take(160) },
-                        label = { Text("Recording name") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (shownDuration > 0 && (previewingReview || reviewPositionMs > 0)) {
-                        Slider(
-                            value = (if (seekingReview) pendingReviewSeekMs else reviewPositionMs)
-                                .coerceIn(0, shownDuration).toFloat(),
-                            onValueChange = { value ->
-                                seekingReview = true
-                                pendingReviewSeekMs = value.toInt().coerceIn(0, shownDuration)
-                            },
-                            onValueChangeFinished = {
-                                val target = pendingReviewSeekMs.coerceIn(0, shownDuration)
-                                reviewPositionMs = target
-                                reviewSession?.seekTo(target.toLong())
-                                seekingReview = false
-                            },
-                            enabled = previewingReview && reviewSession != null,
-                            valueRange = 0f..shownDuration.toFloat(),
-                            modifier = Modifier.fillMaxWidth().semantics {
-                                contentDescription = "Seek recording preview"
-                                stateDescription = "${formatPlaybackTime(if (seekingReview) pendingReviewSeekMs else reviewPositionMs)} of ${formatPlaybackTime(shownDuration)}"
-                            }
-                        )
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilledIconButton(
-                            enabled = reviewAttachment != null,
-                            onClick = {
-                                if (previewingReview) {
-                                    if (reviewPaused) {
-                                        reviewSession?.resume()
-                                        reviewPaused = false
-                                        status = "Preview resumed."
-                                    } else {
-                                        reviewSession?.pause()
-                                        reviewPaused = true
-                                        status = "Preview paused."
-                                    }
-                                } else {
-                                    if (reviewAttachment != null) {
-                                        stopReviewPlayback()
-                                        val focus = requestVoiceAudioFocus(audioManager) {
-                                            stopReviewPlayback()
-                                            status = "Preview stopped because audio focus was interrupted."
-                                        }
-                                        if (focus == null) {
-                                            status = "Audio focus is unavailable. Try again."
-                                        } else {
-                                            requestedAudioFocus = true
-                                            audioFocusListener = focus
-                                            previewingReview = true
-                                            reviewPlaying = true
-                                            reviewPaused = false
-                                            reviewPositionMs = 0
-                                            reviewDurationMs = 0
-                                            val player = PcmVoicePlayback(
-                                                context, readAttachment = voiceNotes::read, attachment = reviewAttachment,
-                                                playbackSpeed = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                                                    .getFloat(PREF_VOICE_PLAYER_SPEED, 1f),
-                                                onProgress = { positionMs, durationMs ->
-                                                    if (!seekingReview) {
-                                                        reviewPositionMs = positionMs
-                                                            .coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-                                                        pendingReviewSeekMs = reviewPositionMs
-                                                    }
-                                                    reviewDurationMs = durationMs
-                                                        .coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-                                                }
-                                            ) { error ->
-                                                reviewSession = null
-                                                previewingReview = false
-                                                reviewPlaying = false
-                                                reviewPaused = false
-                                                abandonVoiceAudioFocus(audioManager, focus)
-                                                audioFocusListener = null
-                                                requestedAudioFocus = false
-                                                status = error ?: "Preview finished."
-                                            }
-                                            reviewSession = player
-                                            runCatching { player.start() }.onFailure {
-                                                status = it.message ?: "Couldn't preview recording."
-                                                stopReviewPlayback()
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            modifier = Modifier.semantics {
-                                contentDescription =
-                                    if (previewingReview && !reviewPaused) "Pause preview recording"
-                                    else "Preview recording"
-                            }
-                        ) {
-                            Icon(
-                                if (previewingReview && !reviewPaused) Icons.Default.Pause
-                                else Icons.Default.PlayArrow,
-                                contentDescription = null
-                            )
+                onTogglePreview = {
+                    if (previewingReview) {
+                        if (reviewPaused) { reviewSession?.resume(); reviewPaused = false; status = "Preview resumed." }
+                        else { reviewSession?.pause(); reviewPaused = true; status = "Preview paused." }
+                    } else if (reviewAttachment != null) {
+                        stopReviewPlayback()
+                        val focus = requestVoiceAudioFocus(audioManager) {
+                            stopReviewPlayback()
+                            status = "Preview stopped because audio focus was interrupted."
                         }
-                        Button(
-                            enabled = pendingReviewName.isNotBlank() && reviewAttachment != null,
-                            onClick = {
-                                runCatching {
-                                    voiceNotes.attachExisting(
-                                        noteId = noteId,
-                                        attachmentId = reviewId,
-                                        createdAtMillis = System.currentTimeMillis(),
-                                        durationMillis = pendingReviewDurationMs.toLong(),
-                                        displayName = pendingReviewName.trim()
-                                    )
-                                }.onSuccess {
-                                    stopReviewPlayback()
-                                    pendingReviewId = null
-                                    addedThisSession.add(reviewId)
-                                    onRecordingAttached(reviewId, pendingReviewCursor)
-                                    status = "Recording attached at cursor position."
-                                }.onFailure {
-                                    status = it.message ?: "Couldn't attach reviewed recording."
+                        if (focus == null) status = "Audio focus is unavailable. Try again."
+                        else {
+                            requestedAudioFocus = true; audioFocusListener = focus
+                            previewingReview = true; reviewPlaying = true; reviewPaused = false
+                            reviewPositionMs = 0; reviewDurationMs = 0
+                            val player = PcmVoicePlayback(
+                                context, readAttachment = voiceNotes::read, attachment = reviewAttachment,
+                                playbackSpeed = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getFloat(PREF_VOICE_PLAYER_SPEED, 1f),
+                                onProgress = { positionMs, durationMs ->
+                                    if (!seekingReview) {
+                                        reviewPositionMs = positionMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                                        pendingReviewSeekMs = reviewPositionMs
+                                    }
+                                    reviewDurationMs = durationMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
                                 }
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) { Text("Attach at cursor") }
-                        OutlinedButton(onClick = { confirmDiscardReview = true }) {
-                            Text("Discard")
+                            ) { error ->
+                                reviewSession = null; previewingReview = false; reviewPlaying = false; reviewPaused = false
+                                abandonVoiceAudioFocus(audioManager, focus)
+                                audioFocusListener = null; requestedAudioFocus = false
+                                status = error ?: "Preview finished."
+                            }
+                            reviewSession = player
+                            runCatching { player.start() }.onFailure {
+                                status = it.message ?: "Couldn't preview recording."
+                                stopReviewPlayback()
+                            }
                         }
                     }
-                }
-            }
+                },
+                onAttach = {
+                    runCatching {
+                        voiceNotes.attachExisting(noteId, reviewId, System.currentTimeMillis(),
+                            pendingReviewDurationMs.toLong(), pendingReviewName.trim())
+                    }.onSuccess {
+                        stopReviewPlayback(); pendingReviewId = null
+                        addedThisSession.add(reviewId)
+                        onRecordingAttached(reviewId, pendingReviewCursor)
+                        status = "Recording attached at cursor position."
+                    }.onFailure { status = it.message ?: "Couldn't attach reviewed recording." }
+                },
+                onDiscard = { confirmDiscardReview = true }
+            )
         }
 
         // ---------- Status ----------
@@ -708,33 +517,24 @@ internal fun VoiceNoteControls(
         )
     }
 
-    // ---------- Review discard confirmation ----------
-    if (confirmDiscardReview && pendingReviewId != null) {
-        AlertDialog(
-            onDismissRequest = { confirmDiscardReview = false },
-            title = { Text("Discard this recording?") },
-            text = { Text("The recording will be permanently deleted and cannot be recovered.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmDiscardReview = false
-                    val id = pendingReviewId
-                    stopReviewPlayback()
-                    if (id != null) {
-                        addedThisSession.remove(id)
-                        runCatching { voiceNotes.delete(noteId, id) }
-                    }
-                    pendingReviewId = null
-                    pendingReviewName = defaultVoiceName()
-                    pendingReviewDurationMs = 0
-                    pendingReviewCursor = 0
-                    status = "Recording discarded. You can record again at any time."
-                }) { Text("Discard") }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmDiscardReview = false }) { Text("Keep recording") }
+    VoiceRecordingDiscardDialog(
+        visible = confirmDiscardReview && pendingReviewId != null,
+        onDismiss = { confirmDiscardReview = false },
+        onConfirm = {
+            confirmDiscardReview = false
+            val id = pendingReviewId
+            stopReviewPlayback()
+            if (id != null) {
+                addedThisSession.remove(id)
+                runCatching { voiceNotes.delete(noteId, id) }
             }
-        )
-    }
+            pendingReviewId = null
+            pendingReviewName = defaultVoiceName()
+            pendingReviewDurationMs = 0
+            pendingReviewCursor = 0
+            status = "Recording discarded. You can record again at any time."
+        }
+    )
 }
 
 private fun formatPlaybackTime(durationMs: Int): String {
