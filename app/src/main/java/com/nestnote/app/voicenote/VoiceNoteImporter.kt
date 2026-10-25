@@ -28,7 +28,7 @@ class VoiceNoteImporter(
      * Providers without a declared size are streamed and bounded by the encrypted store's size limit.
      */
     @Throws(IOException::class)
-    fun import(noteId: Long, uri: Uri): VoiceAttachmentMetadata {
+    fun importAudio(noteId: Long, uri: Uri): VoiceAttachmentMetadata {
         require(noteId > 0) { "Invalid note ID" }
 
         val name = queryDisplayName(uri)
