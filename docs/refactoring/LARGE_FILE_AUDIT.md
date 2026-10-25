@@ -40,8 +40,10 @@ Approximate sizes are from the source audit and should be remeasured when each e
 - [x] Extract voice-player preferences/preview into `SettingsVoicePlayerSection.kt`.
 - [x] Extract privacy settings into `SettingsPrivacySection.kt`.
 - [x] Extract data/archive entry and storage-backend selection into `SettingsDataSection.kt`; backend change requests still flow through the parent's confirmation state.
-- [ ] Review reset and dialog coordination, imports, and all extracted callback/state boundaries.
+- [x] Review reset and dialog coordination: the parent `SettingsScreen` retains reset-dialog ownership because confirmation coordinates the external reset callback, local editor defaults, custom-font file cleanup, and preference removal. Storage-backend confirmation remains separately owned by the parent and dismisses before scheduling the callback.
+- [x] Remove unused imports from extracted settings screens and shared components; keep each composable's callback parameters explicit so the parent remains the state owner.
 - [x] Extract the independent boot landing screen from `NestNoteApp.kt` into `BootLandingScreen.kt`; keep the existing boot-sound preference key and user toggle behavior.
+- [x] Add targeted regression coverage for unique LazyColumn item keys and stable sort choices alongside the existing settings-search tests.
 - [ ] Re-check imports, build, and tests after the extraction series is complete.
 3. **NestNoteApp:** first take a test baseline; the boot landing presentation has been extracted as a low-risk first step. Next extract note actions and coordinators behind existing repository APIs only after baseline verification. Keep the app root as the composition root.
 4. Verify each extraction with Android CI and targeted regression tests before continuing.
