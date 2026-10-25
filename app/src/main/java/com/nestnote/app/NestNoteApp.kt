@@ -689,27 +689,7 @@ internal fun NestNoteApp(
                         .animateContentSize(animationSpec = tween(durationMillis = 200))
                 ) {
                 if (storageRecoveryRequired) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        color = colors.errorContainer,
-                        contentColor = colors.onErrorContainer
-                    ) {
-                        Row(
-                            Modifier.padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.CloudOff, contentDescription = null, modifier = Modifier.size(22.dp))
-                            Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                                Text("Notes need recovery", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                Text(
-                                    "Stored notes couldn't be read. Nothing was overwritten. Restore a backup before creating, editing, or deleting notes.",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                            TextButton(onClick = { selectedView = "Settings" }) { Text("Open") }
-                        }
-                    }
+                    AppStorageRecoveryNotice(onOpenSettings = { selectedView = "Settings" })
                 }
                 AppDashboardFilters(
                     searchVisible = searchVisible,
@@ -1284,18 +1264,9 @@ internal fun NestNoteApp(
         }
 
         if (showStorageRecoveryDialog) {
-            AlertDialog(
-                onDismissRequest = { showStorageRecoveryDialog = false },
-                title = { Text("Local notes need recovery") },
-                text = { Text("NESTNOTE couldn't read the saved notes. The stored data has been left untouched. Open Settings and restore a backup before creating, editing, or deleting notes.") },
-                confirmButton = {
-                    TextButton(onClick = { showStorageRecoveryDialog = false; selectedView = "Settings" }) {
-                        Text("Open backup settings")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showStorageRecoveryDialog = false }) { Text("Later") }
-                }
+            AppStorageRecoveryDialog(
+                onDismiss = { showStorageRecoveryDialog = false },
+                onOpenSettings = { showStorageRecoveryDialog = false; selectedView = "Settings" }
             )
         }
 
