@@ -20,7 +20,7 @@ The audit identified these primary candidates on `main`:
 | P3 | `PrivateVault.kt` | 469 | Vault security policy vs dialogs/biometric UI |
 | P3 | `NoteStore.kt` | 450 | Backend selection, serialization and validation/merge helpers |
 
-Approximate sizes are from the source audit and should be remeasured when each extraction begins.
+Baseline sizes are approximate counts from the initial source audit. Current counts below were measured from the PR branch source at this checkpoint.
 
 ## P0 execution order
 
@@ -44,8 +44,20 @@ Approximate sizes are from the source audit and should be remeasured when each e
 - [x] Remove unused imports from extracted settings screens and shared components; keep each composable's callback parameters explicit so the parent remains the state owner.
 - [x] Extract the independent boot landing screen from `NestNoteApp.kt` into `BootLandingScreen.kt`; keep the existing boot-sound preference key and user toggle behavior.
 - [x] Add targeted regression coverage for unique LazyColumn item keys and stable sort choices alongside the existing settings-search tests.
-- [ ] Re-check imports, build, and tests after the extraction series is complete.
-3. **NestNoteApp:** first take a test baseline; the boot landing presentation has been extracted as a low-risk first step. Next extract note actions and coordinators behind existing repository APIs only after baseline verification. Keep the app root as the composition root.
+- [x] Re-check obvious stale imports in the extracted files and add pure JVM regression coverage for stable settings keys/sort choices. Full build/test verification remains pending.
+
+## Measured progress on PR #99 branch
+
+Counts are current source line counts, not estimates; line counts may vary slightly with trailing newlines.
+
+| File | Initial audit baseline | Current branch | Change | Status |
+|---|---:|---:|---:|---|
+| `SettingsScreen.kt` | 2,652 | 551 | -2,101 lines (-79.2%) | Section extraction pass complete; parent remains composition/state owner |
+| `NestNoteApp.kt` | ~2,150 | 2,086 | -64 lines (~3.0%) | Boot landing UI extracted; next P0 target |
+
+The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 additions, which is a net reduction of 2,101 lines. Extracted settings sections/dialogs/components are now in focused files; no claim is made that build or tests pass until they are run.
+
+3. **NestNoteApp (next file):** continue with a read-only boundary audit first. Prioritize a self-contained, behavior-preserving extraction around note actions or import orchestration, but do not move persistence, encryption, draft-recovery, or linked-note navigation logic until a test baseline is available. Keep `NestNoteApp` as the composition root.
 4. Verify each extraction with Android CI and targeted regression tests before continuing.
 
 ## Safety constraints
