@@ -10,7 +10,7 @@ The audit identified these primary candidates on `main`:
 
 | Priority | File | Approx. lines | First responsibility boundaries |
 |---|---|---:|---|
-| `NestNoteApp.kt` | ~2,150 | 1660 | -490 lines (-22.8%) | In progress: destination header/actions, accent palette, Markdown preview, confirmation dialogs, and note-collection toolbar extracted; continue app-root pass before CI |
+| `NestNoteApp.kt` | ~2,150 | 1522 | -628 lines (-29.2%) | In progress: destination actions, accent palette, Markdown preview, confirmation dialogs, dashboard header, categories screen, and collection toolbar extracted; app-root pass remains open before CI |
 | P0 | `SettingsScreen.kt` | 2,652 | Settings composition, appearance, voice-player preferences, privacy settings, backup/restore, shared controls |
 | P1 | `VoiceNoteAudio.kt` | 1,097 | Recording lifecycle, audio focus, WAV/PCM decoder, importer UI, recording controls |
 | P1 | `NoteEditor.kt` | 1,034 | Editor state/undo, actions, draft recovery, save coordination |
@@ -161,3 +161,10 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Kept preference writes, selected destination, Markdown picker launch, and encrypt-all confirmation ownership in `NestNoteApp.kt` through callbacks.
 - [x] Preserved the Markdown import test tag, sort labels/order, theme toggle labels, encrypt-all eligibility, and layout toggle behavior.
 - [ ] Compile/test the extraction with the complete `NestNoteApp.kt` pass; no CI result is claimed yet.
+
+### Dashboard header and categories extraction audit
+
+- [x] Added `AppDashboardHeader.kt` to preserve the Home welcome card, destination heading/count, and existing note-collection toolbar while routing mutations through parent callbacks.
+- [x] Added `AppCategoriesScreen.kt`; category counts exclude archived and Private Vault notes as before, and navigation remains a parent callback.
+- [x] Removed imports from `NestNoteApp.kt` whose only usages moved to extracted UI files.
+- [ ] Verify the complete source tree compiles and existing UI behavior is unchanged; no CI/build result is claimed yet.
