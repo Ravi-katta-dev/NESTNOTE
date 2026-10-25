@@ -25,19 +25,19 @@ Existing installs retain their previous Compact/Full choice when no newer style 
 
 ## Follow-up plan
 
-1. Migrate editor and note lifecycle call sites to `VoiceNoteRepository` in a dedicated change;
-   preserve draft commit/discard behavior and ensure note deletion is durably committed before
-   attachment cleanup.
-2. Move `VoiceAttachmentStore` and `VoiceAttachmentManifest` into this package only after all
-   imports, tests, and any test-only constructors have been migrated together. Keep the storage
-   format and Keystore alias stable; a source-package refactor must not trigger data migration.
-3. Add repository-level tests for metadata commit failure, deletion failure, corrupted ciphertext,
-   missing Keystore key, process termination during save, duplicate IDs, and reconciliation that
-   never deletes unindexed ciphertext.
-4. Review ordinary-note encryption and backup/restore UX so voice attachments are clearly
+1. Recording capture and review now use `VoiceNoteRepository`: streaming capture persists an
+   encrypted review payload without publishing metadata; choosing Attach publishes metadata;
+   discard removes the payload; WAV import uses the repository's save-and-publish operation.
+   Editor commit/discard and note lifecycle cleanup also route through the repository.
+2. Keep `VoiceAttachmentStore` and `VoiceAttachmentManifest` in the parent package until the
+   remaining non-UI/test references and streaming API can be migrated together. Do not buffer a
+   live recording into memory or stage plaintext on disk to satisfy the package boundary.
+3. Expand repository-level failure coverage as needed, especially manifest write failure during
+   attach, deletion failure, and process interruption during streaming save.
+4. Verify ordinary-note export/backup and restore behavior so voice attachments are clearly
    treated as separate encrypted files and never silently represented as included in portable note
    backups.
-5. Run Android CI and device tests before treating the refactor as release-ready.
+5. Run exact-head Android CI and device tests before treating the refactor as release-ready.
 
 ## Safety invariants
 
@@ -56,7 +56,7 @@ The repository now has regression coverage for:
 - per-note bulk cleanup without deleting another note's recording; and
 - recovery discovery of ciphertext whose metadata row is missing.
 
-The recording pipeline intentionally continues to use `VoiceAttachmentStore` as its streaming encryption sink. The player also currently consumes the store abstraction for authenticated reads. Moving those classes by package rename before introducing and testing equivalent streaming interfaces would create a broad mechanical change with little safety benefit.
+The recording pipeline now calls repository methods for review-payload streaming, attach, discard, and WAV import. The repository still delegates streaming encryption and authenticated reads to `VoiceAttachmentStore`, and the metadata index to `VoiceAttachmentManifest`. Moving those primitives by package rename before all references and tests are migrated would create a broad mechanical change with little safety benefit.
 
 This sequencing follows the same established storage invariants documented by Android's `AtomicFile`: finish writing and sync before publishing a replacement, and provide explicit mutual exclusion because atomic replacement alone is not a lock. Reference: https://developer.android.com/reference/androidx/core/util/AtomicFile
 
