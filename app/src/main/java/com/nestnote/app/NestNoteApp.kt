@@ -1112,61 +1112,28 @@ internal fun NestNoteApp(
                                 )
                             }
                         }
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                if (selectedView == "Home") "Your notes" else "Notes",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (selectedView == "Home") {
-                                IconButton(
-                                    onClick = { markdownImportLauncher.launch(arrayOf("text/markdown", "text/plain", "text/x-markdown", "application/octet-stream")) },
-                                    modifier = Modifier.testTag("import_markdown_button")
-                                ) {
-                                    Icon(Icons.Default.FileOpen, contentDescription = "Import Markdown file")
-                                }
+                        AppNoteCollectionToolbar(
+                            selectedView = selectedView,
+                            dark = dark,
+                            sortByTitle = sortByTitle,
+                            sortByCreated = sortByCreated,
+                            dashboardLayout = dashboardLayout,
+                            canEncryptAll = notes.any { !it.privateNote && !it.encrypted },
+                            onImportMarkdown = {
+                                markdownImportLauncher.launch(arrayOf("text/markdown", "text/plain", "text/x-markdown", "application/octet-stream"))
+                            },
+                            onThemeToggle = {
+                                val next = if (dark) ThemeMode.LIGHT else ThemeMode.DARK
+                                themeMode = next
+                                saveString(PREF_THEME, next.name)
+                            },
+                            onSortChange = { setSort(it) },
+                            onEncryptAll = { confirmEncryptAll = true },
+                            onLayoutToggle = {
+                                dashboardLayout = if (dashboardLayout == DashboardLayout.GRID) DashboardLayout.LIST else DashboardLayout.GRID
+                                saveString(PREF_LAYOUT, dashboardLayout.name)
                             }
-                            IconButton(
-                                onClick = {
-                                    val next = if (dark) ThemeMode.LIGHT else ThemeMode.DARK
-                                    themeMode = next
-                                    saveString(PREF_THEME, next.name)
-                                }
-                            ) {
-                                Icon(
-                                    if (dark) Icons.Default.LightMode else Icons.Default.DarkMode,
-                                    contentDescription = if (dark) "Switch to light theme" else "Switch to dark theme"
-                                )
-                            }
-                            var sortMenuExpanded by remember { mutableStateOf(false) }
-                            Box {
-                                TextButton(onClick = { sortMenuExpanded = true }) {
-                                    Text(when { sortByTitle -> "Title A–Z"; sortByCreated -> "Recently created"; else -> "Recently edited" }, style = MaterialTheme.typography.labelLarge)
-                                }
-                                DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
-                                    DropdownMenuItem(text = { Text("Recently edited") }, onClick = { setSort("RECENT"); sortMenuExpanded = false })
-                                    DropdownMenuItem(text = { Text("Recently created") }, onClick = { setSort("CREATED"); sortMenuExpanded = false })
-                                    DropdownMenuItem(text = { Text("Title A–Z") }, onClick = { setSort("TITLE"); sortMenuExpanded = false })
-                                    HorizontalDivider()
-                                    DropdownMenuItem(text = { Text("Encrypt all notes…") }, onClick = { sortMenuExpanded = false; confirmEncryptAll = true }, enabled = notes.any { !it.privateNote && !it.encrypted })
-                                }
-                            }
-                            IconButton(
-                                onClick = {
-                                    dashboardLayout = if (dashboardLayout == DashboardLayout.GRID) DashboardLayout.LIST else DashboardLayout.GRID
-                                    saveString(PREF_LAYOUT, dashboardLayout.name)
-                                }
-                            ) {
-                                Icon(
-                                    if (dashboardLayout == DashboardLayout.GRID) Icons.AutoMirrored.Filled.List else Icons.Default.GridView,
-                                    contentDescription = "Switch dashboard layout"
-                                )
-                            }
-                        }
+                        )
                     }
                     if (!storageLoaded) {
                         Column(
