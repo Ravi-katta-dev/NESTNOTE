@@ -101,29 +101,6 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
-/**
- * Keys for every item in the settings LazyColumn, in display order.
- * Declaring them in one place keeps programmatic scrolling stable.
- */
-private val SettingsItemKeys = listOf(
-    "settings_header",
-    "settings_appearance",
-    "settings_layout",
-    "settings_behavior",
-    "settings_editor",
-    "settings_voice_player_section_v2",
-    "settings_privacy",
-    "settings_backup",
-    "settings_reset"
-)
-
-/** Sort choices are immutable and never change. */
-private val SortOptions: List<Pair<String, String>> = listOf(
-    "RECENT" to "Edited",
-    "CREATED" to "Created",
-    "TITLE" to "Title"
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun SettingsScreen(
