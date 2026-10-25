@@ -108,4 +108,31 @@ class VoiceNoteRepositoryTest {
         assertEquals(listOf("indexed"), repository.listPayloads(55L).map { it.attachmentId })
         assertTrue(File(File(root, "55"), "indexed.nva").isFile)
     }
+
+    @Test
+    fun corruptedCiphertextIsRejectedByRepositoryRead() {
+        val root = Files.createTempDirectory("nestnote-voice-corrupt-ciphertext").toFile()
+        val repository = repository(root)
+        repository.save(
+            noteId = 56L,
+            attachmentId = "tampered_clip",
+            input = ByteArrayInputStream("must authenticate before returning".toByteArray()),
+            createdAtMillis = 1L,
+            durationMillis = 1L,
+            displayName = "Tampered"
+        )
+
+        val payload = File(File(root, "56"), "tampered_clip.nva")
+        val encrypted = payload.readBytes()
+        encrypted[encrypted.lastIndex] = (encrypted.last().toInt() xor 0x01).toByte()
+        payload.writeBytes(encrypted)
+
+        try {
+            repository.read(56L, "tampered_clip")
+            throw AssertionError("Tampered AES-GCM payload must not be returned")
+        } catch (expected: IOException) {
+            assertTrue(expected.message!!.contains("authentication failed"))
+        }
+    }
+
 }
