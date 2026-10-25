@@ -718,88 +718,26 @@ internal fun NestNoteApp(
                         }
                     }
                 }
-                if (searchVisible) {
-                    OutlinedTextField(
-                        value = search, onValueChange = { search = it },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp).testTag("note_search_field"),
-                        placeholder = { Text("Search · is:pinned · has:voice · after:YYYY-MM-DD") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        trailingIcon = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (search.isNotBlank()) IconButton(
-                                    onClick = {
-                                        val query = search.trim()
-                                        if (query !in savedSearches && savedSearches.size < 12) {
-                                            savedSearches = savedSearches + query
-                                            preferences.edit().putStringSet(PREF_SAVED_SEARCHES, savedSearches.toMutableSet()).apply()
-                                        }
-                                    },
-                                    enabled = search.trim() in savedSearches || savedSearches.size < 12
-                                ) { Icon(Icons.Default.BookmarkAdd, contentDescription = "Save search") }
-                                IconButton(onClick = {
-                                    searchVisible = false
-                                    search = ""
-                                }) { Icon(Icons.Default.Close, contentDescription = "Close search field") }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(18.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = colors.surfaceContainerLow,
-                            focusedContainerColor = colors.surfaceContainerLow,
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedBorderColor = colors.primary
-                        )
-                    )
-                }
-                if (savedSearches.isNotEmpty() && (selectedView == "Home" || selectedView == "All notes")) {
-                    Row(
-                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 18.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        savedSearches.forEach { query ->
-                            FilterChip(
-                                selected = search == query,
-                                onClick = { search = query },
-                                label = { Text(query, maxLines = 1) },
-                                trailingIcon = {
-                                    IconButton(
-                                        onClick = {
-                                            savedSearches = savedSearches - query
-                                            preferences.edit().putStringSet(PREF_SAVED_SEARCHES, savedSearches.toMutableSet()).apply()
-                                        },
-                                        modifier = Modifier.size(26.dp)
-                                    ) { Icon(Icons.Default.Close, contentDescription = "Remove saved search", modifier = Modifier.size(16.dp)) }
-                                }
-                            )
+                AppDashboardFilters(
+                    searchVisible = searchVisible,
+                    search = search,
+                    savedSearches = savedSearches,
+                    selectedView = selectedView,
+                    categories = categoryOptions,
+                    onSearchChange = { search = it },
+                    onSaveSearch = { query ->
+                        if (query !in savedSearches && savedSearches.size < 12) {
+                            savedSearches = savedSearches + query
+                            preferences.edit().putStringSet(PREF_SAVED_SEARCHES, savedSearches.toMutableSet()).apply()
                         }
-                    }
-                }
-                if (selectedView == "Home" || selectedView == "All notes" || categoryOptions.contains(selectedView)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(start = 18.dp, end = 18.dp, bottom = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            selected = selectedView == "Home" || selectedView == "All notes",
-                            onClick = { selectedView = "Home" },
-                            label = { Text("All notes") },
-                            leadingIcon = if (selectedView == "Home" || selectedView == "All notes") {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                            } else null
-                        )
-                        categoryOptions.forEach { category ->
-                            FilterChip(
-                                selected = selectedView == category,
-                                onClick = { selectedView = category },
-                                label = { Text(category) }
-                            )
-                        }
-                    }
-                }
+                    },
+                    onCloseSearch = { searchVisible = false; search = "" },
+                    onRemoveSavedSearch = { query ->
+                        savedSearches = savedSearches - query
+                        preferences.edit().putStringSet(PREF_SAVED_SEARCHES, savedSearches.toMutableSet()).apply()
+                    },
+                    onSelectView = { selectedView = it }
+                )
                 if (selectedView == "More") {
                     MoreScreen(
                         pinnedCount = notes.count { it.pinned && !it.archived && !it.privateNote },
