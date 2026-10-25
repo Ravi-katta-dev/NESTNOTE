@@ -3,7 +3,6 @@ package com.nestnote.app
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.media.AudioFormat
 import android.media.AudioManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,8 +40,6 @@ import kotlinx.coroutines.withContext
 
 
 private const val VOICE_SAMPLE_RATE = 16_000
-private const val VOICE_CHANNEL_IN = AudioFormat.CHANNEL_IN_MONO
-private const val VOICE_ENCODING = AudioFormat.ENCODING_PCM_16BIT
 private const val MAX_WAV_CONTAINER_OVERHEAD_BYTES = 1024 * 1024
 
 /**
