@@ -34,8 +34,8 @@ class VoiceNoteImporter(
 
         val mimeType = resolver.getType(uri)?.lowercase(Locale.ROOT)
         val providedName = queryDisplayName(uri)
-        if (!isAudioDocument(providedName, mimeType)) throw IOException("Choose an audio file to import")
-        val name = ensureAudioExtension(providedName, mimeType)
+        if (!VoiceAudioImportPolicy.isAudioDocument(providedName, mimeType)) throw IOException("Choose an audio file to import")
+        val name = VoiceAudioImportPolicy.ensureAudioExtension(providedName, mimeType)
 
         val declaredSize = querySize(uri)
         if (declaredSize != null && declaredSize > VoiceNoteRepository.MAX_RECORDING_BYTES) {
@@ -89,7 +89,27 @@ class VoiceNoteImporter(
         }
     }.getOrDefault(0L)
 
-    private fun ensureAudioExtension(name: String, mimeType: String?): String {
+    private companion object {
+        const val MAX_DISPLAY_NAME_LENGTH = 160
+        val AUDIO_EXTENSIONS = setOf(
+            "aac", "aif", "aiff", "amr", "ape", "flac", "m4a", "m4b", "mka", "mp3",
+            "mpc", "oga", "ogg", "opus", "wav", "weba", "webm", "wma", "3ga", "3gp"
+        )
+    }
+}
+/** Pure import policy kept separate so extension/MIME behavior is covered by JVM tests. */
+internal object VoiceAudioImportPolicy {
+    private val audioExtensions = setOf(
+        "aac", "aif", "aiff", "amr", "ape", "flac", "m4a", "m4b", "mka", "mp3",
+        "mpc", "oga", "ogg", "opus", "wav", "weba", "webm", "wma", "3ga", "3gp"
+    )
+
+    fun isAudioDocument(name: String, mimeType: String?): Boolean {
+        if (mimeType?.startsWith("audio/") == true) return true
+        return name.substringAfterLast('.', "").lowercase(Locale.ROOT) in audioExtensions
+    }
+
+    fun ensureAudioExtension(name: String, mimeType: String?): String {
         if (name.lastIndexOf('.') > 0 && name.substringAfterLast('.').isNotBlank()) return name
         val extension = when (mimeType) {
             "audio/mpeg", "audio/mp3" -> "mp3"
@@ -103,19 +123,6 @@ class VoiceNoteImporter(
             "audio/webm" -> "webm"
             else -> null
         }
-        return "$name.${extension ?: "audio"}"
-    }
-
-    private fun isAudioDocument(name: String, mimeType: String?): Boolean {
-        if (mimeType?.startsWith("audio/") == true) return true
-        return name.substringAfterLast('.', "").lowercase(Locale.ROOT) in AUDIO_EXTENSIONS
-    }
-
-    private companion object {
-        const val MAX_DISPLAY_NAME_LENGTH = 160
-        val AUDIO_EXTENSIONS = setOf(
-            "aac", "aif", "aiff", "amr", "ape", "flac", "m4a", "m4b", "mka", "mp3",
-            "mpc", "oga", "ogg", "opus", "wav", "weba", "webm", "wma", "3ga", "3gp"
-        )
+        return "$name." + (extension ?: "audio")
     }
 }
