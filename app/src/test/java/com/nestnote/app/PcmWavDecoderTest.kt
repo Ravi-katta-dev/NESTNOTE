@@ -46,7 +46,7 @@ class PcmWavDecoderTest {
         buffer.putShort(16)
         buffer.put("data".toByteArray(Charsets.US_ASCII))
         buffer.putInt(dataLength)
-        samples.forEach(buffer::putShort)
+        samples.forEach { buffer.putShort(it) }
         return buffer.array()
     }
 }
