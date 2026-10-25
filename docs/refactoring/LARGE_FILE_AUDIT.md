@@ -10,7 +10,7 @@ The audit identified these primary candidates on `main`:
 
 | Priority | File | Approx. lines | First responsibility boundaries |
 |---|---|---:|---|
-| `NestNoteApp.kt` | ~2,150 | 1522 | -628 lines (-29.2%) | In progress: destination actions, accent palette, Markdown preview, confirmation dialogs, dashboard header, categories screen, and collection toolbar extracted; app-root pass remains open before CI |
+| `NestNoteApp.kt` | ~2,150 | 1,522 | -628 lines (-29.2%) | In progress: destination actions, accent palette, Markdown preview, recovery dialogs, confirmation dialogs, dashboard filters/header, category screen, empty state, and note collection extracted; stateful app-root pass remains before CI |
 | P0 | `SettingsScreen.kt` | 2,652 | Settings composition, appearance, voice-player preferences, privacy settings, backup/restore, shared controls |
 | P1 | `VoiceNoteAudio.kt` | 1,097 | Recording lifecycle, audio focus, WAV/PCM decoder, importer UI, recording controls |
 | P1 | `NoteEditor.kt` | 1,034 | Editor state/undo, actions, draft recovery, save coordination |
