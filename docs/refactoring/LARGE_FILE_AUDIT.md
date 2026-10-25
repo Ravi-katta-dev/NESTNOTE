@@ -45,6 +45,7 @@ Baseline sizes are approximate counts from the initial source audit. Current cou
 - [x] Extract the independent boot landing screen from `NestNoteApp.kt` into `BootLandingScreen.kt`; keep the existing boot-sound preference key and user toggle behavior.
 - [x] Extract destination title/subtitle mapping into pure `AppDestinationPresentation.kt`; route state and navigation remain owned by `NestNoteApp`, with JVM tests for known destinations and fallback labels.
 - [x] Extract the animated destination title/subtitle presentation into `AppDestinationHeader.kt`; the parent retains route state, navigation actions, and app-bar ownership.
+- [x] Extract private-vault lock and nested More back affordances into `AppDestinationNavigationIcon.kt`, with callbacks keeping navigation/session ownership in the parent.
 - [x] Centralize ordinary-note encryption eligibility so selected-note and confirmed encrypt-all actions share the same private/already-encrypted exclusion rule; add JVM coverage.
 - [x] Add targeted regression coverage for unique LazyColumn item keys and stable sort choices alongside the existing settings-search tests.
 - [x] Re-check obvious stale imports in the extracted files and add pure JVM regression coverage for stable settings keys/sort choices. Full build/test verification remains pending.
@@ -56,7 +57,7 @@ Counts are current source line counts, not estimates; line counts may vary sligh
 | File | Initial audit baseline | Current branch | Change | Status |
 |---|---:|---:|---:|---|
 | `SettingsScreen.kt` | 2,652 | 551 | -2,101 lines (-79.2%) | Section extraction pass complete; parent remains composition/state owner |
-| `NestNoteApp.kt` | ~2,150 | 2,034 | -116 lines (-5.4%) | In progress: boot screen, destination labels/header, and encryption eligibility extracted; continue before CI |
+| `NestNoteApp.kt` | ~2,150 | 2,031 | -119 lines (-5.5%) | In progress: destination header/navigation affordances and prior pure helpers extracted; continue before CI |
 
 The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 additions, which is a net reduction of 2,101 lines. Extracted settings sections/dialogs/components are now in focused files; no claim is made that build or tests pass until they are run.
 
