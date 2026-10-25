@@ -1268,48 +1268,12 @@ internal fun NestNoteApp(
                             Text("Loading your notes…", color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                         }
                     } else if (filteredNotes.isEmpty()) {
-                        Column(
-                            Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 44.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            NestEmptyIllustration(
-                                when {
-                                    search.isNotBlank() -> Icons.Default.Search
-                                    selectedView == "Archived" -> Icons.Default.Archive
-                                    selectedView == "Pinned" -> Icons.Default.PushPin
-                                    selectedView == "Reminders" -> Icons.Default.NotificationsNone
-                                    else -> Icons.Default.Add
-                                }
-                            )
-                            Text(
-                                when {
-                                    search.isNotBlank() -> "No matching notes"
-                                    selectedView == "Archived" -> "Nothing archived yet"
-                                    selectedView == "Pinned" -> "No pinned notes yet"
-                                    selectedView == "Reminders" -> "No reminders yet"
-                                    categoryOptions.contains(selectedView) -> "No $selectedView notes yet"
-                                    else -> "A fresh page awaits"
-                                },
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                when {
-                                    search.isNotBlank() -> "Try another search, or clear it to see all your notes."
-                                    selectedView == "Archived" -> "Notes you archive will be kept here, away from your main lists."
-                                    selectedView == "Pinned" -> "Pin important notes to keep them easy to find."
-                                    selectedView == "Reminders" -> "Add a reminder to a note and it will show up here."
-                                    categoryOptions.contains(selectedView) -> "Notes assigned to this category will appear here."
-                                    else -> "Create a note and let ideas flow."
-                                },
-                                color = colors.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            if (search.isNotBlank()) {
-                                TextButton(onClick = { search = "" }) { Text("Clear search") }
-                            }
-                        }
+                        AppNotesEmptyState(
+                            search = search,
+                            selectedView = selectedView,
+                            categoryOptions = categoryOptions,
+                            onClearSearch = { search = "" }
+                        )
                     } else if (dashboardLayout == DashboardLayout.GRID) {
                         LazyVerticalGrid(
                             columns = GridCells.Adaptive(minSize = 155.dp),
