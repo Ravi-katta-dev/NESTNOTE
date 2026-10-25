@@ -731,7 +731,7 @@ internal fun NestNoteApp(
                             modifier = Modifier
                         ) {
                             AnimatedContent(
-                                targetState = when (selectedView) { "Private" -> "Private Vault"; "PrivateVaultSettings" -> "Private Vault settings"; "Settings" -> "Settings"; "Backup" -> "Encrypted archives"; "About" -> "About & help"; "Templates" -> "Note templates"; "Insights" -> "Note insights"; "Shortcuts" -> "Keyboard shortcuts"; "More" -> "More"; "Pinned" -> "Pinned notes"; "Archived" -> "Archived notes"; "Categories" -> "Categories"; else -> "NestNote" },
+                                targetState = AppDestinationPresentation.title(selectedView),
                                 transitionSpec = {
                                     (fadeIn(animationSpec = androidx.compose.animation.core.tween(180)) +
                                         slideInVertically(
@@ -753,7 +753,7 @@ internal fun NestNoteApp(
                                 )
                             }
                             Text(
-                                when (selectedView) { "Private" -> "Hidden notes · unlocked"; "PrivateVaultSettings" -> "Authentication and privacy controls"; "Settings" -> "Make your notes feel like yours"; "Backup" -> "Protect and manage your notes"; "About" -> "Version, licence and how NESTNOTE works"; "Templates" -> "A faster start for your next note"; "Insights" -> "Private patterns from your own notes"; "Shortcuts" -> "Hardware keyboard controls"; "More" -> "More ways to organize your notes"; else -> "Your thoughts, organized." },
+                                AppDestinationPresentation.subtitle(selectedView),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = colors.onSurfaceVariant
                             )
