@@ -32,10 +32,7 @@ attachment. Whether an imported codec/container can be played depends on Android
 on the target device; an import success must not be presented as a guarantee of playback support.
 Some providers do not expose duration, in which case duration is recorded as zero.
 
-The importer is a backend entry point; the document-picker UI and import action still need to be
-connected to it. Importing call recordings is supported when the user has a recording file that
-Android exposes through the document picker. The app does not record, intercept, or extract calls
-from the phone system.
+The editor document picker is connected to the importer. Imported encoded files are passed to Android MediaPlayer through an in-memory data source after authenticated decryption; built-in PCM recordings retain the PCM/WAV playback path. When a provider omits a filename extension, the importer infers one from common MIME types or uses an .audio marker so the player does not misclassify the payload as raw PCM. Playback remains dependent on device decoder support. Importing call recordings is supported when the user has a recording file that Android exposes through the document picker. The app does not record, intercept, or extract calls from the phone system.
 
 ## Voice-player presentation
 
@@ -53,8 +50,8 @@ Existing installs retain their previous Compact/Full choice when no newer style 
 3. Add tests for recognized extensions/MIME types, unknown-size streams, size-limit rejection,
    missing providers, duration-unavailable files, metadata commit failure, deletion failure, and
    process interruption during streaming save.
-4. Connect Android's system document picker to `VoiceNoteImporter`, then show a clear error if the
-   platform decoder cannot play a successfully imported file.
+4. Keep the editor document picker connected to `VoiceNoteImporter` and ensure unsupported codecs
+   produce a clear playback error without deleting the encrypted attachment.
 5. Verify ordinary-note export/backup and restore behavior so voice attachments are never silently
    represented as included in portable note backups.
 6. Run exact-head Android CI and device tests before treating the refactor as release-ready.
