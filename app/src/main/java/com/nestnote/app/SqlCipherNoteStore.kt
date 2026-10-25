@@ -24,6 +24,17 @@ internal class SqlCipherNoteStore(context: Context) {
 
     init { SQLiteDatabase.loadLibs(appContext) }
 
+    /**
+     * Reports whether either half of this backend's persisted state exists. A database file
+     * without its wrapped passphrase (or vice versa) is not a fresh backend: it is an
+     * interrupted/corrupt state and must not be silently seeded over.
+     */
+    @Synchronized
+    fun hasStorageArtifacts(): Boolean {
+        val file = appContext.getDatabasePath(DATABASE_NAME)
+        return (file.exists() && file.length() > 0L) || prefs.contains(WRAPPED_PASSPHRASE)
+    }
+
     @Synchronized
     fun hasStoredNotes(): Boolean {
         val file = appContext.getDatabasePath(DATABASE_NAME)
