@@ -100,8 +100,9 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Extracted grid/list note-card rendering into `AppNoteCollection.kt`; note selection, navigation, encryption, deletion, pin/archive persistence and stable note IDs remain parent-owned. Grid/list-specific pin gating is preserved.
 - [x] Extracted category browsing into `AppCategoriesScreen.kt`; category selection is still routed through the parent.
 - [x] Extracted dashboard heading and display controls into `AppDashboardHeader.kt`; theme/layout/sort preference writes, note creation, Markdown import, and encrypt-all confirmation are callbacks owned by the parent.
+- [x] Extracted search input, saved-search chips, and category filter chips into `AppDashboardFilters.kt`; query state and preference persistence remain parent-owned.
 - [x] Removed stale explicit imports left by the completed UI extractions.
-- Current measured `NestNoteApp.kt` size: 1,591 lines at this checkpoint, compared with the initial audit estimate of ~2,150. Persistence, vault migration/unlock, encryption, draft recovery orchestration, and editor save/navigation lifecycle remain in the composition root intentionally.
+- Current measured `NestNoteApp.kt` size: 1,522 lines at this checkpoint, compared with the initial audit estimate of ~2,150. Persistence, vault migration/unlock, encryption, draft recovery orchestration, and editor save/navigation lifecycle remain in the composition root intentionally.
 - [ ] Continue the app-root boundary pass, then run Android CI and targeted tests once the file-level refactor is complete. No CI was triggered during this pass.
 
 ### Markdown import extraction progress
