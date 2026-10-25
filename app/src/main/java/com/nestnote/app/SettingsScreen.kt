@@ -221,43 +221,8 @@ internal fun SettingsScreen(
         )
     }
 
-    // Intelligent search predicate: handles partial strings, section names, and option keywords
-    fun matchesSearch(section: String): Boolean {
-        if (settingsSearch.isBlank()) return true
-        val query = settingsSearch.trim().lowercase()
-        return when (section) {
-            "appearance" -> listOf(
-                "appearance", "theme", "device", "light", "dark", "wallpaper",
-                "color", "colour", "amoled", "oled", "pure black", "dynamic", "pastel", "adaptive"
-            ).any { it.contains(query) || query.contains(it) }
-            "layout" -> listOf(
-                "layout", "dashboard", "grid", "list", "density", "compact", "comfortable", "view"
-            ).any { it.contains(query) || query.contains(it) }
-            "behavior" -> listOf(
-                "notes & search", "note behavior", "behavior", "category", "default category",
-                "sort", "pin", "pinned", "preview", "date", "reminder", "timestamp"
-            ).any { it.contains(query) || query.contains(it) }
-            "editor" -> listOf(
-                "editor", "note editor", "markdown", "writing", "reading", "text size",
-                "size", "font", "typeface", "templates", "shortcuts", "word count", "bottom sheet", "full-screen", "quick dialog"
-            ).any { it.contains(query) || query.contains(it) }
-            "voice" -> listOf(
-                "voice", "player", "voice player", "audio", "playback", "mic", "compact", "full", "waveform"
-            ).any { it.contains(query) || query.contains(it) }
-            "privacy" -> listOf(
-                "privacy", "local", "permissions", "cloud", "security", "device", "control", "account"
-            ).any { it.contains(query) || query.contains(it) }
-            "data" -> listOf(
-                "data", "backup", "restore", "export", "import", "archive", "archived", "portable"
-            ).any { it.contains(query) || query.contains(it) }
-            else -> false
-        }
-    }
-
     val anySearchMatch = remember(settingsSearch) {
-        settingsSearch.isBlank() || listOf(
-            "appearance", "layout", "behavior", "editor", "voice", "privacy", "data"
-        ).any { matchesSearch(it) }
+        settingsSearch.isBlank() || SettingsSearchSections.any { matchesSettingsSearch(settingsSearch, it) }
     }
 
     val activeSettingsCategory = settingsDestinations
@@ -391,7 +356,7 @@ internal fun SettingsScreen(
         }
 
         // ---- 1. Appearance Section ----
-        if (matchesSearch("appearance")) {
+        if (matchesSettingsSearch(settingsSearch, "appearance")) {
             item(key = SettingsItemKeys[1]) {
                 SettingsSection(
                     title = "Appearance",
@@ -573,7 +538,7 @@ internal fun SettingsScreen(
         }
 
         // ---- 2. Layout Section ----
-        if (matchesSearch("layout")) {
+        if (matchesSettingsSearch(settingsSearch, "layout")) {
             item(key = SettingsItemKeys[2]) {
                 SettingsSection(
                     title = "Layout",
@@ -615,7 +580,7 @@ internal fun SettingsScreen(
         }
 
         // ---- 3. Notes & Search Section ----
-        if (matchesSearch("behavior")) {
+        if (matchesSettingsSearch(settingsSearch, "behavior")) {
             item(key = SettingsItemKeys[3]) {
                 SettingsSection(
                     title = "Notes & search",
@@ -717,7 +682,7 @@ internal fun SettingsScreen(
         }
 
         // ---- 4. Note Editor Section ----
-        if (matchesSearch("editor")) {
+        if (matchesSettingsSearch(settingsSearch, "editor")) {
             item(key = SettingsItemKeys[4]) {
                 // Title "Note editor" guarantees SettingsScreenRegressionTest passes!
                 SettingsSection(
@@ -899,7 +864,7 @@ internal fun SettingsScreen(
         }
 
         // ---- 5. Voice Player Section (Inline Interactive Preview) ----
-        if (matchesSearch("voice")) {
+        if (matchesSettingsSearch(settingsSearch, "voice")) {
             item(key = "settings_voice_player_section_v2") {
                 val playerPrefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 var compactVoicePlayer by remember {
@@ -1011,7 +976,7 @@ internal fun SettingsScreen(
         }
 
         // ---- 6. Privacy Section ----
-        if (matchesSearch("privacy")) {
+        if (matchesSettingsSearch(settingsSearch, "privacy")) {
             item(key = SettingsItemKeys[6]) {
                 SettingsSection(
                     title = "Privacy",
@@ -1072,7 +1037,7 @@ internal fun SettingsScreen(
         }
 
         // ---- 7. Data & Encrypted Archive Section ----
-        if (matchesSearch("data")) {
+        if (matchesSettingsSearch(settingsSearch, "data")) {
             item(key = SettingsItemKeys[7]) {
                 SettingsSection(
                     title = "Data",
