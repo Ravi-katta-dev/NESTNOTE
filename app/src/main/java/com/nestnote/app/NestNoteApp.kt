@@ -611,12 +611,7 @@ internal fun NestNoteApp(
                     val fileName = displayName.ifBlank {
                         uri.lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.') ?: ""
                     }
-                    val firstHeading = Regex("(?m)^#\\s+(.+?)\\s*$").find(markdown)
-                    val title = firstHeading?.groupValues?.get(1)?.trim().orEmpty()
-                        .ifBlank { fileName.ifBlank { "Imported note" } }
-                    val body = if (firstHeading != null) markdown.removeRange(firstHeading.range).trim()
-                        else markdown.trim()
-                    title to body
+                    MarkdownNoteParser.parse(markdown, fileName)
                 }.getOrNull()
             }
         }
