@@ -32,7 +32,7 @@ internal class SqlCipherNoteStore(context: Context) {
     @Synchronized
     fun hasStorageArtifacts(): Boolean {
         val file = appContext.getDatabasePath(DATABASE_NAME)
-        return (file.exists() && file.length() > 0L) || prefs.contains(WRAPPED_PASSPHRASE)
+        return file.exists() || prefs.contains(WRAPPED_PASSPHRASE)
     }
 
     @Synchronized
