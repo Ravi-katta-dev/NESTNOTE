@@ -1360,80 +1360,44 @@ internal fun NestNoteApp(
 
         if (showOrphanDraftDialog && pendingOrphanDrafts.isNotEmpty()) {
             val newest = pendingOrphanDrafts.first()
-            val count = pendingOrphanDrafts.size
             val draftDateFormatter = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
             val preview = newest.title.ifBlank {
                 newest.body.lineSequence().firstOrNull { it.isNotBlank() }?.take(40).orEmpty()
             }.ifBlank { "Untitled" }
-            AlertDialog(
-                onDismissRequest = { showOrphanDraftDialog = false },
-                title = {
-                    Text(if (count == 1) "Recover unsaved note?" else "Recover unsaved notes?")
-                },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(
-                            if (count == 1) {
-                                "A draft from ${draftDateFormatter.format(Date(newest.savedAtMillis))} was found."
-                            } else {
-                                "$count drafts from previous sessions were found. The most recent is:"
-                            }
-                        )
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = colors.surfaceContainerHighest
-                        ) {
-                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(preview, style = MaterialTheme.typography.titleSmall)
-                                Text(
-                                    draftDateFormatter.format(Date(newest.savedAtMillis)),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = colors.onSurfaceVariant
-                                )
-                            }
-                        }
+            OrphanDraftRecoveryDialog(
+                count = pendingOrphanDrafts.size,
+                preview = preview,
+                savedAtLabel = draftDateFormatter.format(Date(newest.savedAtMillis)),
+                onDismiss = { showOrphanDraftDialog = false },
+                onRecover = {
+                    val recovered = NestNote(
+                        id = newest.noteId,
+                        title = newest.title,
+                        body = newest.body,
+                        category = newest.category,
+                        color = newest.color,
+                        background = newest.background,
+                        pinned = newest.pinned,
+                        reminder = newest.reminder,
+                        wallpaperUri = newest.wallpaperUri,
+                        updated = newest.savedAtMillis,
+                        created = newest.savedAtMillis
+                    )
+                    requestPersist(notes + recovered) {
+                        coroutineScope.launch(Dispatchers.IO) { runCatching { DraftStore(context).clear(newest.noteId) } }
+                        pendingOrphanDrafts = pendingOrphanDrafts.drop(1)
+                        if (pendingOrphanDrafts.isEmpty()) showOrphanDraftDialog = false
+                        coroutineScope.launch { snackbarHostState.showSnackbar("Draft recovered") }
                     }
                 },
-                confirmButton = {
-                    TextButton(onClick = {
-                        val recovered = NestNote(
-                            id = newest.noteId,
-                            title = newest.title,
-                            body = newest.body,
-                            category = newest.category,
-                            color = newest.color,
-                            background = newest.background,
-                            pinned = newest.pinned,
-                            reminder = newest.reminder,
-                            wallpaperUri = newest.wallpaperUri,
-                            updated = newest.savedAtMillis,
-                            created = newest.savedAtMillis
-                        )
-                        requestPersist(notes + recovered) {
-                            coroutineScope.launch(Dispatchers.IO) { runCatching { DraftStore(context).clear(newest.noteId) } }
-                            pendingOrphanDrafts = pendingOrphanDrafts.drop(1)
-                            if (pendingOrphanDrafts.isEmpty()) {
-                                showOrphanDraftDialog = false
-                            }
-                            coroutineScope.launch { snackbarHostState.showSnackbar("Draft recovered") }
+                onDiscardAll = {
+                    coroutineScope.launch {
+                        withContext(Dispatchers.IO) {
+                            pendingOrphanDrafts.forEach { runCatching { DraftStore(context).clear(it.noteId) } }
                         }
-                    }) { Text("Recover") }
-                },
-                dismissButton = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                        TextButton(onClick = {
-                            coroutineScope.launch {
-                                withContext(Dispatchers.IO) {
-                                    pendingOrphanDrafts.forEach {
-                                        runCatching { DraftStore(context).clear(it.noteId) }
-                                    }
-                                }
-                            }
-                            pendingOrphanDrafts = emptyList()
-                            showOrphanDraftDialog = false
-                        }) { Text("Discard all") }
-                        TextButton(onClick = { showOrphanDraftDialog = false }) { Text("Later") }
                     }
+                    pendingOrphanDrafts = emptyList()
+                    showOrphanDraftDialog = false
                 }
             )
         }
@@ -1444,39 +1408,25 @@ internal fun NestNoteApp(
             val restoreIncoming = NoteStore.remapDraftIdCollisionForRestore(notes, publicIncoming, editorDraftId)
             val preview = NoteStore.merge(notes, restoreIncoming)
             val withinNoteLimit = NoteStore.isValidNoteCollection(preview.notes)
-            AlertDialog(
-                onDismissRequest = { pendingRestore = null },
-                title = { Text("Review backup restore") },
-                text = {
-                    Text(
-                        if (withinNoteLimit) {
-                            "This backup will add ${preview.added} notes and update ${preview.updated} existing notes. Voice recordings are not included. Notes not present in the backup will not be deleted."
-                        } else {
-                            "This restore would exceed NESTNOTE's ${NoteStore.MAX_NOTES}-note limit. Remove notes or choose a smaller backup before restoring."
+            BackupRestoreReviewDialog(
+                addedCount = preview.added,
+                updatedCount = preview.updated,
+                withinNoteLimit = withinNoteLimit,
+                maxNotes = NoteStore.MAX_NOTES,
+                onDismiss = { pendingRestore = null },
+                onRestore = {
+                    requestPersist(preview.notes, allowRecovery = true) {
+                        val restoredCategories = (categoryOptions + preview.notes.map { it.category })
+                            .distinct().filter { it.isNotBlank() }
+                        if (restoredCategories != categoryOptions) {
+                            categoryOptions = restoredCategories
+                            preferences.edit().putStringSet(PREF_CUSTOM_CATEGORIES, restoredCategories.toMutableSet()).apply()
                         }
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        enabled = withinNoteLimit,
-                        onClick = {
-                            requestPersist(preview.notes, allowRecovery = true) {
-                                val restoredCategories = (categoryOptions + preview.notes.map { it.category })
-                                    .distinct().filter { it.isNotBlank() }
-                                if (restoredCategories != categoryOptions) {
-                                    categoryOptions = restoredCategories
-                                    preferences.edit().putStringSet(PREF_CUSTOM_CATEGORIES, restoredCategories.toMutableSet()).apply()
-                                }
-                                pendingRestore = null
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Restored ${preview.added} new and ${preview.updated} updated notes")
-                                }
-                            }
+                        pendingRestore = null
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Restored ${preview.added} new and ${preview.updated} updated notes")
                         }
-                    ) { Text("Restore notes") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { pendingRestore = null }) { Text("Cancel") }
+                    }
                 }
             )
         }
