@@ -2007,7 +2007,7 @@ internal fun NestNoteApp(
             }
         }
         if (confirmEncryptAll) {
-            val eligible = notes.filter { !it.privateNote && !it.encrypted }
+            val eligible = OrdinaryNoteSelection.eligibleForEncryption(notes)
             AlertDialog(
                 onDismissRequest = { confirmEncryptAll = false },
                 title = { Text("Encrypt all ordinary notes?") },
