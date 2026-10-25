@@ -1,0 +1,53 @@
+package com.nestnote.app
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+
+/** Category overview UI; destination changes are delegated to the app root. */
+@Composable
+internal fun AppCategoriesScreen(
+    notes: List<NestNote>,
+    categories: List<String>,
+    onSelectCategory: (String) -> Unit
+) {
+    val activeCategoryCounts = remember(notes, categories) {
+        categories.associateWith { category ->
+            notes.count { it.category == category && !it.archived && !it.privateNote }
+        }
+    }
+    Column(
+        Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text("Categories", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        categories.chunked(2).forEach { pair ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                pair.forEach { category ->
+                    Card(
+                        modifier = Modifier.weight(1f).clickable { onSelectCategory(category) },
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                            Text(category, style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "${activeCategoryCounts[category] ?: 0} active notes",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
