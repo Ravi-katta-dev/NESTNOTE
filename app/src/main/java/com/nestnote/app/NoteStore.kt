@@ -55,8 +55,11 @@ class NoteStore internal constructor(context: Context, private val testKeyProvid
         }
         val targetStore = if (target == NoteStorageBackend.SQLCIPHER) SqlCipherNoteStore(appContext) else null
         val result = if (targetStore == null) loadKeyStoreSafely() else {
-            if (targetStore.hasStoredNotes()) targetStore.loadSafely()
-            else {
+            if (targetStore.hasStorageArtifacts()) {
+                // Existing database/key material must be treated as authoritative. Never
+                // seed over it merely because its key is missing or its database is unreadable.
+                targetStore.loadSafely()
+            } else {
                 if (!isValidNoteCollection(currentNotes) || !targetStore.save(currentNotes)) {
                     throw NoteStorageException("Could not initialize the encrypted SQL database; the active store was not changed")
                 }
