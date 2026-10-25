@@ -58,16 +58,17 @@ Counts are current source line counts, not estimates; line counts may vary sligh
 | File | Initial audit baseline | Current branch | Change | Status |
 |---|---:|---:|---:|---|
 | `SettingsScreen.kt` | 2,652 | 551 | -2,101 lines (-79.2%) | Section extraction pass complete; parent remains composition/state owner |
-| `NestNoteApp.kt` | ~2,150 | 2,015 | -135 lines (-6.3%) | In progress: destination header/actions extracted and obsolete imports removed; continue broader composition-root refactor before CI |
+| `NestNoteApp.kt` | ~2,150 | 1,995 | -155 lines (-7.2%) | In progress: destination header/actions and accent palette extracted; composition-root refactor continues before CI |
 
 The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 additions, which is a net reduction of 2,101 lines. Extracted settings sections/dialogs/components are now in focused files; no claim is made that build or tests pass until they are run.
 
 ### Next-file boundary audit: `NestNoteApp.kt`
 
-- Current size: 2,086 lines on this branch; the initial audit estimated ~2,150 lines.
+- Current size at the latest checkpoint: 1,995 lines; the initial audit estimated ~2,150 lines. Counts are refreshed after each completed extraction.
 - Existing boot landing UI has already moved to `BootLandingScreen.kt` (the app-root diff removes 65 lines and adds one replacement line).
+- [x] Extracted the shared `AccentPalette` enum and color-scheme mapping into `AppAccentPalette.kt`; `SettingsScreen` and `NestNoteApp` continue to use the same enum values and preference key.
 - Identified stateful action clusters inside `NestNoteApp`: persistence (`persist` / `requestPersist`, around lines 372–464), ordinary-note encryption (`encryptOrdinaryNote`, `decryptOrdinaryNote`, and selection actions, around lines 465–539), deletion/sort/reset preference actions (around lines 540–590), and Markdown import orchestration (`importMarkdownUris`, around line 591).
-- These clusters share composition-owned state and callbacks. Extracting them wholesale before a baseline would risk changing save ordering, error handling, draft recovery, encryption verification, or UI state. The next implementation step is therefore to establish the existing build/test baseline, then extract one narrow, testable helper at a time while leaving orchestration in `NestNoteApp`.
+- These clusters share composition-owned state and callbacks. Extracting them wholesale before a baseline would risk changing save ordering, error handling, draft recovery, encryption verification, or UI state. The next implementation step is to continue with narrow, testable boundaries while leaving persistence orchestration, vault-session ownership, and editor lifecycle in `NestNoteApp`.
 
 3. **NestNoteApp (current file):** continue behavior-preserving extractions within this file. Keep persistence, encryption, draft-recovery, and linked-note navigation orchestration in the composition root unless a safe, testable boundary is established. Run CI only after the `NestNoteApp.kt` refactor pass is complete.
 4. Verify each extraction with Android CI and targeted regression tests before continuing.
