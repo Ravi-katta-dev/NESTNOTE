@@ -2,7 +2,6 @@ package com.nestnote.app
 
 import android.media.AudioManager
 import android.media.ToneGenerator
-import android.content.SharedPreferences
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -19,13 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
 @Composable
 internal fun BootLandingScreen(preferences: android.content.SharedPreferences) {
-    val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
     var soundEnabled by remember {
         mutableStateOf(preferences.getBoolean(PREF_BOOT_SOUND_ENABLED, true))
