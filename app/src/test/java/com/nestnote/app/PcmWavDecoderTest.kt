@@ -30,6 +30,12 @@ class PcmWavDecoderTest {
         decodePcmWav(byteArrayOf(1, 2, 3, 4))
     }
 
+    @Test(expected = IOException::class)
+    fun rejectsWavWhoseDecodedPcmWouldExceedAttachmentLimit() {
+        // A tiny source file with a pathological sample rate must not trigger a huge allocation.
+        decodePcmWav(wav(channels = 1, sampleRate = 1, samples = ShortArray(2_000)))
+    }
+
     private fun wav(channels: Int, sampleRate: Int, samples: ShortArray): ByteArray {
         val dataLength = samples.size * 2
         val buffer = ByteBuffer.allocate(44 + dataLength).order(ByteOrder.LITTLE_ENDIAN)
