@@ -734,26 +734,13 @@ internal fun NestNoteApp(
                     },
                     actions = {
                         if (selectedView == "Home" || selectedView == "All notes") {
-                            IconButton(
-                                onClick = {
+                            AppDestinationSearchAction(
+                                searchVisible = searchVisible,
+                                onToggle = {
                                     searchVisible = !searchVisible
                                     if (!searchVisible) search = ""
-                                },
-                                modifier = Modifier
-                                    .padding(end = 8.dp)
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (searchVisible) colors.primaryContainer else colors.surfaceContainerHigh
-                                    )
-                                    .testTag("home_search_icon")
-                            ) {
-                                Icon(
-                                    if (searchVisible) Icons.Default.Close else Icons.Default.Search,
-                                    contentDescription = if (searchVisible) "Close search" else "Search notes",
-                                    tint = if (searchVisible) colors.onPrimaryContainer else colors.onSurface
-                                )
-                            }
+                                }
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.surface)
