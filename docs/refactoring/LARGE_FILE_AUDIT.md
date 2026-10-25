@@ -106,3 +106,12 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Extracted ordinary-note locked-record field mapping into `OrdinaryNoteRecordTransform.kt`; encryption, authenticated decrypt verification, and persistence remain with the app workflow.
 - [x] Added regression tests for sensitive-field clearing, metadata preservation, and rejection of private/already-encrypted notes.
 - [ ] CI for this exact refactor commit must pass before starting the next file extraction.
+
+
+### Markdown note construction extraction progress
+
+- [x] Extracted deterministic creation of imported note records into `MarkdownNoteFactory.kt`. It preserves input order, assigns the selected category, increments timestamps by input index, and allocates collision-free IDs against existing and newly-created notes.
+- [x] Added JVM regression coverage for ordering, category/body/title preservation, timestamps, ID collision avoidance, and empty input in `MarkdownNoteFactoryTest.kt`.
+- [x] Kept URI reading, all-or-nothing read failure handling, persistence, route selection, and snackbar feedback in `NestNoteApp.kt`.
+- [ ] Build and run targeted tests after the current `NestNoteApp.kt` refactor pass is complete; no CI has been started for these commits.
+- Next: inspect remaining app-root responsibilities and continue only with another behavior-preserving boundary; persistence ordering and encryption verification remain intentionally in place.
