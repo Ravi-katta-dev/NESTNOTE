@@ -44,6 +44,7 @@ Baseline sizes are approximate counts from the initial source audit. Current cou
 - [x] Remove unused imports from extracted settings screens and shared components; keep each composable's callback parameters explicit so the parent remains the state owner.
 - [x] Extract the independent boot landing screen from `NestNoteApp.kt` into `BootLandingScreen.kt`; keep the existing boot-sound preference key and user toggle behavior.
 - [x] Extract destination title/subtitle mapping into pure `AppDestinationPresentation.kt`; route state and navigation remain owned by `NestNoteApp`, with JVM tests for known destinations and fallback labels.
+- [x] Centralize ordinary-note encryption eligibility so selected-note and confirmed encrypt-all actions share the same private/already-encrypted exclusion rule; add JVM coverage.
 - [x] Add targeted regression coverage for unique LazyColumn item keys and stable sort choices alongside the existing settings-search tests.
 - [x] Re-check obvious stale imports in the extracted files and add pure JVM regression coverage for stable settings keys/sort choices. Full build/test verification remains pending.
 
