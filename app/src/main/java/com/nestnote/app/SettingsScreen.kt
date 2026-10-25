@@ -471,92 +471,13 @@ internal fun SettingsScreen(
         // ---- 7. Data & Encrypted Archive Section ----
         if (matchesSettingsSearch(settingsSearch, "data")) {
             item(key = SettingsItemKeys[7]) {
-                SettingsSection(
-                    title = "Data",
-                    subtitle = "Manage encrypted archives and local storage",
-                    icon = Icons.Default.Archive
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        OverviewTile(
-                            label = "Active notes",
-                            count = (totalNotes - archivedNotes).coerceAtLeast(0),
-                            onClick = onOpenBackupRestore,
-                            modifier = Modifier.weight(1f)
-                        )
-                        OverviewTile(
-                            label = "Archived notes",
-                            count = archivedNotes,
-                            onClick = onOpenBackupRestore,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Text(
-                        "Create or restore a password-protected encrypted archive.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 2.dp)
-                    )
-
-                    HorizontalDivider(Modifier.padding(vertical = 4.dp), color = colors.outlineVariant.copy(alpha = 0.5f))
-                    SettingLabel("Encrypted note storage")
-                    Text(
-                        "Choose which private app-data store NESTNOTE uses. Switching never deletes the other store; a new SQLCipher store is initialized from the current notes only the first time.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.onSurfaceVariant
-                    )
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
-                                .clickable { if (storageBackend != NoteStorageBackend.KEYSTORE) pendingStorageBackend = NoteStorageBackend.KEYSTORE }
-                                .padding(horizontal = 4.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = storageBackend == NoteStorageBackend.KEYSTORE,
-                                onClick = { if (storageBackend != NoteStorageBackend.KEYSTORE) pendingStorageBackend = NoteStorageBackend.KEYSTORE }
-                            )
-                            Column(Modifier.weight(1f).padding(start = 8.dp)) {
-                                Text("Android Keystore encrypted storage", style = MaterialTheme.typography.titleSmall)
-                                Text("AES-GCM encrypted note payload in app preferences", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
-                                .clickable { if (storageBackend != NoteStorageBackend.SQLCIPHER) pendingStorageBackend = NoteStorageBackend.SQLCIPHER }
-                                .padding(horizontal = 4.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = storageBackend == NoteStorageBackend.SQLCIPHER,
-                                onClick = { if (storageBackend != NoteStorageBackend.SQLCIPHER) pendingStorageBackend = NoteStorageBackend.SQLCIPHER }
-                            )
-                            Column(Modifier.weight(1f).padding(start = 8.dp)) {
-                                Text("Encrypted SQL database (SQLCipher)", style = MaterialTheme.typography.titleSmall)
-                                Text("Database under app-private storage; its key is wrapped by Android Keystore", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-                            }
-                        }
-                    }
-
-                    // Opens the encrypted archive workflow.
-                    OutlinedButton(
-                        onClick = onOpenBackupRestore,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("settings_open_backup_restore"),
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, colors.outlineVariant)
-                    ) {
-                        Icon(Icons.Default.Archive, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Encrypted archive", fontWeight = FontWeight.SemiBold)
-                        Spacer(Modifier.weight(1f))
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, modifier = Modifier.size(18.dp))
-                    }
-                }
+                SettingsDataSection(
+                    totalNotes = totalNotes,
+                    archivedNotes = archivedNotes,
+                    onOpenBackupRestore = onOpenBackupRestore,
+                    storageBackend = storageBackend,
+                    onRequestStorageBackendChange = { pendingStorageBackend = it }
+                )
             }
         }
 
