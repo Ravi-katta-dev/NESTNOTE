@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 internal fun AppDashboardFilters(
     searchVisible: Boolean,
     search: String,
-    savedSearches: Set<String>,
+    savedSearches: List<String>,
     selectedView: String,
     categories: List<String>,
     onSearchChange: (String) -> Unit,
