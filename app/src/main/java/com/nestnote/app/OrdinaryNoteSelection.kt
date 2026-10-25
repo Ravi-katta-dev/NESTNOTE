@@ -7,8 +7,11 @@ package com.nestnote.app
  * which records are eligible and applies already-verified replacements to the original list.
  */
 internal object OrdinaryNoteSelection {
+    fun eligibleForEncryption(notes: List<NestNote>): List<NestNote> =
+        notes.filter { !it.privateNote && !it.encrypted }
+
     fun forEncryption(notes: List<NestNote>, selectedIds: Set<Long>): List<NestNote> =
-        notes.filter { it.id in selectedIds && !it.privateNote && !it.encrypted }
+        eligibleForEncryption(notes).filter { it.id in selectedIds }
 
     fun forDecryption(notes: List<NestNote>, selectedIds: Set<Long>): List<NestNote> =
         notes.filter { it.id in selectedIds && it.encrypted && !it.privateNote }
