@@ -90,3 +90,12 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Added JVM regression cases for first-heading extraction, subsequent headings, fallback file names, blank fallback titles, whitespace trimming and empty documents in `MarkdownNoteParserTest.kt`.
 - [ ] Run `MarkdownNoteParserTest` and the Android app compile/test tasks against the latest PR head; GitHub source edits alone do not establish passing verification.
 - Next: check the exact diff and CI results, then choose the next small extraction based on tests rather than moving persistence or encryption wholesale.
+
+
+### Ordinary-note selection extraction progress
+
+- [x] Extracted selection eligibility and ordered replacement application into the pure `OrdinaryNoteSelection.kt` helper.
+- [x] Kept cryptographic encrypt/decrypt calls, authenticated round-trip verification, failure handling, persistence, and success feedback in `NestNoteApp`.
+- [x] Added JVM regression coverage for private-note exclusion, already-encrypted exclusion, selected-note ordering, replacement ordering, and empty replacements.
+- [ ] Confirm the latest Android CI run includes this exact commit and passes; the previously reported successful run predates this extraction unless its SHA matches the new head.
+- Next: wait for/inspect CI on the updated head before selecting another extraction.
