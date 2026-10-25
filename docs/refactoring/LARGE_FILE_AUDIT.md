@@ -58,7 +58,7 @@ Counts are current source line counts, not estimates; line counts may vary sligh
 | File | Initial audit baseline | Current branch | Change | Status |
 |---|---:|---:|---:|---|
 | `SettingsScreen.kt` | 2,652 | 551 | -2,101 lines (-79.2%) | Section extraction pass complete; parent remains composition/state owner |
-| `NestNoteApp.kt` | ~2,150 | 2,018 | -132 lines (-6.1%) | In progress: app-bar destination header/actions extracted; continue broader composition-root refactor before CI |
+| `NestNoteApp.kt` | ~2,150 | 2,015 | -135 lines (-6.3%) | In progress: destination header/actions extracted and obsolete imports removed; continue broader composition-root refactor before CI |
 
 The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 additions, which is a net reduction of 2,101 lines. Extracted settings sections/dialogs/components are now in focused files; no claim is made that build or tests pass until they are run.
 
