@@ -44,6 +44,45 @@ class VoiceNoteRepository private constructor(
     fun listPayloads(noteId: Long): List<VoiceAttachment> = store.list(noteId)
 
     /**
+     * Persist encrypted audio for the review step without publishing it as an attached recording.
+     * The payload remains encrypted and discoverable for recovery until explicitly attached or discarded.
+     */
+    @Throws(IOException::class)
+    fun saveForReview(noteId: Long, attachmentId: String, input: InputStream): VoiceAttachment =
+        store.save(noteId, attachmentId, input)
+
+    /** Publish metadata for a successfully saved review payload after the user chooses Attach. */
+    @Throws(IOException::class)
+    fun attachExisting(
+        noteId: Long,
+        attachmentId: String,
+        createdAtMillis: Long,
+        durationMillis: Long,
+        displayName: String
+    ): VoiceAttachmentMetadata {
+        val payload = store.list(noteId).firstOrNull { it.attachmentId == attachmentId }
+            ?: throw IOException("Attachment payload is missing; metadata was not committed")
+        val metadata = VoiceAttachmentMetadata(
+            noteId = noteId,
+            attachmentId = attachmentId,
+            createdAtMillis = createdAtMillis,
+            durationMillis = durationMillis,
+            encryptedSizeBytes = payload.encryptedSizeBytes,
+            displayName = displayName
+        )
+        manifest.put(metadata, store)
+        return metadata
+    }
+
+    /** Remove an unattached review payload without changing unrelated manifest entries. */
+    @Throws(IOException::class)
+    fun deletePayload(noteId: Long, attachmentId: String) {
+        if (!store.delete(noteId, attachmentId)) {
+            throw IOException("Voice recording payload could not be deleted")
+        }
+    }
+
+    /**
      * Encrypt and persist the recording first, then publish metadata. If metadata publication
      * fails, remove only the newly-created payload so no unindexed partial save is left behind.
      */
