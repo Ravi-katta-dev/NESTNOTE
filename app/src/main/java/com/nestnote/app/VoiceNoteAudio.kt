@@ -94,7 +94,6 @@ internal fun VoiceNoteControls(
 
     // Review playback state
     var previewingReview by remember { mutableStateOf(false) }
-    var reviewPlaying by remember { mutableStateOf(false) }
     var reviewPaused by remember { mutableStateOf(false) }
     var reviewPositionMs by remember { mutableIntStateOf(0) }
     var reviewDurationMs by remember { mutableIntStateOf(0) }
@@ -281,7 +280,6 @@ internal fun VoiceNoteControls(
         reviewSession?.stop()
         reviewSession = null
         previewingReview = false
-        reviewPlaying = false
         reviewPaused = false
         reviewPositionMs = 0
         reviewDurationMs = 0
@@ -342,7 +340,6 @@ internal fun VoiceNoteControls(
                 reviewSession?.stop()
                 reviewSession = null
                 previewingReview = false
-                reviewPlaying = false
                 reviewPaused = false
                 if (status.startsWith("Recording…") || status.startsWith("Recording paused")) {
                     status = "Recording stopped when the app left the foreground."
@@ -424,7 +421,6 @@ internal fun VoiceNoteControls(
                         if (focus == null) status = "Audio focus is unavailable. Try again."
                         else {
                             requestedAudioFocus = true; audioFocusListener = focus
-                            previewingReview = true; reviewPlaying = true; reviewPaused = false
                             reviewPositionMs = 0; reviewDurationMs = 0
                             val player = PcmVoicePlayback(
                                 context, readAttachment = voiceNotes::read, attachment = reviewAttachment,
@@ -437,7 +433,6 @@ internal fun VoiceNoteControls(
                                     reviewDurationMs = durationMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
                                 }
                             ) { error ->
-                                reviewSession = null; previewingReview = false; reviewPlaying = false; reviewPaused = false
                                 abandonVoiceAudioFocus(audioManager, focus)
                                 audioFocusListener = null; requestedAudioFocus = false
                                 status = error ?: "Preview finished."
