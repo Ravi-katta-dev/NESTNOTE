@@ -5,6 +5,7 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.OpenableColumns
+import com.nestnote.app.VoiceAttachmentMetadata
 import java.io.IOException
 import java.util.Locale
 import java.util.UUID
