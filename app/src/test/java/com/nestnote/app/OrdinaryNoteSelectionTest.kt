@@ -18,6 +18,12 @@ class OrdinaryNoteSelectionTest {
     }
 
     @Test
+    fun allEncryptionEligibilityExcludesPrivateAndAlreadyEncryptedNotes() {
+        val notes = listOf(note(1), note(2, encrypted = true), note(3, privateNote = true))
+        assertEquals(listOf(1L), OrdinaryNoteSelection.eligibleForEncryption(notes).map { it.id })
+    }
+
+    @Test
     fun decryptionSelectionIncludesOnlyEncryptedOrdinaryNotes() {
         val notes = listOf(note(1), note(2, encrypted = true), note(3, privateNote = true, encrypted = true))
         assertEquals(listOf(2L), OrdinaryNoteSelection.forDecryption(notes, setOf(1, 2, 3)).map { it.id })
