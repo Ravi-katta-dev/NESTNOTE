@@ -33,6 +33,81 @@ class NoteStoreTest {
     }
 
     @Test
+    fun keystoreSwitchMergesLatestSourceNotesAndChangesBackendAfterCopy() {
+        val original = NestNote(id = 501L, title = "Original", body = "Keystore copy", updated = 10L)
+        assertTrue(store.save(listOf(original)))
+        val prefs = context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
+        assertTrue(prefs.edit().putString("storage_backend", NoteStorageBackend.SQLCIPHER.name).commit())
+
+        // These are the notes reloaded from the active source at worker execution time.
+        val latest = listOf(
+            original.copy(title = "Edited during delay", body = "Latest body", updated = 20L),
+            NestNote(id = 502L, title = "Created during delay", body = "Must survive", updated = 21L)
+        )
+        val switched = store.switchBackend(NoteStorageBackend.KEYSTORE, latest)
+
+        assertFalse(switched.recoveryRequired)
+        assertEquals(NoteStorageBackend.KEYSTORE, store.currentBackend())
+        assertEquals(listOf(501L, 502L), store.load().map { it.id })
+        assertEquals("Edited during delay", store.load().first().title)
+        assertEquals("Must survive", store.load().last().body)
+    }
+
+    @Test
+    fun missingKeystoreKeyFailsClosedAndPreservesBackendAndCiphertext() {
+        val note = NestNote(id = 503L, title = "Preserve me", body = "Encrypted bytes")
+        assertTrue(store.save(listOf(note)))
+        val prefs = context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
+        val encryptedBefore = prefs.getString("notes_encrypted_v2", null)
+        assertTrue(prefs.edit().putString("storage_backend", NoteStorageBackend.SQLCIPHER.name).commit())
+        val wrongKey = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
+        val brokenStore = NoteStore(context) { wrongKey }
+
+        org.junit.Assert.assertThrows(NoteStorageException::class.java) {
+            brokenStore.switchBackend(NoteStorageBackend.KEYSTORE, listOf(note.copy(body = "new copy")))
+        }
+
+        assertEquals(NoteStorageBackend.SQLCIPHER, brokenStore.currentBackend())
+        assertEquals(encryptedBefore, prefs.getString("notes_encrypted_v2", null))
+    }
+
+    @Test
+    fun corruptKeystoreCiphertextFailsClosedWithoutOverwritingOriginalBytes() {
+        val note = NestNote(id = 504L, title = "Corrupt test", body = "Keep stored bytes")
+        assertTrue(store.save(listOf(note)))
+        val prefs = context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
+        assertTrue(prefs.edit()
+            .putString("storage_backend", NoteStorageBackend.SQLCIPHER.name)
+            .putString("notes_encrypted_v2", "not-valid-ciphertext")
+            .commit())
+        val corruptBytes = prefs.getString("notes_encrypted_v2", null)
+
+        org.junit.Assert.assertThrows(NoteStorageException::class.java) {
+            store.switchBackend(NoteStorageBackend.KEYSTORE, listOf(note.copy(body = "must not overwrite")))
+        }
+
+        assertEquals(NoteStorageBackend.SQLCIPHER, store.currentBackend())
+        assertEquals(corruptBytes, prefs.getString("notes_encrypted_v2", null))
+    }
+
+    @Test
+    fun invalidSourceNotesAbortSwitchWithoutChangingBackendOrStoredBytes() {
+        val note = NestNote(id = 505L, title = "Valid", body = "Keep")
+        assertTrue(store.save(listOf(note)))
+        val prefs = context.getSharedPreferences("nestnote_local", Context.MODE_PRIVATE)
+        val encryptedBefore = prefs.getString("notes_encrypted_v2", null)
+        assertTrue(prefs.edit().putString("storage_backend", NoteStorageBackend.SQLCIPHER.name).commit())
+        val invalid = note.copy(id = -1L)
+
+        org.junit.Assert.assertThrows(NoteStorageException::class.java) {
+            store.switchBackend(NoteStorageBackend.KEYSTORE, listOf(invalid))
+        }
+
+        assertEquals(NoteStorageBackend.SQLCIPHER, store.currentBackend())
+        assertEquals(encryptedBefore, prefs.getString("notes_encrypted_v2", null))
+    }
+
+    @Test
     fun firstLoadReturnsStarterNotes() {
         val notes = store.load()
         assertTrue(notes.isNotEmpty())
