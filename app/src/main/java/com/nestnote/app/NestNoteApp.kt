@@ -508,7 +508,7 @@ internal fun NestNoteApp(
         }
     }
     fun encryptSelectedNotes() {
-        val selected = notes.filter { it.id in selectedNoteIds && !it.privateNote && !it.encrypted }
+        val selected = OrdinaryNoteSelection.forEncryption(notes, selectedNoteIds)
         if (selected.isEmpty()) {
             coroutineScope.launch { snackbarHostState.showSnackbar("No unencrypted ordinary notes are selected.") }
             return
@@ -517,13 +517,13 @@ internal fun NestNoteApp(
             coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Bulk encryption failed; no notes were changed.") }
             return
         }
-        requestPersist(notes.map { replacements[it.id] ?: it }) {
+        requestPersist(OrdinaryNoteSelection.applyReplacements(notes, replacements)) {
             selectedNoteIds = emptySet()
             coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted and verified ${replacements.size} notes") }
         }
     }
     fun decryptSelectedNotes() {
-        val selected = notes.filter { it.id in selectedNoteIds && it.encrypted && !it.privateNote }
+        val selected = OrdinaryNoteSelection.forDecryption(notes, selectedNoteIds)
         if (selected.isEmpty()) {
             coroutineScope.launch { snackbarHostState.showSnackbar("No encrypted ordinary notes are selected.") }
             return
@@ -532,7 +532,7 @@ internal fun NestNoteApp(
             coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Bulk decryption failed; no notes were changed.") }
             return
         }
-        requestPersist(notes.map { replacements[it.id] ?: it }) {
+        requestPersist(OrdinaryNoteSelection.applyReplacements(notes, replacements)) {
             selectedNoteIds = emptySet()
             coroutineScope.launch { snackbarHostState.showSnackbar("Decrypted and verified ${replacements.size} notes") }
         }
@@ -2032,7 +2032,7 @@ internal fun NestNoteApp(
                             emptyMap()
                         }
                         if (replacements.isNotEmpty()) {
-                            requestPersist(notes.map { replacements[it.id] ?: it }) {
+                            requestPersist(OrdinaryNoteSelection.applyReplacements(notes, replacements)) {
                                 selectedNoteIds = emptySet()
                                 coroutineScope.launch { snackbarHostState.showSnackbar("Encrypted and verified ${replacements.size} ordinary notes") }
                             }
