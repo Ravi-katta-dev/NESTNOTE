@@ -33,8 +33,9 @@ class VoiceNoteImporter(
         require(noteId > 0) { "Invalid note ID" }
 
         val mimeType = resolver.getType(uri)?.lowercase(Locale.ROOT)
-        val name = ensureAudioExtension(queryDisplayName(uri), mimeType)
-        if (!isAudioDocument(name, mimeType)) throw IOException("Choose an audio file to import")
+        val providedName = queryDisplayName(uri)
+        if (!isAudioDocument(providedName, mimeType)) throw IOException("Choose an audio file to import")
+        val name = ensureAudioExtension(providedName, mimeType)
 
         val declaredSize = querySize(uri)
         if (declaredSize != null && declaredSize > VoiceNoteRepository.MAX_RECORDING_BYTES) {
@@ -89,7 +90,7 @@ class VoiceNoteImporter(
     }.getOrDefault(0L)
 
     private fun ensureAudioExtension(name: String, mimeType: String?): String {
-        if (name.substringAfterLast('.', "").isNotEmpty()) return name
+        if (name.lastIndexOf('.') > 0 && name.substringAfterLast('.').isNotBlank()) return name
         val extension = when (mimeType) {
             "audio/mpeg", "audio/mp3" -> "mp3"
             "audio/mp4", "audio/x-m4a" -> "m4a"
@@ -102,7 +103,7 @@ class VoiceNoteImporter(
             "audio/webm" -> "webm"
             else -> null
         }
-        return if (extension == null) name else "$name.$extension"
+        return "$name.${extension ?: "audio"}"
     }
 
     private fun isAudioDocument(name: String, mimeType: String?): Boolean {
