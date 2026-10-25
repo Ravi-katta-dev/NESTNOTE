@@ -721,33 +721,7 @@ internal fun NestNoteApp(
                         Column(
                             modifier = Modifier
                         ) {
-                            AnimatedContent(
-                                targetState = AppDestinationPresentation.title(selectedView),
-                                transitionSpec = {
-                                    (fadeIn(animationSpec = androidx.compose.animation.core.tween(180)) +
-                                        slideInVertically(
-                                            animationSpec = androidx.compose.animation.core.tween(180),
-                                            initialOffsetY = { it / 8 }
-                                        )) togetherWith
-                                        (fadeOut(animationSpec = androidx.compose.animation.core.tween(100)) +
-                                            slideOutVertically(
-                                                animationSpec = androidx.compose.animation.core.tween(100),
-                                                targetOffsetY = { -it / 10 }
-                                            ))
-                                },
-                                label = "tab-title-transition"
-                            ) { title ->
-                                Text(
-                                    title,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.2.sp
-                                )
-                            }
-                            Text(
-                                AppDestinationPresentation.subtitle(selectedView),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colors.onSurfaceVariant
-                            )
+                            AppDestinationHeader(selectedView)
                         }
                     },
                     navigationIcon = {
