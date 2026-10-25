@@ -207,4 +207,44 @@ class VoiceNoteRepositoryTest {
         assertArrayEquals(byteArrayOf(1, 2, 3), committed.readBytes())
     }
 
+
+    @Test
+    fun reviewPayloadIsEncryptedButNotListedUntilExplicitlyAttached() {
+        val root = Files.createTempDirectory("nestnote-voice-review-lifecycle").toFile()
+        val repository = repository(root)
+        val original = "review before attach".toByteArray()
+
+        repository.saveForReview(61L, "review_clip", ByteArrayInputStream(original))
+
+        assertTrue(File(File(root, "61"), "review_clip.nva").isFile)
+        assertTrue(repository.list(61L).isEmpty())
+        assertEquals(listOf("review_clip"), repository.listPayloads(61L).map { it.attachmentId })
+        assertArrayEquals(original, repository.read(61L, "review_clip"))
+
+        repository.attachExisting(
+            noteId = 61L,
+            attachmentId = "review_clip",
+            createdAtMillis = 10L,
+            durationMillis = 20L,
+            displayName = "Review clip"
+        )
+
+        assertEquals("Review clip", repository.list(61L).single().displayName)
+        repository.delete(61L, "review_clip")
+        assertTrue(repository.listPayloads(61L).isEmpty())
+        assertTrue(repository.list(61L).isEmpty())
+    }
+
+    @Test
+    fun discardingReviewPayloadDoesNotPublishMetadata() {
+        val root = Files.createTempDirectory("nestnote-voice-review-discard").toFile()
+        val repository = repository(root)
+        repository.saveForReview(62L, "discard_me", ByteArrayInputStream(byteArrayOf(1, 3, 5)))
+
+        repository.deletePayload(62L, "discard_me")
+
+        assertTrue(repository.listPayloads(62L).isEmpty())
+        assertTrue(repository.list(62L).isEmpty())
+    }
+
 }
