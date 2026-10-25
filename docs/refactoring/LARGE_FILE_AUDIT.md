@@ -91,6 +91,19 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [ ] UI smoke tests cover settings navigation and editor interaction.
 - [ ] Each extraction remains a small, reviewable change.
 
+
+
+### NestNoteApp UI extraction progress
+
+- [x] Extracted orphan-draft recovery and backup-restore review dialog presentation into `AppRecoveryDialogs.kt`; draft recovery, merge validation, persistence and confirmation callbacks remain parent-owned.
+- [x] Extracted dashboard empty-state presentation into `AppNotesEmptyState.kt`, preserving destination-specific copy, illustration selection and clear-search behavior.
+- [x] Extracted grid/list note-card rendering into `AppNoteCollection.kt`; note selection, navigation, encryption, deletion, pin/archive persistence and stable note IDs remain parent-owned. Grid/list-specific pin gating is preserved.
+- [x] Extracted category browsing into `AppCategoriesScreen.kt`; category selection is still routed through the parent.
+- [x] Extracted dashboard heading and display controls into `AppDashboardHeader.kt`; theme/layout/sort preference writes, note creation, Markdown import, and encrypt-all confirmation are callbacks owned by the parent.
+- [x] Removed stale explicit imports left by the completed UI extractions.
+- Current measured `NestNoteApp.kt` size: 1,591 lines at this checkpoint, compared with the initial audit estimate of ~2,150. Persistence, vault migration/unlock, encryption, draft recovery orchestration, and editor save/navigation lifecycle remain in the composition root intentionally.
+- [ ] Continue the app-root boundary pass, then run Android CI and targeted tests once the file-level refactor is complete. No CI was triggered during this pass.
+
 ### Markdown import extraction progress
 
 - [x] Extracted the first-heading/title/body transformation from `NestNoteApp.importMarkdownUris()` into the pure `MarkdownNoteParser.kt` helper. URI access, display-name lookup, note-ID allocation, category assignment, persistence and user feedback remain in the app root.
