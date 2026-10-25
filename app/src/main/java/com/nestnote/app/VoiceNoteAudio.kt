@@ -31,6 +31,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +43,7 @@ import kotlinx.coroutines.withContext
 private const val VOICE_SAMPLE_RATE = 16_000
 private const val VOICE_CHANNEL_IN = AudioFormat.CHANNEL_IN_MONO
 private const val VOICE_ENCODING = AudioFormat.ENCODING_PCM_16BIT
+private const val MAX_WAV_CONTAINER_OVERHEAD_BYTES = 1024 * 1024
 
 /**
  * Records mono PCM and pipes it directly into the repository's encrypted storage stream.
@@ -129,7 +131,7 @@ internal fun VoiceNoteControls(
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     val pcm = context.contentResolver.openInputStream(uri)
-                        ?.use { decodePcmWav(it.readBytes()) }
+                        ?.use { decodePcmWav(readBoundedWavBytes(it)) }
                         ?: throw IOException("Could not open the selected audio file.")
                     if (pcm.isEmpty()) throw IOException("The selected audio file contains no audio.")
                     if (pcm.size > com.nestnote.app.voicenote.VoiceNoteRepository.MAX_RECORDING_BYTES) {
@@ -273,6 +275,7 @@ internal fun VoiceNoteControls(
             abandonVoiceAudioFocus(audioManager, audioFocusListener)
             requestedAudioFocus = false
         }
+        audioFocusListener = null
         status = "Finishing encrypted recording…"
     }
 
@@ -287,6 +290,7 @@ internal fun VoiceNoteControls(
             abandonVoiceAudioFocus(audioManager, audioFocusListener)
             requestedAudioFocus = false
         }
+        audioFocusListener = null
     }
 
     // Recording timer
@@ -352,6 +356,8 @@ internal fun VoiceNoteControls(
             recordingSession?.stop()
             reviewSession?.stop()
             if (requestedAudioFocus) abandonVoiceAudioFocus(audioManager, audioFocusListener)
+            requestedAudioFocus = false
+            audioFocusListener = null
         }
     }
 
@@ -499,6 +505,33 @@ internal fun VoiceNoteControls(
             status = "Recording discarded. You can record again at any time."
         }
     )
+}
+
+/**
+ * Reads an imported WAV with a hard container-size limit before decoding. The decoded PCM
+ * is checked against the repository limit separately because WAV headers/chunks add overhead.
+ */
+private fun readBoundedWavBytes(input: java.io.InputStream): ByteArray {
+    val maxBytes = com.nestnote.app.voicenote.VoiceNoteRepository.MAX_RECORDING_BYTES.toLong() +
+        MAX_WAV_CONTAINER_OVERHEAD_BYTES
+    val output = ByteArrayOutputStream()
+    val buffer = ByteArray(8 * 1024)
+    var total = 0L
+    while (true) {
+        val count = input.read(buffer)
+        if (count < 0) break
+        if (count == 0) {
+            val single = input.read()
+            if (single < 0) break
+            if (++total > maxBytes) throw IOException("WAV file exceeds the supported import size.")
+            output.write(single)
+            continue
+        }
+        total += count
+        if (total > maxBytes) throw IOException("WAV file exceeds the supported import size.")
+        output.write(buffer, 0, count)
+    }
+    return output.toByteArray()
 }
 
 /** e.g. "Voice note · Oct 20, 3:42 PM". Editable in the review step and stored in the manifest. */
