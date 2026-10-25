@@ -83,3 +83,10 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [ ] Note save, encryption, draft recovery and import flows remain behavior-compatible.
 - [ ] UI smoke tests cover settings navigation and editor interaction.
 - [ ] Each extraction remains a small, reviewable change.
+
+### Markdown import extraction progress
+
+- [x] Extracted the first-heading/title/body transformation from `NestNoteApp.importMarkdownUris()` into the pure `MarkdownNoteParser.kt` helper. URI access, display-name lookup, note-ID allocation, category assignment, persistence and user feedback remain in the app root.
+- [x] Added JVM regression cases for first-heading extraction, subsequent headings, fallback file names, blank fallback titles, whitespace trimming and empty documents in `MarkdownNoteParserTest.kt`.
+- [ ] Run `MarkdownNoteParserTest` and the Android app compile/test tasks against the latest PR head; GitHub source edits alone do not establish passing verification.
+- Next: check the exact diff and CI results, then choose the next small extraction based on tests rather than moving persistence or encryption wholesale.
