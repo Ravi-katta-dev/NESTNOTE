@@ -36,7 +36,10 @@ Approximate sizes are from the source audit and should be remeasured when each e
 - [x] Extract the appearance section into `SettingsAppearanceSection.kt`.
 - [x] Extract the dashboard layout/density section into `SettingsLayoutSection.kt`.
 - [x] Extract notes/search behavior settings into `SettingsBehaviorSection.kt` with category draft changes passed through callbacks.
-- [ ] Extract editor, voice-player, and privacy sections where the state/callback boundaries remain clear.
+- [x] Extract editor settings into `SettingsEditorSection.kt`; preference writes remain owned by the parent screen.
+- [x] Extract voice-player preferences/preview into `SettingsVoicePlayerSection.kt`.
+- [x] Extract privacy settings into `SettingsPrivacySection.kt`.
+- [ ] Extract data/storage selection section and reset/dialog coordination where boundaries are clear.
 - [ ] Re-check imports, build, and tests after the extraction series is complete.
 3. **NestNoteApp:** after a test baseline, extract note actions and coordinators behind existing repository APIs. Keep the app root as the composition root.
 4. Verify each extraction with Android CI and targeted regression tests before continuing.
