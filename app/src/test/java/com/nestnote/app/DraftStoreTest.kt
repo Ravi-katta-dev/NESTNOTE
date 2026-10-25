@@ -214,6 +214,30 @@ class DraftStoreTest {
     }
 
     @Test
+    fun `missing private draft key fails closed and preserves encrypted bytes`() {
+        val draft = sampleDraft(84L).copy(title = "Keep encrypted", body = "Do not discard", privateNote = true)
+        assertTrue(encryptedStore().write(draft))
+        val file = File(root, "note-84.json")
+        val originalBytes = file.readBytes()
+
+        // A store without access to the dedicated private key must not decode or erase it.
+        assertNull(store.read(84L))
+        assertTrue(file.exists())
+        assertTrue(originalBytes.contentEquals(file.readBytes()))
+        assertTrue(store.listAll(includePrivate = true).isEmpty())
+        assertTrue(file.exists())
+        assertTrue(originalBytes.contentEquals(file.readBytes()))
+    }
+
+    @Test
+    fun `private draft cannot be written without its encryption key`() {
+        val draft = sampleDraft(85L).copy(title = "Never plaintext", body = "Sensitive", privateNote = true)
+
+        assertFalse(store.write(draft))
+        assertFalse(File(root, "note-85.json").exists())
+    }
+
+    @Test
     fun `private draft wrong key and tampering are rejected`() {
         val draft = sampleDraft(78L).copy(title = "Secret", privateNote = true)
         assertTrue(encryptedStore().write(draft))
