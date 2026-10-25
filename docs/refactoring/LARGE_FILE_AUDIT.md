@@ -25,7 +25,18 @@ Approximate sizes are from the source audit and should be remeasured when each e
 ## P0 execution order
 
 1. **SettingsScreen first:** move settings-only constants and presentation sections to focused files without changing preference keys, defaults, ordering, or callback semantics.
-2. **SettingsScreen sections:** extract appearance, voice-player settings, privacy, and backup/restore one at a time. Keep `SettingsScreen` as the composition/navigation owner.
+2. **SettingsScreen sections:** extract appearance, layout, voice-player settings, privacy, and backup/restore one at a time. Keep `SettingsScreen` as the composition/navigation owner.
+
+## PR #99 progress
+
+- [x] Extract stable item keys, sort options, and pure settings-search matching into `SettingsScreenModel.kt`.
+- [x] Extract shared settings presentation components into `SettingsComponents.kt`.
+- [x] Extract the voice-player settings dialog into `VoicePlayerSettingsDialog.kt`.
+- [x] Extract encrypted backup/restore UI into `BackupRestoreScreen.kt`.
+- [x] Extract the appearance section into `SettingsAppearanceSection.kt`.
+- [x] Extract the dashboard layout/density section into `SettingsLayoutSection.kt`.
+- [ ] Extract behavior, editor, voice-player, and privacy sections where the state/callback boundaries remain clear.
+- [ ] Re-check imports, build, and tests after the extraction series is complete.
 3. **NestNoteApp:** after a test baseline, extract note actions and coordinators behind existing repository APIs. Keep the app root as the composition root.
 4. Verify each extraction with Android CI and targeted regression tests before continuing.
 
