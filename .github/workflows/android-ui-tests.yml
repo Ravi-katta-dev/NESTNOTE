@@ -27,6 +27,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
           PR_NUMBER: ${{ inputs.pr_number }}
           EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
@@ -37,6 +38,9 @@ jobs:
           ACTUAL_SHA="$(jq -r '.head.sha' <<< "$PR_JSON")"
           PR_STATE="$(jq -r '.state' <<< "$PR_JSON")"
           [[ "$PR_STATE" == "open" && "$ACTUAL_SHA" == "$EXPECTED_SHA" ]] || { echo "::error::PR is closed or approval is stale"; exit 1; }
+          gh api --paginate "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
+            --jq ".[] | select(.user.login == \"$REPOSITORY_OWNER\" and .body == \"/approve-ci $EXPECTED_SHA\") | .id" \
+            | grep -q . || { echo "::error::No owner approval comment exists for this exact SHA"; exit 1; }
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.expected_sha }}
