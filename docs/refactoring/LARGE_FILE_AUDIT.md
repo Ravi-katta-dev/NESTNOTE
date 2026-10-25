@@ -129,6 +129,6 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Extracted audio-focus request/listener ownership into `VoiceAudioFocus.kt`; the granted request remains paired with its listener for release.
 - [x] Extracted recording startup, attachment-id registration, late-completion discard protection, and startup-failure cleanup into `VoiceRecordingCoordinator.kt`.
 - [x] Extracted permission-denial/settings actions into `VoicePermissionSettingsActions.kt`; recording retry and permission state remain owned by `VoiceNoteControls`.
-- [x] Removed stale imports left behind by the capture/focus/coordinator/permission-action extractions.
-- [ ] Run targeted tests and Android CI only after the current file-level refactor is complete, following the project's per-file validation rule. No CI was started by this pass.
-- Current `VoiceNoteAudio.kt` size after these extractions: 769 lines (source line count at this checkpoint). Recording controls and review-state/playback orchestration remain in the original file; the file-level pass is not complete.
+- [x] Extracted recording progress, idle record/import actions, review-card presentation, and discard confirmation into `VoiceRecordingControlsUi.kt`; playback, permission, persistence, and lifecycle decisions remain owned by `VoiceNoteControls`.
+- [x] Consolidated presentation-only UI into the extracted file and removed stale imports and the duplicate recording-dot/time-format helpers.
+- [x] Measured `VoiceNoteAudio.kt` at 509 lines at this checkpoint (from 1,097-line initial audit baseline: -588 lines, about -53.6%). This file-level refactor pass is complete; run the targeted tests and Android CI against the latest PR head before starting another file.
