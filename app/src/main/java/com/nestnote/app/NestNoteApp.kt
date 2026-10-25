@@ -1185,24 +1185,20 @@ internal fun NestNoteApp(
                         },
                         onStorageBackendChange = { target ->
                             if (!storageLoaded || storageRecoveryRequired) {
-                                coroutineScope.launch { snackbarHostState.showSnackbar("Resolve storage recovery before switching storage.") }
+                                coroutineScope.launch { snackbarHostState.showSnackbar("Resolve storage recovery before scheduling a storage change.") }
+                            } else if (target == store.currentBackend()) {
+                                coroutineScope.launch { snackbarHostState.showSnackbar("That storage backend is already active.") }
                             } else {
-                                coroutineScope.launch {
-                                    val switchResult = runCatching {
-                                        withContext(Dispatchers.IO) { store.switchBackend(target, notes + legacyPrivateNotes) }
+                                runCatching { StorageBackendSwitchWorker.schedule(context, target) }
+                                    .onSuccess {
+                                        val backendName = if (target == NoteStorageBackend.SQLCIPHER) "SQLCipher" else "AES-256 Android Keystore"
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar("Change to $backendName scheduled for 5 hours from now. Current storage remains active until then.")
+                                        }
                                     }
-                                    switchResult.onSuccess { result ->
-                                        notes = result.notes.filterNot { it.privateNote }
-                                        legacyPrivateNotes = result.notes.filter { it.privateNote }
-                                        storageRecoveryRequired = result.recoveryRequired
-                                        selectedNoteIds = emptySet()
-                                        editorVisible = false
-                                        val backendName = if (target == NoteStorageBackend.SQLCIPHER) "SQLCipher" else "Android Keystore"
-                                        snackbarHostState.showSnackbar("Storage switched to $backendName. The other store was kept.")
-                                    }.onFailure { error ->
-                                        snackbarHostState.showSnackbar(error.message ?: "Storage switch failed; the active store was kept.")
+                                    .onFailure { error ->
+                                        coroutineScope.launch { snackbarHostState.showSnackbar(error.message ?: "Could not schedule storage change.") }
                                     }
-                                }
                             }
                         }
                     )
