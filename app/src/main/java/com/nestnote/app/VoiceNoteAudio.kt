@@ -7,61 +7,22 @@ import android.media.AudioFormat
 import android.media.AudioManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -74,6 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
 
 private const val VOICE_SAMPLE_RATE = 16_000
 private const val VOICE_CHANNEL_IN = AudioFormat.CHANNEL_IN_MONO
@@ -488,8 +450,13 @@ internal fun VoiceNoteControls(
                 },
                 onAttach = {
                     runCatching {
-                        voiceNotes.attachExisting(noteId, reviewId, System.currentTimeMillis(),
-                            pendingReviewDurationMs.toLong(), pendingReviewName.trim())
+                        voiceNotes.attachExisting(
+                            noteId = noteId,
+                            attachmentId = reviewId,
+                            createdAtMillis = System.currentTimeMillis(),
+                            durationMillis = pendingReviewDurationMs.toLong(),
+                            displayName = pendingReviewName.trim()
+                        )
                     }.onSuccess {
                         stopReviewPlayback(); pendingReviewId = null
                         addedThisSession.add(reviewId)
@@ -537,33 +504,6 @@ internal fun VoiceNoteControls(
     )
 }
 
-private fun formatPlaybackTime(durationMs: Int): String {
-    val totalSeconds = (durationMs / 1000).coerceAtLeast(0)
-    return "%d:%02d".format(totalSeconds / 60, totalSeconds % 60)
-}
-
-/** Small pulsing dot shown while a voice recording is active. Decorative. */
-@Composable
-private fun RecordingDot(active: Boolean, reducedMotion: Boolean) {
-    val alpha = if (active && !reducedMotion) {
-        val transition = rememberInfiniteTransition(label = "recording-dot")
-        val pulsing by transition.animateFloat(
-            initialValue = 0.3f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(tween(650), RepeatMode.Reverse),
-            label = "recording-dot-alpha"
-        )
-        pulsing
-    } else {
-        1f
-    }
-    Box(
-        Modifier
-            .size(10.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.error.copy(alpha = alpha))
-    )
-}
 /** e.g. "Voice note · Oct 20, 3:42 PM". Editable in the review step and stored in the manifest. */
 internal fun defaultVoiceName(): String =
     "Voice note \u00b7 " + java.text.SimpleDateFormat("MMM d, h:mm a", java.util.Locale.getDefault()).format(java.util.Date())
