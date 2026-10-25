@@ -41,8 +41,9 @@ Approximate sizes are from the source audit and should be remeasured when each e
 - [x] Extract privacy settings into `SettingsPrivacySection.kt`.
 - [x] Extract data/archive entry and storage-backend selection into `SettingsDataSection.kt`; backend change requests still flow through the parent's confirmation state.
 - [ ] Review reset and dialog coordination, imports, and all extracted callback/state boundaries.
+- [x] Extract the independent boot landing screen from `NestNoteApp.kt` into `BootLandingScreen.kt`; keep the existing boot-sound preference key and user toggle behavior.
 - [ ] Re-check imports, build, and tests after the extraction series is complete.
-3. **NestNoteApp:** after a test baseline, extract note actions and coordinators behind existing repository APIs. Keep the app root as the composition root.
+3. **NestNoteApp:** first take a test baseline; the boot landing presentation has been extracted as a low-risk first step. Next extract note actions and coordinators behind existing repository APIs only after baseline verification. Keep the app root as the composition root.
 4. Verify each extraction with Android CI and targeted regression tests before continuing.
 
 ## Safety constraints
