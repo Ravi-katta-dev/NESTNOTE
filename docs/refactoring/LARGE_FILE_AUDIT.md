@@ -127,4 +127,4 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - [x] Extracted permission-denial/settings actions into `VoicePermissionSettingsActions.kt`; recording retry and permission state remain owned by `VoiceNoteControls`.
 - [x] Removed stale imports left behind by the capture/focus/coordinator/permission-action extractions.
 - [ ] Run targeted tests and Android CI only after the current file-level refactor is complete, following the project's per-file validation rule. No CI was started by this pass.
-- Current `VoiceNoteAudio.kt` size after these extractions: 776 lines (source line count at this checkpoint). Recording controls and review-state/playback orchestration remain in the original file; the file-level pass is not complete.
+- Current `VoiceNoteAudio.kt` size after these extractions: 769 lines (source line count at this checkpoint). Recording controls and review-state/playback orchestration remain in the original file; the file-level pass is not complete.
