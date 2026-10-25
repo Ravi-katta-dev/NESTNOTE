@@ -43,6 +43,7 @@ Baseline sizes are approximate counts from the initial source audit. Current cou
 - [x] Review reset and dialog coordination: the parent `SettingsScreen` retains reset-dialog ownership because confirmation coordinates the external reset callback, local editor defaults, custom-font file cleanup, and preference removal. Storage-backend confirmation remains separately owned by the parent and dismisses before scheduling the callback.
 - [x] Remove unused imports from extracted settings screens and shared components; keep each composable's callback parameters explicit so the parent remains the state owner.
 - [x] Extract the independent boot landing screen from `NestNoteApp.kt` into `BootLandingScreen.kt`; keep the existing boot-sound preference key and user toggle behavior.
+- [x] Extract destination title/subtitle mapping into pure `AppDestinationPresentation.kt`; route state and navigation remain owned by `NestNoteApp`, with JVM tests for known destinations and fallback labels.
 - [x] Add targeted regression coverage for unique LazyColumn item keys and stable sort choices alongside the existing settings-search tests.
 - [x] Re-check obvious stale imports in the extracted files and add pure JVM regression coverage for stable settings keys/sort choices. Full build/test verification remains pending.
 
@@ -53,7 +54,7 @@ Counts are current source line counts, not estimates; line counts may vary sligh
 | File | Initial audit baseline | Current branch | Change | Status |
 |---|---:|---:|---:|---|
 | `SettingsScreen.kt` | 2,652 | 551 | -2,101 lines (-79.2%) | Section extraction pass complete; parent remains composition/state owner |
-| `NestNoteApp.kt` | ~2,150 | 2,086 | -64 lines (~3.0%) | Boot landing UI extracted; next P0 target |
+| `NestNoteApp.kt` | ~2,150 | 2,069 | -81 lines (-3.8%) | In progress: boot landing and destination labels extracted; continue boundary-by-boundary before CI |
 
 The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 additions, which is a net reduction of 2,101 lines. Extracted settings sections/dialogs/components are now in focused files; no claim is made that build or tests pass until they are run.
 
@@ -64,7 +65,7 @@ The PR compare currently reports `SettingsScreen.kt` at 2,193 deletions and 92 a
 - Identified stateful action clusters inside `NestNoteApp`: persistence (`persist` / `requestPersist`, around lines 372–464), ordinary-note encryption (`encryptOrdinaryNote`, `decryptOrdinaryNote`, and selection actions, around lines 465–539), deletion/sort/reset preference actions (around lines 540–590), and Markdown import orchestration (`importMarkdownUris`, around line 591).
 - These clusters share composition-owned state and callbacks. Extracting them wholesale before a baseline would risk changing save ordering, error handling, draft recovery, encryption verification, or UI state. The next implementation step is therefore to establish the existing build/test baseline, then extract one narrow, testable helper at a time while leaving orchestration in `NestNoteApp`.
 
-3. **NestNoteApp (next file):** prioritize a read-only boundary audit first. Do not move persistence, encryption, draft-recovery, or linked-note navigation logic until a test baseline is available. Keep `NestNoteApp` as the composition root.
+3. **NestNoteApp (current file):** continue behavior-preserving extractions within this file. Keep persistence, encryption, draft-recovery, and linked-note navigation orchestration in the composition root unless a safe, testable boundary is established. Run CI only after the `NestNoteApp.kt` refactor pass is complete.
 4. Verify each extraction with Android CI and targeted regression tests before continuing.
 
 ## Safety constraints
