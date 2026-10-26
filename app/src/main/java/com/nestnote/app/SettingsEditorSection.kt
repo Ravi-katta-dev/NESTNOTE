@@ -100,7 +100,6 @@ internal fun SettingsEditorSection(
                                     FilterChip(
                                         selected = editorFontStyle == family,
                                         onClick = {
-                                            editorFontStyle = family
                                             onFontFamilySelected(family)
                                         },
                                         label = { Text(family.label) }
