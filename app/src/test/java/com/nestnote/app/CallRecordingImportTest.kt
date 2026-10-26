@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,6 +41,48 @@ class CallRecordingImportTest {
         CallRecordingImport.saveItems(context, expected)
 
         assertEquals(expected, CallRecordingImport.items(context))
+    }
+
+
+    @Test
+    fun pendingAndFailedStatusesAndErrorsSurviveReload() {
+        val expected = listOf(
+            CallRecordingImport.Item(
+                attachmentId = "",
+                displayName = "Pending call.m4a",
+                importedAtMillis = 1_800_000_000_001L,
+                durationMillis = 0L,
+                sourceUri = "content://provider/tree/pending",
+                status = CallRecordingImport.ITEM_PENDING
+            ),
+            CallRecordingImport.Item(
+                attachmentId = "",
+                displayName = "Oversized call.m4a",
+                importedAtMillis = 1_800_000_000_000L,
+                durationMillis = 0L,
+                sourceUri = "content://provider/tree/failed",
+                status = CallRecordingImport.ITEM_FAILED,
+                error = "Exceeds the 100 MiB import limit"
+            )
+        )
+
+        CallRecordingImport.saveItems(context, expected)
+
+        assertEquals(expected, CallRecordingImport.items(context))
+    }
+
+    @Test
+    fun oldMetadataWithoutStatusDefaultsToImported() {
+        context.getSharedPreferences(CallRecordingImport.PREFS, 0).edit()
+            .putString(
+                CallRecordingImport.KEY_ITEMS,
+                """[{"id":"0123456789abcdef","name":"Old recording.m4a","importedAt":1800000000000,"duration":0,"source":"content://provider/old"}]"""
+            ).commit()
+
+        val item = CallRecordingImport.items(context).single()
+
+        assertEquals(CallRecordingImport.ITEM_IMPORTED, item.status)
+        assertEquals("", item.error)
     }
 
     @Test
