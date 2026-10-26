@@ -20,7 +20,8 @@ import androidx.compose.ui.unit.dp
 internal fun SettingsPrivacySection(
     screenCaptureProtectionEnabled: Boolean,
     onScreenCaptureProtectionChange: (Boolean) -> Unit,
-    onOpenPrivateVaultSettings: () -> Unit
+    onOpenPrivateVaultSettings: () -> Unit,
+    onOpenCallRecordings: () -> Unit = {}
 ) {
     val colors = MaterialTheme.colorScheme
                     SettingsSection(
@@ -70,7 +71,22 @@ internal fun SettingsPrivacySection(
                         }
     
                         HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.5f))
-    
+
+                        OutlinedButton(
+                            onClick = onOpenCallRecordings,
+                            modifier = Modifier.fillMaxWidth().testTag("settings_call_recordings"),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, colors.outlineVariant)
+                        ) {
+                            Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Call recordings", fontWeight = FontWeight.SemiBold)
+                            Spacer(Modifier.weight(1f))
+                            Icon(Icons.Default.ChevronRight, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+
+                        HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.5f))
+
                         Text(
                             "Use Android app permissions and your chosen export destination to manage access to your data.",
                             style = MaterialTheme.typography.bodySmall,
