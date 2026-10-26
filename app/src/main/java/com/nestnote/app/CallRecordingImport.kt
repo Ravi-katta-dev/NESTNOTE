@@ -13,7 +13,9 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.nestnote.app.voicenote.VoiceAudioImportPolicy
+import java.io.ByteArrayInputStream
 import java.io.IOException
+import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -95,6 +97,21 @@ internal object CallRecordingImport {
         val saved = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(KEY_TREE_URI, treeUri.toString()).commit()
         saved
+    }.getOrDefault(false)
+
+    /** Round-trip a small encrypted probe before enabling background imports. */
+    fun verifyEncryptionReady(context: Context): Boolean = runCatching {
+        val store = VoiceAttachmentStore(context)
+        val id = UUID.randomUUID().toString().replace("-", "")
+        val probe = "NESTNOTE-CALL-IMPORT".toByteArray(Charsets.UTF_8)
+        store.save(RECORDINGS_NOTE_ID, id, ByteArrayInputStream(probe))
+        val recovered = store.read(RECORDINGS_NOTE_ID, id)
+        val verified = MessageDigest.isEqual(probe, recovered)
+        recovered.fill(0)
+        probe.fill(0)
+        check(verified) { "Encrypted storage verification failed" }
+        check(store.delete(RECORDINGS_NOTE_ID, id)) { "Encrypted verification cleanup failed" }
+        true
     }.getOrDefault(false)
 
     fun schedule(context: Context) {
