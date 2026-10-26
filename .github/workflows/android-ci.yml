@@ -59,6 +59,19 @@ jobs:
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Lint, test and build Android variants
         run: ./gradlew --no-daemon lintDebug testDebugUnitTest assembleDebug assembleRelease assembleDebugAndroidTest
+      - name: Verify SQLCipher JNI members survive release shrinking
+        shell: bash
+        run: |
+          set -euo pipefail
+          MAPPING="app/build/outputs/mapping/release/mapping.txt"
+          test -s "$MAPPING" || { echo "::error::Release R8 mapping file is missing"; exit 1; }
+          grep -Fq 'net.sqlcipher.database.SQLiteDatabase -> net.sqlcipher.database.SQLiteDatabase:' "$MAPPING" || {
+            echo "::error::SQLCipher SQLiteDatabase class was renamed by R8"; exit 1;
+          }
+          grep -Fq 'long mNativeHandle -> mNativeHandle' "$MAPPING" || {
+            echo "::error::SQLCipher JNI field mNativeHandle was removed, renamed, or changed in release output"; exit 1;
+          }
+          echo "Verified SQLCipher SQLiteDatabase and long mNativeHandle are preserved in the minified release mapping."
       - uses: actions/upload-artifact@v4
         if: always()
         with:
