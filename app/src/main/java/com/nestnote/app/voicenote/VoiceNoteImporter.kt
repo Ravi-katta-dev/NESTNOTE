@@ -57,15 +57,20 @@ class VoiceNoteImporter(
         }
     }
 
-    private fun queryDisplayName(uri: Uri): String = runCatching {
-        resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (index >= 0) cursor.getString(index)?.trim()?.takeIf(String::isNotEmpty)
-                    ?.take(MAX_DISPLAY_NAME_LENGTH)
-            } else null
+    private fun queryDisplayName(uri: Uri): String {
+        return try {
+            resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (index >= 0) cursor.getString(index)?.trim()
+                        ?.takeIf { it.isNotEmpty() }?.take(MAX_DISPLAY_NAME_LENGTH)
+                    else null
+                } else null
+            } ?: "Imported audio"
+        } catch (_: Exception) {
+            "Imported audio"
         }
-    }.getOrNull() ?: "Imported audio"
+    }
 
     private fun querySize(uri: Uri): Long? = runCatching {
         resolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
