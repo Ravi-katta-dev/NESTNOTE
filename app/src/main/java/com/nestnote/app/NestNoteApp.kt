@@ -789,6 +789,8 @@ internal fun NestNoteApp(
                             }
                         }
                     )
+                } else if (selectedView == "CallRecordings") {
+                    CallRecordingsScreen(onBack = { selectedView = "Settings" })
                 } else if (selectedView == "PrivateVaultSettings") {
                     PrivateVaultSettingsScreen(
                         passwordConfigured = PrivateVaultSecurity.isConfigured(context),
@@ -909,6 +911,7 @@ internal fun NestNoteApp(
                         archivedNotes = notes.count { it.archived && !it.privateNote },
                         onOpenBackupRestore = { selectedView = "Backup" },
                         onOpenPrivateVaultSettings = { selectedView = "PrivateVaultSettings" },
+                        onOpenCallRecordings = { selectedView = "CallRecordings" },
                         storageBackend = store.currentBackend(),
                         screenCaptureProtectionEnabled = screenCaptureProtectionEnabled,
                         onScreenCaptureProtectionChange = { enabled ->
