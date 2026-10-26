@@ -4,6 +4,12 @@ import android.media.MediaDataSource
 import android.media.MediaPlayer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -372,7 +378,61 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                     pendingAction = "open"
                     password = ""
                     passwordError = ""
-                }) { Text("Unlock recordings") }
+                }) { Text("Unlock with password") }
+                val host = remember(context) { context.findCallRecordingsActivity() }
+                val biometricAvailable = remember(host) {
+                    host != null && BiometricManager.from(host).canAuthenticate(
+                        BiometricManager.Authenticators.BIOMETRIC_STRONG
+                    ) == BiometricManager.BIOMETRIC_SUCCESS &&
+                        PrivateVaultBiometricKey(context).isEnrolled()
+                }
+                if (biometricAvailable) {
+                    OutlinedButton(onClick = {
+                        val activity = host ?: return@OutlinedButton
+                        val biometricKey = PrivateVaultBiometricKey(context)
+                        val cipher = biometricKey.createUnlockCipher()
+                        if (cipher == null) {
+                            passwordError = "Biometric key unavailable. Use your vault password."
+                            pendingAction = "open"
+                            return@OutlinedButton
+                        }
+                        val prompt = BiometricPrompt(
+                            activity,
+                            ContextCompat.getMainExecutor(activity),
+                            object : BiometricPrompt.AuthenticationCallback() {
+                                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                                    val session = biometricKey.unlock(result.cryptoObject?.cipher)
+                                    if (session != null) {
+                                        authenticated = true
+                                        pendingAction = null
+                                        passwordError = ""
+                                    } else {
+                                        passwordError = "Biometric vault unlock failed safely. Use your password."
+                                        pendingAction = "open"
+                                    }
+                                }
+
+                                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                                    if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
+                                        errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON &&
+                                        errorCode != BiometricPrompt.ERROR_CANCELED
+                                    ) passwordError = errString.toString()
+                                    pendingAction = "open"
+                                }
+                            }
+                        )
+                        val info = BiometricPrompt.PromptInfo.Builder()
+                            .setTitle("Unlock Private Vault")
+                            .setSubtitle("Authenticate to view private call recordings")
+                            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                            .setNegativeButtonText("Use password")
+                            .build()
+                        prompt.authenticate(info, BiometricPrompt.CryptoObject(cipher))
+                    }) { Text("Unlock with fingerprint") }
+                }
+                if (passwordError.isNotBlank()) {
+                    Text(passwordError, color = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }
@@ -431,4 +491,11 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
             dismissButton = { TextButton(onClick = { pendingAction = null; password = "" }) { Text("Cancel") } }
         )
     }
+}
+
+
+private tailrec fun Context.findCallRecordingsActivity(): FragmentActivity? = when (this) {
+    is FragmentActivity -> this
+    is ContextWrapper -> baseContext.findCallRecordingsActivity()
+    else -> null
 }
