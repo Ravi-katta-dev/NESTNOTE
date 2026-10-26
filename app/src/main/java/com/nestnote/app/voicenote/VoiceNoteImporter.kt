@@ -38,8 +38,8 @@ class VoiceNoteImporter(
         val name = VoiceAudioImportPolicy.ensureAudioExtension(providedName, mimeType)
 
         val declaredSize = querySize(uri)
-        if (declaredSize != null && declaredSize > VoiceNoteRepository.MAX_RECORDING_BYTES) {
-            throw IOException("Audio file exceeds the ${VoiceNoteRepository.MAX_RECORDING_BYTES / (1024 * 1024)} MB limit")
+        if (declaredSize != null && declaredSize > VoiceNoteRepository.MAX_IMPORT_BYTES) {
+            throw IOException("Audio file exceeds the ${VoiceNoteRepository.MAX_IMPORT_BYTES / (1024 * 1024)} MB limit")
         }
 
         val duration = readDurationMillis(uri)
