@@ -44,6 +44,10 @@ internal object CallRecordingImport {
     const val STATUS_IMPORTED = "Import complete"
     const val STATUS_SOURCE_UNAVAILABLE = "Source folder unavailable — reconnect it"
     const val STATUS_FAILED = "Import failed — retry available"
+    const val ITEM_IMPORTED = "Imported"
+    const val ITEM_PENDING = "Pending"
+    const val ITEM_FAILED = "Failed"
+    const val INPUT_SOURCE_URI = "source_uri"
     const val RECORDINGS_NOTE_ID = 9_223_372_036_854_770_000L
 
     data class Item(
@@ -51,7 +55,9 @@ internal object CallRecordingImport {
         val displayName: String,
         val importedAtMillis: Long,
         val durationMillis: Long,
-        val sourceUri: String
+        val sourceUri: String,
+        val status: String = ITEM_IMPORTED,
+        val error: String = ""
     )
 
     fun enabled(context: Context): Boolean =
@@ -73,7 +79,11 @@ internal object CallRecordingImport {
                         displayName = item.getString("name"),
                         importedAtMillis = item.getLong("importedAt"),
                         durationMillis = item.optLong("duration", 0L),
-                        sourceUri = item.getString("source")
+                        sourceUri = item.getString("source"),
+                        status = item.optString("status", ITEM_IMPORTED).takeIf {
+                            it == ITEM_IMPORTED || it == ITEM_PENDING || it == ITEM_FAILED
+                        } ?: ITEM_FAILED,
+                        error = item.optString("error", "")
                     ))
                 }
             }.sortedByDescending { it.importedAtMillis }
@@ -119,6 +129,13 @@ internal object CallRecordingImport {
         }
     }.getOrDefault(false)
 
+    fun retry(context: Context, sourceUri: String) {
+        val request = OneTimeWorkRequestBuilder<CallRecordingImportWorker>()
+            .setInputData(androidx.work.workDataOf(INPUT_SOURCE_URI to sourceUri))
+            .build()
+        WorkManager.getInstance(context).enqueue(request)
+    }
+
     fun schedule(context: Context) {
         val manager = WorkManager.getInstance(context)
         val periodic = PeriodicWorkRequestBuilder<CallRecordingImportWorker>(6, TimeUnit.HOURS).build()
@@ -161,6 +178,8 @@ internal object CallRecordingImport {
                 put("importedAt", item.importedAtMillis)
                 put("duration", item.durationMillis)
                 put("source", item.sourceUri)
+                put("status", item.status)
+                put("error", item.error)
             })
         }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
@@ -182,47 +201,80 @@ internal class CallRecordingImportWorker(
             return@withContext fail(CallRecordingImport.STATUS_SOURCE_UNAVAILABLE)
         }
 
+        val requestedSource = inputData.getString(CallRecordingImport.INPUT_SOURCE_URI)
         val priorItems = CallRecordingImport.items(applicationContext).toMutableList()
-        val importedSources = priorItems.mapTo(mutableSetOf()) { it.sourceUri }
+        val importedSources = priorItems.filter { it.status == CallRecordingImport.ITEM_IMPORTED }
+            .mapTo(mutableSetOf()) { it.sourceUri }
         val ignoredSources = CallRecordingImport.ignoredSources(applicationContext)
         val store = runCatching { VoiceAttachmentStore(applicationContext) }.getOrElse {
             return@withContext fail(CallRecordingImport.STATUS_FAILED)
         }
         var importedCount = 0
+        var failureCount = 0
         var oversizedFileFound = false
         return@withContext try {
             root.listFiles().filter { it.isFile && it.canRead() }.forEach { file ->
                 if (!CallRecordingImport.enabled(applicationContext)) return@forEach
                 val uri = file.uri
                 val sourceKey = uri.toString()
+                if (requestedSource != null && sourceKey != requestedSource) return@forEach
                 if (sourceKey in importedSources || sourceKey in ignoredSources) return@forEach
-                val name = file.name ?: queryName(resolver, uri) ?: "Call recording"
+                val name = (file.name ?: queryName(resolver, uri) ?: "Call recording").take(160)
                 val mime = resolver.getType(uri)?.lowercase(java.util.Locale.ROOT)
                 if (!VoiceAudioImportPolicy.isAudioDocument(name, mime)) return@forEach
+
+                val oldItem = priorItems.firstOrNull { it.sourceUri == sourceKey }
+                val pendingItem = CallRecordingImport.Item(
+                    attachmentId = "",
+                    displayName = name,
+                    importedAtMillis = oldItem?.importedAtMillis ?: System.currentTimeMillis(),
+                    durationMillis = oldItem?.durationMillis ?: readDuration(resolver, uri),
+                    sourceUri = sourceKey,
+                    status = CallRecordingImport.ITEM_PENDING
+                )
+                priorItems.removeAll { it.sourceUri == sourceKey }
+                priorItems += pendingItem
+                CallRecordingImport.saveItems(applicationContext, priorItems)
+
                 val declared = file.length()
                 if (declared > com.nestnote.app.voicenote.VoiceNoteRepository.MAX_IMPORT_BYTES) {
-                    // Keep the source untouched and surface an actionable error.
                     oversizedFileFound = true
+                    markFailed(priorItems, sourceKey, "Exceeds the 100 MiB import limit")
+                    failureCount++
                     return@forEach
                 }
+
                 val id = UUID.randomUUID().toString().replace("-", "")
-                val input = resolver.openInputStream(uri) ?: throw IOException("Source recording is no longer accessible")
-                input.use { store.save(CallRecordingImport.RECORDINGS_NOTE_ID, id, it) }
-                priorItems += CallRecordingImport.Item(
-                    attachmentId = id,
-                    displayName = name.take(160),
-                    importedAtMillis = System.currentTimeMillis(),
-                    durationMillis = readDuration(resolver, uri),
-                    sourceUri = sourceKey
-                )
-                importedSources += sourceKey
-                importedCount++
-                CallRecordingImport.saveItems(applicationContext, priorItems)
+                try {
+                    val input = resolver.openInputStream(uri)
+                        ?: throw IOException("Source recording is no longer accessible")
+                    input.use { store.save(CallRecordingImport.RECORDINGS_NOTE_ID, id, it) }
+                    val importedItem = pendingItem.copy(
+                        attachmentId = id,
+                        importedAtMillis = System.currentTimeMillis(),
+                        status = CallRecordingImport.ITEM_IMPORTED,
+                        error = ""
+                    )
+                    priorItems.removeAll { it.sourceUri == sourceKey }
+                    priorItems += importedItem
+                    importedSources += sourceKey
+                    CallRecordingImport.saveItems(applicationContext, priorItems)
+                    importedCount++
+                } catch (error: Exception) {
+                    runCatching { store.delete(CallRecordingImport.RECORDINGS_NOTE_ID, id) }
+                    markFailed(
+                        priorItems,
+                        sourceKey,
+                        error.message?.take(180)?.ifBlank { null } ?: "Could not import this recording"
+                    )
+                    failureCount++
+                }
             }
             CallRecordingImport.setStatus(
                 applicationContext,
                 when {
-                    oversizedFileFound -> "A source recording exceeds the 100 MB import limit"
+                    oversizedFileFound -> "One or more recordings exceed the 100 MiB import limit"
+                    failureCount > 0 -> CallRecordingImport.STATUS_FAILED
                     importedCount > 0 -> CallRecordingImport.STATUS_IMPORTED
                     else -> CallRecordingImport.STATUS_READY
                 }
@@ -232,6 +284,18 @@ internal class CallRecordingImportWorker(
             fail(CallRecordingImport.STATUS_SOURCE_UNAVAILABLE)
         } catch (_: Exception) {
             fail(CallRecordingImport.STATUS_FAILED)
+        }
+    }
+
+    private fun markFailed(items: MutableList<CallRecordingImport.Item>, sourceUri: String, error: String) {
+        val index = items.indexOfLast { it.sourceUri == sourceUri }
+        if (index >= 0) {
+            items[index] = items[index].copy(
+                attachmentId = "",
+                status = CallRecordingImport.ITEM_FAILED,
+                error = error
+            )
+            CallRecordingImport.saveItems(applicationContext, items)
         }
     }
 
