@@ -118,12 +118,10 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
 
     val visibleItems = recordings.filter { item ->
         val matchesQuery = query.isBlank() || item.displayName.contains(query, ignoreCase = true)
-        // Only successfully encrypted copies are currently persisted as list items.
-        // Pending/Failed are job-level states, not individual recording states; don't mislabel
-        // imported recordings as those states.
         val matchesFilter = when (filter) {
-            "Imported" -> true
-            "Pending", "Failed" -> false
+            "Imported" -> item.status == CallRecordingImport.ITEM_IMPORTED
+            "Pending" -> item.status == CallRecordingImport.ITEM_PENDING
+            "Failed" -> item.status == CallRecordingImport.ITEM_FAILED
             else -> true
         }
         matchesQuery && matchesFilter
@@ -276,17 +274,42 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                     }
                 }
             }
-            items(visibleItems, key = { it.attachmentId }) { item ->
+            items(visibleItems, key = { it.sourceUri }) { item ->
                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(item.displayName, style = MaterialTheme.typography.titleMedium)
                         Text(
                             "${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(item.importedAtMillis))} · " +
-                                if (item.durationMillis > 0) "${item.durationMillis / 1000}s · Encrypted" else "Encrypted",
+                                when (item.status) {
+                                    CallRecordingImport.ITEM_IMPORTED ->
+                                        if (item.durationMillis > 0) "${item.durationMillis / 1000}s · Encrypted" else "Encrypted"
+                                    CallRecordingImport.ITEM_PENDING -> "Pending import"
+                                    else -> "Import failed"
+                                },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (item.status != CallRecordingImport.ITEM_IMPORTED) {
+                            if (item.error.isNotBlank()) {
+                                Text(item.error, color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall)
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(onClick = {
+                                    CallRecordingImport.retry(context, item.sourceUri)
+                                    status = "Retry queued for ${item.displayName}"
+                                    playbackScope.launch {
+                                        delay(500)
+                                        status = CallRecordingImport.status(context)
+                                        recordings = CallRecordingImport.items(context)
+                                    }
+                                }) {
+                                    Icon(Icons.Default.Refresh, contentDescription = null)
+                                    Spacer(Modifier.size(6.dp))
+                                    Text("Retry import")
+                                }
+                            }
+                        } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(onClick = {
                                 if (selectedPlayback == item.attachmentId) {
                                     runCatching { playbackPlayer?.stop() }
