@@ -39,7 +39,7 @@ internal object CallRecordingImport {
     const val KEY_ITEMS = "items"
     const val KEY_IGNORED_SOURCES = "ignored_sources"
     const val STATUS_DISABLED = "Disabled"
-    const STATUS_NEEDS_FOLDER = "Choose a recordings folder"
+    const val STATUS_NEEDS_FOLDER = "Choose a recordings folder"
     const val STATUS_READY = "Waiting to import"
     const val STATUS_IMPORTED = "Import complete"
     const val STATUS_SOURCE_UNAVAILABLE = "Source folder unavailable — reconnect it"
