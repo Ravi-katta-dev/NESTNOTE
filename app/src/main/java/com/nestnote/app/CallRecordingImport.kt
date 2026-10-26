@@ -104,14 +104,18 @@ internal object CallRecordingImport {
         val store = VoiceAttachmentStore(context)
         val id = UUID.randomUUID().toString().replace("-", "")
         val probe = "NESTNOTE-CALL-IMPORT".toByteArray(Charsets.UTF_8)
-        store.save(RECORDINGS_NOTE_ID, id, ByteArrayInputStream(probe))
-        val recovered = store.read(RECORDINGS_NOTE_ID, id)
-        val verified = MessageDigest.isEqual(probe, recovered)
-        recovered.fill(0)
-        probe.fill(0)
-        check(verified) { "Encrypted storage verification failed" }
-        check(store.delete(RECORDINGS_NOTE_ID, id)) { "Encrypted verification cleanup failed" }
-        true
+        try {
+            store.save(RECORDINGS_NOTE_ID, id, ByteArrayInputStream(probe))
+            val recovered = store.read(RECORDINGS_NOTE_ID, id)
+            try {
+                MessageDigest.isEqual(probe, recovered)
+            } finally {
+                recovered.fill(0)
+            }
+        } finally {
+            runCatching { store.delete(RECORDINGS_NOTE_ID, id) }
+            probe.fill(0)
+        }
     }.getOrDefault(false)
 
     fun schedule(context: Context) {
