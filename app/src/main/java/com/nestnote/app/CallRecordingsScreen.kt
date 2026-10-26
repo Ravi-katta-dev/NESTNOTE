@@ -367,7 +367,6 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                                 prefs.edit().putBoolean(CallRecordingImport.KEY_ENABLED, false).commit()
                                 enabled = false
                                 androidx.work.WorkManager.getInstance(context).cancelUniqueWork("call_recording_import_scan")
-                                androidx.work.WorkManager.getInstance(context).cancelUniquePeriodicWork("call_recording_import_periodic")
                                 CallRecordingImport.setStatus(context, CallRecordingImport.STATUS_DISABLED)
                                 status = CallRecordingImport.status(context)
                             }
