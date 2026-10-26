@@ -63,6 +63,7 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
     var selectedPlayback by remember { mutableStateOf<String?>(null) }
     var playbackError by remember { mutableStateOf("") }
     var playbackPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+    var folderPickerEnables by remember { mutableStateOf(true) }
 
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
@@ -73,10 +74,12 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                 CallRecordingImport.persistTreeGrant(context, uri)
             ) {
                 sourceUri = uri
-                prefs.edit().putBoolean(CallRecordingImport.KEY_ENABLED, true).commit()
-                enabled = true
+                if (folderPickerEnables) {
+                    prefs.edit().putBoolean(CallRecordingImport.KEY_ENABLED, true).commit()
+                    enabled = true
+                }
                 CallRecordingImport.setStatus(context, CallRecordingImport.STATUS_READY)
-                CallRecordingImport.schedule(context)
+                if (enabled) CallRecordingImport.schedule(context)
                 status = CallRecordingImport.status(context)
             } else {
                 status = "Folder permission or encrypted storage verification failed — nothing was enabled"
@@ -177,6 +180,7 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                                 )
                             }
                             OutlinedButton(onClick = {
+                                folderPickerEnables = enabled
                                 pendingAction = "change_folder"
                                 password = ""
                                 passwordError = ""
