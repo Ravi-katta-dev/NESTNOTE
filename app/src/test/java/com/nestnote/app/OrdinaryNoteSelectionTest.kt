@@ -32,7 +32,7 @@ class OrdinaryNoteSelectionTest {
     @Test
     fun selectionPreservesOriginalNoteOrder() {
         val notes = listOf(note(1), note(2), note(3))
-        assertEquals(listOf(3L, 1L), OrdinaryNoteSelection.forEncryption(notes, setOf(3, 1)).map { it.id })
+        assertEquals(listOf(1L, 3L), OrdinaryNoteSelection.forEncryption(notes, setOf(3, 1)).map { it.id })
     }
 
     @Test
