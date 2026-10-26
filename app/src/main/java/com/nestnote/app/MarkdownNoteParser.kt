@@ -9,7 +9,7 @@ internal object MarkdownNoteParser {
     data class ParsedNote(val title: String, val body: String)
 
     fun parse(markdown: String, fallbackTitle: String): ParsedNote {
-        val firstHeading = Regex("(?m)^#\\s+(.+?)\\s*$").find(markdown)
+        val firstHeading = Regex("(?m)^#[ \\t]+([^\\r\\n]*?)[ \\t]*$").find(markdown)
         val title = firstHeading?.groupValues?.get(1)?.trim().orEmpty()
             .ifBlank { fallbackTitle.ifBlank { "Imported note" } }
         val body = if (firstHeading != null) markdown.removeRange(firstHeading.range).trim()
