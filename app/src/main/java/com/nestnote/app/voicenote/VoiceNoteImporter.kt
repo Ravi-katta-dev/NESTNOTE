@@ -57,17 +57,15 @@ class VoiceNoteImporter(
         }
     }
 
-    private fun queryDisplayName(uri: Uri): String {
+    private fun queryDisplayName(uri: Uri): String = runCatching {
         resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (index >= 0) cursor.getString(index)?.trim()?.takeIf(String::isNotEmpty)?.let {
-                    return it.take(MAX_DISPLAY_NAME_LENGTH)
-                }
-            }
+                if (index >= 0) cursor.getString(index)?.trim()?.takeIf(String::isNotEmpty)
+                    ?.take(MAX_DISPLAY_NAME_LENGTH)
+            } else null
         }
-        return "Imported audio"
-    }
+    }.getOrNull() ?: "Imported audio"
 
     private fun querySize(uri: Uri): Long? = runCatching {
         resolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
@@ -91,10 +89,6 @@ class VoiceNoteImporter(
 
     private companion object {
         const val MAX_DISPLAY_NAME_LENGTH = 160
-        val AUDIO_EXTENSIONS = setOf(
-            "aac", "aif", "aiff", "amr", "ape", "flac", "m4a", "m4b", "mka", "mp3",
-            "mpc", "oga", "ogg", "opus", "wav", "weba", "webm", "wma", "3ga", "3gp"
-        )
     }
 }
 /** Pure import policy kept separate so extension/MIME behavior is covered by JVM tests. */
