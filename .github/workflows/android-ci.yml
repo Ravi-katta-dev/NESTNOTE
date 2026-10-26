@@ -64,8 +64,8 @@ jobs:
         run: |
           set -euo pipefail
           DEPENDENCIES="$(./gradlew --no-daemon :app:dependencyInsight --dependency android-database-sqlcipher --configuration releaseRuntimeClasspath)"
-          printf '%s\\n' "$DEPENDENCIES"
-          grep -Eq 'net\\.zetetic:android-database-sqlcipher:4\\.5\\.4([[:space:]]|$)' <<< "$DEPENDENCIES" || {
+          printf '%s\n' "$DEPENDENCIES"
+          grep -Eq 'net\.zetetic:android-database-sqlcipher:4\.5\.4([[:space:]]|$)' <<< "$DEPENDENCIES" || {
             echo "::error::Expected SQLCipher Android 4.5.4 in releaseRuntimeClasspath"; exit 1;
           }
       - name: Verify SQLCipher JNI members survive release shrinking
