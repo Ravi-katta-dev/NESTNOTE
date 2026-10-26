@@ -38,7 +38,8 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
     var recordings by remember { mutableStateOf(CallRecordingImport.items(context)) }
     var query by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf("All") }
-    var pendingAction by remember { mutableStateOf<String?>(null) }
+    var pendingAction by remember { mutableStateOf<String?>("open") }
+    var authenticated by rememberSaveable { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf("") }
     var selectedPlayback by remember { mutableStateOf<String?>(null) }
@@ -89,6 +90,7 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
         matchesQuery && matchesFilter
     }
 
+    if (authenticated) {
     Scaffold(topBar = {
         TopAppBar(
             title = { Text("Call recordings") },
@@ -281,6 +283,23 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
         }
     }
 
+    } else {
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("Call recordings") }, navigationIcon = {
+                TextButton(onClick = onBack) { Text("Back") }
+            })
+        }) { insets ->
+            Column(
+                Modifier.fillMaxSize().padding(insets).padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(Icons.Default.Lock, contentDescription = null)
+                Text("Private recordings are locked", style = MaterialTheme.typography.titleLarge)
+                Text("Authenticate with your Private Vault password to view or manage imported recordings.")
+            }
+        }
+    }
+
     if (pendingAction != null) {
         AlertDialog(
             onDismissRequest = { pendingAction = null; password = "" },
@@ -306,9 +325,11 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                         passwordError = "Password not accepted. No changes were made."
                     } else {
                         val action = pendingAction
+                        authenticated = true
                         pendingAction = null
                         password = ""
                         when (action) {
+                            "open" -> Unit
                             "enable" -> if (sourceUri == null) folderPicker.launch(null) else {
                                 prefs.edit().putBoolean(CallRecordingImport.KEY_ENABLED, true).commit()
                                 enabled = true
