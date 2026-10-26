@@ -41,9 +41,11 @@ class OrdinaryNoteSelectionTest {
         val replacement = note(2, encrypted = true)
         val result = OrdinaryNoteSelection.applyReplacements(notes, mapOf(2L to replacement))
         assertEquals(listOf(1L, 2L, 3L), result.map { it.id })
-        assertEquals(note(1), result[0])
+        // Compare against the original instances: constructing a fresh NestNote can differ in
+        // timestamp defaults and makes this a flaky/incorrect equality assertion.
+        assertEquals(notes[0], result[0])
         assertEquals(replacement, result[1])
-        assertEquals(note(3), result[2])
+        assertEquals(notes[2], result[2])
     }
 
     @Test
