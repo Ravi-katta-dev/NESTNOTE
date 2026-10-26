@@ -1,7 +1,4 @@
 # Keep custom R8 rules here only when required by release-build tests.
 # Avoid broad keep rules that disable useful shrinking or obfuscation.
-
-# SQLCipher accesses SQLiteDatabase.mNativeHandle through JNI. R8 cannot infer
-# that native field lookup from Java references alone, so preserve the SQLCipher
-# classes and member names required by the native library in minified release builds.
--keep class net.sqlcipher.** { *; }
+# Add SQLCipher-specific rules only after a minified-release regression test proves
+# that R8 changes a JNI-referenced member and the rule fixes that test.
