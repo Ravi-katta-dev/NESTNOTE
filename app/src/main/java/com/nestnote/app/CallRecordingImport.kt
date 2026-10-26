@@ -37,6 +37,7 @@ internal object CallRecordingImport {
     const val KEY_STATUS = "last_status"
     const val KEY_STATUS_AT = "last_status_at"
     const val KEY_ITEMS = "items"
+    const val KEY_IGNORED_SOURCES = "ignored_sources"
     const val STATUS_DISABLED = "Disabled"
     const STATUS_NEEDS_FOLDER = "Choose a recordings folder"
     const val STATUS_READY = "Waiting to import"
@@ -134,11 +135,22 @@ internal object CallRecordingImport {
         val store = VoiceAttachmentStore(context)
         val removed = runCatching { store.delete(RECORDINGS_NOTE_ID, attachmentId) }.getOrDefault(false)
         if (removed) {
-            val remaining = items(context).filterNot { it.attachmentId == attachmentId }
-            saveItems(context, remaining)
+            val currentItems = items(context)
+            val removedItem = currentItems.firstOrNull { it.attachmentId == attachmentId }
+            if (removedItem != null) {
+                val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                val ignored = prefs.getStringSet(KEY_IGNORED_SOURCES, emptySet()).orEmpty().toMutableSet()
+                ignored += removedItem.sourceUri
+                prefs.edit().putStringSet(KEY_IGNORED_SOURCES, ignored).commit()
+            }
+            saveItems(context, currentItems.filterNot { it.attachmentId == attachmentId })
         }
         return removed
     }
+
+    fun ignoredSources(context: Context): Set<String> =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getStringSet(KEY_IGNORED_SOURCES, emptySet()).orEmpty().toSet()
 
     internal fun saveItems(context: Context, items: List<Item>) {
         val array = JSONArray()
@@ -172,6 +184,7 @@ internal class CallRecordingImportWorker(
 
         val priorItems = CallRecordingImport.items(applicationContext).toMutableList()
         val importedSources = priorItems.mapTo(mutableSetOf()) { it.sourceUri }
+        val ignoredSources = CallRecordingImport.ignoredSources(applicationContext)
         val store = runCatching { VoiceAttachmentStore(applicationContext) }.getOrElse {
             return@withContext fail(CallRecordingImport.STATUS_FAILED)
         }
@@ -182,7 +195,7 @@ internal class CallRecordingImportWorker(
                 if (!CallRecordingImport.enabled(applicationContext)) return@forEach
                 val uri = file.uri
                 val sourceKey = uri.toString()
-                if (sourceKey in importedSources) return@forEach
+                if (sourceKey in importedSources || sourceKey in ignoredSources) return@forEach
                 val name = file.name ?: queryName(resolver, uri) ?: "Call recording"
                 val mime = resolver.getType(uri)?.lowercase(java.util.Locale.ROOT)
                 if (!VoiceAudioImportPolicy.isAudioDocument(name, mime)) return@forEach
