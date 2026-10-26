@@ -86,6 +86,7 @@ internal fun SettingsScreen(
     modifier: Modifier = Modifier,
     onOpenBackupRestore: () -> Unit = {},
     onOpenPrivateVaultSettings: () -> Unit = {},
+    onOpenCallRecordings: () -> Unit = {},
     storageBackend: NoteStorageBackend = NoteStorageBackend.KEYSTORE,
     onStorageBackendChange: (NoteStorageBackend) -> Unit = {},
     screenCaptureProtectionEnabled: Boolean = true,
@@ -407,7 +408,8 @@ internal fun SettingsScreen(
                 SettingsPrivacySection(
                     screenCaptureProtectionEnabled = screenCaptureProtectionEnabled,
                     onScreenCaptureProtectionChange = onScreenCaptureProtectionChange,
-                    onOpenPrivateVaultSettings = onOpenPrivateVaultSettings
+                    onOpenPrivateVaultSettings = onOpenPrivateVaultSettings,
+                    onOpenCallRecordings = onOpenCallRecordings
                 )
             }
         }
