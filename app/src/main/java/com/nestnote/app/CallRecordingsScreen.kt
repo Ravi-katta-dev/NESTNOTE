@@ -69,8 +69,8 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
             val chosenFolder = runCatching { DocumentFile.fromTreeUri(context, uri) }.getOrNull()
             if (chosenFolder == null || !chosenFolder.isDirectory || !chosenFolder.canRead()) {
                 status = CallRecordingImport.STATUS_SOURCE_UNAVAILABLE
-            } else if (CallRecordingImport.persistTreeGrant(context, uri) &&
-                runCatching { VoiceAttachmentStore(context) }.isSuccess
+            } else if (CallRecordingImport.verifyEncryptionReady(context) &&
+                CallRecordingImport.persistTreeGrant(context, uri)
             ) {
                 sourceUri = uri
                 prefs.edit().putBoolean(CallRecordingImport.KEY_ENABLED, true).commit()
@@ -79,7 +79,7 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                 CallRecordingImport.schedule(context)
                 status = CallRecordingImport.status(context)
             } else {
-                status = "Folder permission could not be saved — choose it again"
+                status = "Folder permission or encrypted storage verification failed — nothing was enabled"
                 prefs.edit().putBoolean(CallRecordingImport.KEY_ENABLED, false).apply()
                 enabled = false
             }
