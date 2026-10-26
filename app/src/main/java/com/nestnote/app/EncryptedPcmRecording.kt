@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
-private const val VOICE_SAMPLE_RATE = 16_000
+internal const val VOICE_SAMPLE_RATE = 16_000
 private const val VOICE_CHANNEL_IN = AudioFormat.CHANNEL_IN_MONO
 private const val VOICE_ENCODING = AudioFormat.ENCODING_PCM_16BIT
 
