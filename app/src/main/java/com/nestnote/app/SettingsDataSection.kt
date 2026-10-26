@@ -73,7 +73,7 @@ internal fun SettingsDataSection(
                             ) {
                                 RadioButton(
                                     selected = storageBackend == NoteStorageBackend.KEYSTORE,
-                                    onClick = { if (storageBackend != NoteStorageBackend.KEYSTORE) pendingStorageBackend = NoteStorageBackend.KEYSTORE }
+                                    onClick = { if (storageBackend != NoteStorageBackend.KEYSTORE) onRequestStorageBackendChange(NoteStorageBackend.KEYSTORE) }
                                 )
                                 Column(Modifier.weight(1f).padding(start = 8.dp)) {
                                     Text("Android Keystore encrypted storage", style = MaterialTheme.typography.titleSmall)
@@ -88,7 +88,7 @@ internal fun SettingsDataSection(
                             ) {
                                 RadioButton(
                                     selected = storageBackend == NoteStorageBackend.SQLCIPHER,
-                                    onClick = { if (storageBackend != NoteStorageBackend.SQLCIPHER) pendingStorageBackend = NoteStorageBackend.SQLCIPHER }
+                                    onClick = { if (storageBackend != NoteStorageBackend.SQLCIPHER) onRequestStorageBackendChange(NoteStorageBackend.SQLCIPHER) }
                                 )
                                 Column(Modifier.weight(1f).padding(start = 8.dp)) {
                                     Text("Encrypted SQL database (SQLCipher)", style = MaterialTheme.typography.titleSmall)
