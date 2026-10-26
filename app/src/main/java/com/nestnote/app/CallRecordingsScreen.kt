@@ -291,9 +291,9 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                                                 bytes.fill(0)
                                                 return@launch
                                             }
-                                            val payload = bytes
+                                            val payload = requireNotNull(bytes)
                                             player = MediaPlayer()
-                                            val activePlayer = player
+                                            val activePlayer = requireNotNull(player)
                                             activePlayer.setDataSource(object : MediaDataSource() {
                                                 override fun getSize(): Long = payload.size.toLong()
                                                 override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
