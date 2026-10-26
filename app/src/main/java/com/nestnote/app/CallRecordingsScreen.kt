@@ -53,6 +53,8 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
     var filter by rememberSaveable { mutableStateOf("All") }
     var pendingAction by remember { mutableStateOf<String?>("open") }
     var authenticated by remember { mutableStateOf(false) }
+    var selectedPlayback by remember { mutableStateOf<String?>(null) }
+    var playbackPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -70,9 +72,7 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
     }
     var password by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf("") }
-    var selectedPlayback by remember { mutableStateOf<String?>(null) }
-    var playbackError by remember { mutableStateOf("") }
-    var playbackPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+    var playbackError by remember { mutableStateOf("") } }
     var folderPickerEnables by remember { mutableStateOf(true) }
 
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
