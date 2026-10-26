@@ -18,6 +18,9 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,7 +42,22 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf("All") }
     var pendingAction by remember { mutableStateOf<String?>("open") }
-    var authenticated by rememberSaveable { mutableStateOf(false) }
+    var authenticated by remember { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                authenticated = false
+                pendingAction = "open"
+                runCatching { playbackPlayer?.stop() }
+                runCatching { playbackPlayer?.release() }
+                playbackPlayer = null
+                selectedPlayback = null
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     var password by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf("") }
     var selectedPlayback by remember { mutableStateOf<String?>(null) }
@@ -321,9 +339,13 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                 TextButton(onClick = {
                     if (!PrivateVaultSecurity.isConfigured(context)) {
                         passwordError = "Set up a Private Vault password first."
+                    } else if (PrivateVaultSecurity.isLockedOut(context)) {
+                        passwordError = "Vault access is temporarily locked. Try again after the cooldown."
                     } else if (!PrivateVaultSecurity.verify(context, password)) {
+                        PrivateVaultSecurity.recordFailedAttempt(context)
                         passwordError = "Password not accepted. No changes were made."
                     } else {
+                        PrivateVaultSecurity.clearFailedAttempts(context)
                         val action = pendingAction
                         authenticated = true
                         pendingAction = null
@@ -340,6 +362,7 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                                 prefs.edit().putBoolean(CallRecordingImport.KEY_ENABLED, false).commit()
                                 enabled = false
                                 androidx.work.WorkManager.getInstance(context).cancelUniqueWork("call_recording_import_scan")
+                                androidx.work.WorkManager.getInstance(context).cancelUniquePeriodicWork("call_recording_import_periodic")
                                 CallRecordingImport.setStatus(context, CallRecordingImport.STATUS_DISABLED)
                                 status = CallRecordingImport.status(context)
                             }
