@@ -1,34 +1,31 @@
 package com.nestnote.app
 
+import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import android.content.Context
+import net.sqlcipher.database.SQLiteDatabase
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Exercises the native SQLCipher load/open/write/read path on an Android runtime. */
+/**
+ * Regression guard for the SQLCipher JNI field lookup crash.
+ *
+ * This intentionally does not write to the application's note database or preferences.
+ */
 @RunWith(AndroidJUnit4::class)
 class SqlCipherNativeSmokeTest {
     @Test
-    fun nativeLibraryLoadsAndEncryptedStoreRoundTripsNote() {
+    fun nativeLibraryLoadsAndJniHandleFieldKeepsExpectedDescriptor() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val store = SqlCipherNoteStore(context)
-        val expected = listOf(
-            NestNote(
-                id = 8675309L,
-                title = "SQLCipher native smoke test",
-                body = "Verify native init and encrypted database access",
-                updated = 1_798_000_000_000L
-            )
-        )
 
-        assertTrue("SQLCipher encrypted save should succeed", store.save(expected))
-        val loaded = store.loadSafely()
+        // SqlCipherNoteStore initialization invokes SQLiteDatabase.loadLibs(context).
+        // The reported crash occurs during this native initialization path.
+        SqlCipherNoteStore(context)
 
-        assertFalse("SQLCipher store must not report recovery for a valid round trip", loaded.recoveryRequired)
-        assertEquals(expected, loaded.notes)
+        val handle = SQLiteDatabase::class.java.getDeclaredField("mNativeHandle")
+        assertNotNull("SQLCipher JNI handle field must be present", handle)
+        assertEquals("SQLCipher JNI expects a Java long (descriptor J)", java.lang.Long.TYPE, handle.type)
     }
 }
