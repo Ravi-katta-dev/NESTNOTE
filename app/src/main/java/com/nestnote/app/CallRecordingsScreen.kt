@@ -72,7 +72,7 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
     }
     var password by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf("") }
-    var playbackError by remember { mutableStateOf("") } }
+    var playbackError by remember { mutableStateOf("") }
     var folderPickerEnables by remember { mutableStateOf(true) }
 
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
