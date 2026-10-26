@@ -287,11 +287,11 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                                                 )
                                             }
                                             // The screen may have relocked while encrypted bytes were being read.
+                                            val payload = requireNotNull(bytes)
                                             if (!authenticated || selectedPlayback != item.attachmentId) {
-                                                bytes.fill(0)
+                                                payload.fill(0)
                                                 return@launch
                                             }
-                                            val payload = requireNotNull(bytes)
                                             player = MediaPlayer()
                                             val activePlayer = requireNotNull(player)
                                             activePlayer.setDataSource(object : MediaDataSource() {
