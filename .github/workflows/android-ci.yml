@@ -72,6 +72,14 @@ jobs:
             echo "::error::SQLCipher JNI field mNativeHandle was removed, renamed, or changed in release output"; exit 1;
           }
           echo "Verified SQLCipher SQLiteDatabase and long mNativeHandle are preserved in the minified release mapping."
+      - name: Run SQLCipher JNI smoke test on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: ./gradlew --no-daemon connectedDebugAndroidTest
       - uses: actions/upload-artifact@v4
         if: always()
         with:
