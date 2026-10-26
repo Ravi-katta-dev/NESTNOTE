@@ -314,6 +314,11 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                 Icon(Icons.Default.Lock, contentDescription = null)
                 Text("Private recordings are locked", style = MaterialTheme.typography.titleLarge)
                 Text("Authenticate with your Private Vault password to view or manage imported recordings.")
+                Button(onClick = {
+                    pendingAction = "open"
+                    password = ""
+                    passwordError = ""
+                }) { Text("Unlock recordings") }
             }
         }
     }
