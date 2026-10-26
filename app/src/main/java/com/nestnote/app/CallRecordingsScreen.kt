@@ -66,7 +66,12 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
 
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
-            if (CallRecordingImport.persistTreeGrant(context, uri)) {
+            val chosenFolder = runCatching { DocumentFile.fromTreeUri(context, uri) }.getOrNull()
+            if (chosenFolder == null || !chosenFolder.isDirectory || !chosenFolder.canRead()) {
+                status = CallRecordingImport.STATUS_SOURCE_UNAVAILABLE
+            } else if (CallRecordingImport.persistTreeGrant(context, uri) &&
+                runCatching { VoiceAttachmentStore(context) }.isSuccess
+            ) {
                 sourceUri = uri
                 prefs.edit().putBoolean(CallRecordingImport.KEY_ENABLED, true).commit()
                 enabled = true
@@ -217,7 +222,14 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(Icons.Default.Lock, contentDescription = null)
-                            Text(if (recordings.isEmpty()) "No imported recordings yet" else "No matching recordings")
+                            Text(
+                                when {
+                                    filter == "Failed" && status.contains("failed", ignoreCase = true) -> status
+                                    filter == "Pending" && status.contains("waiting", ignoreCase = true) -> status
+                                    recordings.isEmpty() -> "No imported recordings yet"
+                                    else -> "No matching recordings"
+                                }
+                            )
                             Text(
                                 "Choose a folder that contains audio files created by your dialer, then run a folder check.",
                                 style = MaterialTheme.typography.bodySmall
