@@ -6,13 +6,16 @@ import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import androidx.documentfile.provider.DocumentFile
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.nestnote.app.voicenote.VoiceAudioImportPolicy
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -87,8 +90,7 @@ internal object CallRecordingImport {
             ?: STATUS_READY
 
     fun persistTreeGrant(context: Context, treeUri: Uri): Boolean = runCatching {
-        val flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
-            android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        val flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
         context.contentResolver.takePersistableUriPermission(treeUri, flags)
         val saved = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(KEY_TREE_URI, treeUri.toString()).commit()
@@ -96,12 +98,15 @@ internal object CallRecordingImport {
     }.getOrDefault(false)
 
     fun schedule(context: Context) {
-        val request = OneTimeWorkRequestBuilder<CallRecordingImportWorker>().build()
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            "call_recording_import_scan",
-            ExistingWorkPolicy.KEEP,
-            request
+        val manager = WorkManager.getInstance(context)
+        val periodic = PeriodicWorkRequestBuilder<CallRecordingImportWorker>(6, TimeUnit.HOURS).build()
+        manager.enqueueUniquePeriodicWork(
+            "call_recording_import_periodic",
+            ExistingPeriodicWorkPolicy.UPDATE,
+            periodic
         )
+        val request = OneTimeWorkRequestBuilder<CallRecordingImportWorker>().build()
+        manager.enqueueUniqueWork("call_recording_import_scan", ExistingWorkPolicy.KEEP, request)
     }
 
     fun removeImportedCopy(context: Context, attachmentId: String): Boolean {
@@ -150,6 +155,7 @@ internal class CallRecordingImportWorker(
             return@withContext fail(CallRecordingImport.STATUS_FAILED)
         }
         var importedCount = 0
+        var oversizedFileFound = false
         return@withContext try {
             root.listFiles().filter { it.isFile && it.canRead() }.forEach { file ->
                 if (!CallRecordingImport.enabled(applicationContext)) return@forEach
@@ -161,8 +167,8 @@ internal class CallRecordingImportWorker(
                 if (!VoiceAudioImportPolicy.isAudioDocument(name, mime)) return@forEach
                 val declared = file.length()
                 if (declared > com.nestnote.app.voicenote.VoiceNoteRepository.MAX_IMPORT_BYTES) {
-                    // Keep the source untouched and surface an actionable error; do not retry
-                    // a file known to exceed the encrypted store's import bound on every scan.
+                    // Keep the source untouched and surface an actionable error.
+                    oversizedFileFound = true
                     return@forEach
                 }
                 val id = UUID.randomUUID().toString().replace("-", "")
@@ -181,7 +187,11 @@ internal class CallRecordingImportWorker(
             }
             CallRecordingImport.setStatus(
                 applicationContext,
-                if (importedCount > 0) CallRecordingImport.STATUS_IMPORTED else CallRecordingImport.STATUS_READY
+                when {
+                    oversizedFileFound -> "A source recording exceeds the 100 MB import limit"
+                    importedCount > 0 -> CallRecordingImport.STATUS_IMPORTED
+                    else -> CallRecordingImport.STATUS_READY
+                }
             )
             Result.success()
         } catch (_: SecurityException) {
