@@ -341,7 +341,7 @@ internal fun SettingsScreen(
                     categoryDraft = categoryDraft,
                     onCategoryDraftChange = { categoryDraft = it },
                     onCategoryOptionsChange = onCategoryOptionsChange,
-                    selectedSort = selectedSort,
+                    selectedSort = selectedSort.first,
                     onSortChange = onSortChange,
                     showNotePreviews = showNotePreviews,
                     onShowNotePreviewsChange = onShowNotePreviewsChange,
