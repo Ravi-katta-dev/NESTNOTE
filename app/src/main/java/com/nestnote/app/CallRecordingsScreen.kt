@@ -28,12 +28,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.documentfile.provider.DocumentFile
 import java.io.IOException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CallRecordingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val playbackScope = rememberCoroutineScope()
     val prefs = remember(context) { context.getSharedPreferences(CallRecordingImport.PREFS, 0) }
     var enabled by remember { mutableStateOf(CallRecordingImport.enabled(context)) }
     var sourceUri by remember { mutableStateOf(CallRecordingImport.sourceTree(context)) }
@@ -108,6 +112,9 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
 
     val visibleItems = recordings.filter { item ->
         val matchesQuery = query.isBlank() || item.displayName.contains(query, ignoreCase = true)
+        // Only successfully encrypted copies are currently persisted as list items.
+        // Pending/Failed are job-level states, not individual recording states; don't mislabel
+        // imported recordings as those states.
         val matchesFilter = when (filter) {
             "Imported" -> true
             "Pending", "Failed" -> false
@@ -264,32 +271,63 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                                     playbackPlayer = null
                                     playbackError = ""
                                     selectedPlayback = item.attachmentId
-                                    try {
-                                        val bytes = VoiceAttachmentStore(context).read(
-                                            CallRecordingImport.RECORDINGS_NOTE_ID, item.attachmentId
-                                        )
-                                        val player = MediaPlayer()
-                                        player.setDataSource(object : MediaDataSource() {
-                                            override fun getSize(): Long = bytes.size.toLong()
-                                            override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
-                                                if (position >= bytes.size) return -1
-                                                val count = minOf(size, bytes.size - position.toInt())
-                                                System.arraycopy(bytes, position.toInt(), buffer, offset, count)
-                                                return count
+                                    playbackScope.launch {
+                                        var bytes: ByteArray? = null
+                                        var player: MediaPlayer? = null
+                                        try {
+                                            bytes = withContext(Dispatchers.IO) {
+                                                VoiceAttachmentStore(context).read(
+                                                    CallRecordingImport.RECORDINGS_NOTE_ID, item.attachmentId
+                                                )
                                             }
-                                            override fun close() { bytes.fill(0) }
-                                        })
-                                        player.setOnCompletionListener {
-                                            runCatching { it.release() }
-                                            playbackPlayer = null
+                                            // The screen may have relocked while encrypted bytes were being read.
+                                            if (!authenticated || selectedPlayback != item.attachmentId) {
+                                                bytes.fill(0)
+                                                return@launch
+                                            }
+                                            val payload = bytes
+                                            player = MediaPlayer()
+                                            val activePlayer = player
+                                            activePlayer.setDataSource(object : MediaDataSource() {
+                                                override fun getSize(): Long = payload.size.toLong()
+                                                override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
+                                                    if (position < 0L || position >= payload.size) return -1
+                                                    val count = minOf(size, payload.size - position.toInt())
+                                                    System.arraycopy(payload, position.toInt(), buffer, offset, count)
+                                                    return count
+                                                }
+                                                override fun close() { payload.fill(0) }
+                                            })
+                                            activePlayer.setOnCompletionListener {
+                                                runCatching { it.release() }
+                                                payload.fill(0)
+                                                if (playbackPlayer === it) playbackPlayer = null
+                                                selectedPlayback = null
+                                            }
+                                            activePlayer.setOnErrorListener { mp, _, _ ->
+                                                runCatching { mp.release() }
+                                                payload.fill(0)
+                                                if (playbackPlayer === mp) playbackPlayer = null
+                                                selectedPlayback = null
+                                                playbackError = "Could not play this recording"
+                                                true
+                                            }
+                                            activePlayer.setOnPreparedListener {
+                                                if (authenticated && selectedPlayback == item.attachmentId) {
+                                                    it.start()
+                                                } else {
+                                                    payload.fill(0)
+                                                    runCatching { it.release() }
+                                                }
+                                            }
+                                            playbackPlayer = activePlayer
+                                            activePlayer.prepareAsync()
+                                        } catch (error: Exception) {
+                                            bytes?.fill(0)
+                                            runCatching { player?.release() }
+                                            playbackError = error.message ?: "Could not play this recording"
                                             selectedPlayback = null
                                         }
-                                        player.setOnPreparedListener { it.start() }
-                                        player.prepareAsync()
-                                        playbackPlayer = player
-                                    } catch (error: Exception) {
-                                        playbackError = error.message ?: "Could not play this recording"
-                                        selectedPlayback = null
                                     }
                                 }
                             }) {
