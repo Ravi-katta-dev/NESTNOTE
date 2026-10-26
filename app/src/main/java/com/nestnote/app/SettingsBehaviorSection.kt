@@ -105,7 +105,12 @@ internal fun SettingsBehaviorSection(
                         HorizontalDivider(Modifier.padding(vertical = 4.dp), color = colors.outlineVariant.copy(alpha = 0.5f))
     
                         SettingLabel("Sort notes by")
-                        SegmentedChoice(SortOptions, selectedSort, { it.second }, { onSortChange(it.first) })
+                        SegmentedChoice(
+                            SortOptions.map { it.first },
+                            selectedSort,
+                            { key -> SortOptions.first { it.first == key }.second },
+                            onSortChange
+                        )
                         Text(
                             "Pinned notes always stay on top.",
                             style = MaterialTheme.typography.bodySmall,
