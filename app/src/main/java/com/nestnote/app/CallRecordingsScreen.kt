@@ -223,6 +223,27 @@ internal fun CallRecordingsScreen(onBack: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(status, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(onClick = {
+                        if (enabled && sourceUri != null) {
+                            CallRecordingImport.schedule(context)
+                            status = "Checking source folder…"
+                            playbackScope.launch {
+                                delay(700)
+                                status = CallRecordingImport.status(context)
+                                recordings = CallRecordingImport.items(context)
+                            }
+                        } else {
+                            status = if (sourceUri == null) CallRecordingImport.STATUS_NEEDS_FOLDER
+                            else CallRecordingImport.STATUS_DISABLED
+                        }
+                    }) {
+                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Spacer(Modifier.size(6.dp))
+                        Text("Scan now")
+                    }
+                }
                 OutlinedTextField(
                     value = query, onValueChange = { query = it },
                     modifier = Modifier.fillMaxWidth(), singleLine = true,
